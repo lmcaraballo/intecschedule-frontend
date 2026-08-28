@@ -13,6 +13,12 @@ export class StorageStack extends cdk.Stack {
             versioned: true,
             encryption: s3.BucketEncryption.S3_MANAGED,
             publicReadAccess: true,
+            blockPublicAccess: new s3.BlockPublicAccess({
+                blockPublicAcls: false,
+                blockPublicPolicy: false,
+                ignorePublicAcls: false,
+                restrictPublicBuckets: false,
+            }),
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
 
