@@ -1,12 +1,11 @@
 {
-  "name": "cdk_example",
-  "version": "0.1.0",
+  "name": "intec-schedule-spa",
+  "version": "1.0.0",
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
-    "cdk": "cdk",
-    "bundle-api": "swagger-cli bundle src/api-contracts/openapi/openapi.yaml -o src/api-contracts/openapi/openapi.bundled.yaml -t yaml"
+    "cdk": "cdk"
   },
   "devDependencies": {
     "@apidevtools/swagger-cli": "^4.0.4",
