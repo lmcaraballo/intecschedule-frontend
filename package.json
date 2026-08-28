@@ -1,0 +1,26 @@
+{
+  "name": "cdk_example",
+  "version": "0.1.0",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest",
+    "cdk": "cdk",
+    "bundle-api": "swagger-cli bundle src/api-contracts/openapi/openapi.yaml -o src/api-contracts/openapi/openapi.bundled.yaml -t yaml"
+  },
+  "devDependencies": {
+    "@apidevtools/swagger-cli": "^4.0.4",
+    "@types/jest": "^30",
+    "@types/node": "^24.10.1",
+    "aws-cdk": "2.1124.1",
+    "jest": "^30",
+    "ts-jest": "^29",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.9.3"
+  },
+  "dependencies": {
+    "@apidevtools/swagger-parser": "^12.1.0",
+    "aws-cdk-lib": "^2.255.0",
+    "constructs": "^10.5.0"
+  }
+}
