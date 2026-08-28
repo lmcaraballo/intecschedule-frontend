@@ -9,7 +9,7 @@ export interface AppEnvProperties extends EnvProperties {
     envName: string;
     stage: string;
     certificateArn: string,
-    vpc: {
+    vpc?: {
         id: string,
         name: string,
         privateSubnet1: string,
