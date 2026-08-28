@@ -4,12 +4,7 @@ import * as cdk from 'aws-cdk-lib';
 const builder = new AppBuilder(new cdk.App())
 
 const app = builder
-    .addNetworkingStack()
-    .addAuthorizationStack()
-    .addLayersStack()
-    .addComputeStack()
-    .addIntegrationStack()
-    .addRdsStack()
+    .addCloudfrontStack()
     .addStorageStack()
     .addSecurityStack()
     .build();

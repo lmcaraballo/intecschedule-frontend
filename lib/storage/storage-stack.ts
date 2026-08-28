@@ -12,8 +12,8 @@ export class StorageStack extends cdk.Stack {
             bucketName: `${Constants.PROJECTNAME}-${props.envName}`,
             versioned: true,
             encryption: s3.BucketEncryption.S3_MANAGED,
-            blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-            removalPolicy: cdk.RemovalPolicy.RETAIN,
+            publicReadAccess: true,
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
 
         new cdk.CfnOutput(this, `${Constants.PROJECTNAME}-bucketArnOutput-${props.envName}`, {

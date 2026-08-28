@@ -1,15 +1,10 @@
 import {App, Stack} from "aws-cdk-lib";
 import {AppEnvProperties, properties} from "../config/app-env-properties";
-import {ComputeStack} from "../lib/compute/compute-stack";
 import {Constants} from "../config/constants";
-import {LayersStack} from "../lib/compute/layers-stack";
-import {NetworkingStack} from "../lib/networking/networking-stack";
 import {StackProps} from "../config/interfaces/stack-properties"
-import {IntegrationStack} from "../lib/integration/integration-stack";
-import {AuthorizationStack} from "../lib/authorization/authorization-stack";
 import {StorageStack} from "../lib/storage/storage-stack";
-import {RdsStack} from "../lib/database/rds-stack";
 import {SecurityStack} from "../lib/security/security-stack";
+import {CloudfrontStack} from "../lib/distribution/cloudfront-stack";
 
 export class AppBuilder {
     private readonly app: App;
@@ -60,75 +55,6 @@ export class AppBuilder {
         };
     }
 
-    public addNetworkingStack(): this {
-        const stackName: string = `${Constants.PROJECTNAME}-NetworkingStack-${this.appProperties.stage}`;
-
-        if (this.stacks.has(stackName)) {
-            return this;
-        }
-
-        const stack = new NetworkingStack(this.app, stackName, this.getBaseStackProps());
-
-        this.stacks.set(stackName, stack);
-
-        return this;
-    }
-
-    public addComputeStack(): this {
-        const stackName: string = `${Constants.PROJECTNAME}-ComputeStack-${this.appProperties.envName}`;
-
-        if (this.stacks.has(stackName)) {
-            return this;
-        }
-
-        const stack = new ComputeStack(this.app, stackName, this.getBaseStackProps());
-
-        this.stacks.set(stackName, stack);
-
-        return this;
-    }
-
-    public addIntegrationStack(): this {
-        const stackName: string = `${Constants.PROJECTNAME}-IntegrationStack-${this.appProperties.envName}`;
-
-        if (this.stacks.has(stackName)) {
-            return this;
-        }
-
-        const stack = new IntegrationStack(this.app, stackName, this.getBaseStackProps());
-
-        this.stacks.set(stackName, stack);
-
-        return this;
-    }
-
-    public addLayersStack(): this {
-        const stackName: string = `${Constants.PROJECTNAME}-LayersStack-${this.appProperties.envName}`;
-
-        if (this.stacks.has(stackName)) {
-            return this;
-        }
-
-        const stack = new LayersStack(this.app, stackName, this.getBaseStackProps());
-
-        this.stacks.set(stackName, stack);
-
-        return this;
-    }
-
-    public addAuthorizationStack(): this {
-        const stackName: string = `${Constants.PROJECTNAME}-AuthorizationStack-${this.appProperties.envName}`;
-
-        if (this.stacks.has(stackName)) {
-            return this;
-        }
-
-        const stack = new AuthorizationStack(this.app, stackName, this.getBaseStackProps());
-
-        this.stacks.set(stackName, stack);
-
-        return this;
-    }
 
     public addStorageStack(): this {
         const stackName: string = `${Constants.PROJECTNAME}-StorageStack-${this.appProperties.envName}`;
@@ -144,14 +70,14 @@ export class AppBuilder {
         return this;
     }
 
-    public addRdsStack(): this {
-        const stackName: string = `${Constants.PROJECTNAME}-RdsStack-${this.appProperties.stage}`;
+    public addCloudfrontStack(): this {
+        const stackName: string = `${Constants.PROJECTNAME}-CloudfrontStack-${this.appProperties.envName}`;
 
         if (this.stacks.has(stackName)) {
             return this;
         }
 
-        const stack = new RdsStack(this.app, stackName, this.getBaseStackProps());
+        const stack = new CloudfrontStack(this.app, stackName, this.getBaseStackProps());
 
         this.stacks.set(stackName, stack);
 
