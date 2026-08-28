@@ -24,7 +24,8 @@ export class CloudfrontStack extends cdk.Stack {
         new cloudfront.Distribution(this, `${Constants.PROJECTNAME}-cloudfront-${props.envName}`, {
             defaultRootObject: 'frontend/react/index.html',
             defaultBehavior: {
-                origin: origins.S3BucketOrigin.withOriginAccessControl(bucket)
+                origin: origins.S3BucketOrigin.withOriginAccessControl(bucket),
+                viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS
             }
         });
     }
