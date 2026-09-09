@@ -6,6 +6,10 @@ on:
       - preprod
       - develop
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   Build:
     runs-on: ubuntu-latest
@@ -73,6 +77,13 @@ jobs:
           name: react-build
           path: src/react/dist
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6.2.3
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          allowed-account-ids: ${{ vars.AWS_ACCOUNT }}
+
       - name: Run CDK Synth
         run: >
           npx cdk synth
@@ -111,6 +122,13 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6.2.3
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          allowed-account-ids: ${{ vars.AWS_ACCOUNT }}
 
       - name: Run CDK Deploy
         run: npx cdk deploy --all --app cdk.out --require-approval never
