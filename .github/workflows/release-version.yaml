@@ -89,6 +89,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: Synth
 
+    permissions:
+      id-token: write
+      contents: read
+
     defaults:
       run:
         shell: bash
