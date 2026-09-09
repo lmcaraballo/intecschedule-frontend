@@ -1,3 +1,4 @@
+import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import * as cdk from 'aws-cdk-lib'
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront'
 import * as s3 from 'aws-cdk-lib/aws-s3';
@@ -21,12 +22,27 @@ export class CloudfrontStack extends cdk.Stack {
             bucketArn
         );
 
-        new cloudfront.Distribution(this, `${Constants.PROJECTNAME}-cloudfront-${props.envName}`, {
-            defaultRootObject: 'frontend/react/index.html',
+        const origin = origins.S3BucketOrigin.withOriginAccessControl(bucket, {
+            originPath: '/frontend/react'
+        });
+
+        const distribution = new cloudfront.Distribution(this, `${Constants.PROJECTNAME}-cloudfront-${props.envName}`, {
+            defaultRootObject: 'index.html',
             defaultBehavior: {
-                origin: origins.S3BucketOrigin.withOriginAccessControl(bucket),
+                origin: origin,
                 viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS
             }
+        });
+
+        new s3deploy.BucketDeployment(this, 'DeployReactApp', {
+            sources: [
+                s3deploy.Source.asset('src/react/dist'),
+            ],
+            destinationBucket: bucket,
+            destinationKeyPrefix: 'frontend/react',
+            distribution,
+            distributionPaths: ['/*'],
+            prune: true,
         });
     }
 }

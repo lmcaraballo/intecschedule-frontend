@@ -1,0 +1,112 @@
+name: release-version
+on:
+  push:
+    branches:
+      - main
+      - preprod
+      - develop
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: check out repository code
+        uses: actions/checkout@v4
+
+      - name: install React dependencies
+        run: npm ci
+        working-directory: src/react
+
+      - name: build React application
+        run: npm run build
+        working-directory: src/react
+
+      - name: upload React build
+        uses: actions/upload-artifact@v4
+        with:
+          name: react-build
+          path: src/react/dist/
+          if-no-files-found: error
+
+  Test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: check out repository code
+        uses: actions/checkout@v4
+
+      - name: install dependencies
+        run: npm ci
+        working-directory: src/react
+
+      - name: run test
+        run: npm run test:run
+        working-directory: src/react
+
+  Synth:
+    runs-on: ubuntu-latest
+    needs: [ Build, Test ]
+
+    defaults:
+      run:
+        shell: bash
+
+    environment: ${{ github.ref_name == 'main' && 'prod' || github.ref_name == 'preprod' && 'pre' || 'dev' }}
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download React build
+        uses: actions/download-artifact@v4
+        with:
+          name: react-build
+          path: src/react/dist
+
+      - name: Run CDK Synth
+        run: >
+          npx cdk synth
+          --context accountId=${{ vars.AWS_ACCOUNT }}
+          --context env=${{ vars.ENV }}
+
+      - name: Upload CDK Assembly
+        uses: actions/upload-artifact@v4
+        with:
+          name: university-schedule-artifact
+          path: cdk.out/
+
+  Deploy:
+    runs-on: ubuntu-latest
+    needs: Synth
+
+    defaults:
+      run:
+        shell: bash
+
+    environment: ${{ github.ref_name == 'main' && 'prod' || github.ref_name == 'preprod' && 'pre' || 'dev' }}
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Download CDK Assembly
+        uses: actions/download-artifact@v4
+        with:
+          name: university-schedule-artifact
+          path: cdk.out
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run CDK Deploy
+        run: npx cdk deploy --all --app cdk.out --require-approval never
