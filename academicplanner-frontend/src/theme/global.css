@@ -89,3 +89,9 @@ h1, h2, p { margin: 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* Reflow when the user enlarges text, without hiding overflowing content. */
+.site-header { flex-wrap: wrap; }
+.brand-link { min-width: 0; max-width: 100%; }
+.brand > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.site-footer { flex-wrap: wrap; }

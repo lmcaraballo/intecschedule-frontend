@@ -127,3 +127,23 @@ describe('scheduleStorage', () => {
     expect(scheduleStorage.get()?.session).toEqual(session);
   });
 });
+
+describe('snapshot ordering and external changes',()=>{
+  beforeEach(()=>localStorage.clear());
+  it('compares actual timestamps across timezone offsets without mixing profiles',()=>{
+    const newest=createMockSession('qa');newest.schedule.fetchedAt='2026-09-18T09:00:00-04:00';scheduleStorage.save(newest);
+    const older=createMockSession('qa');older.schedule.fetchedAt='2026-09-18T12:00:00Z';
+    expect(()=>scheduleStorage.save(older)).toThrow('desactualizada');
+    expect(scheduleStorage.get()?.session).toEqual(newest);
+    older.student.id='other-student';expect(()=>scheduleStorage.save(older)).not.toThrow();
+  });
+  it('does not emit on unchanged focus, rereads changed data on visibility, and removes listeners',()=>{
+    scheduleStorage.save(createMockSession('qa'));
+    const listener=vi.fn(),unsubscribe=scheduleStorage.subscribe(listener);
+    window.dispatchEvent(new Event('focus'));expect(listener).not.toHaveBeenCalled();
+    localStorage.removeItem('academicplanner:data:v1');
+    vi.spyOn(document,'visibilityState','get').mockReturnValue('visible');
+    document.dispatchEvent(new Event('visibilitychange'));expect(listener).toHaveBeenCalledWith('cleared');
+    unsubscribe();listener.mockClear();window.dispatchEvent(new Event('focus'));expect(listener).not.toHaveBeenCalled();
+  });
+});

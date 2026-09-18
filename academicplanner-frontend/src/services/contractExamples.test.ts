@@ -1,19 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import contract from '../../docs/openapi.json';
-import { credentialsSchema } from '../features/auth/authSchema';
-import { parseAcademicResponse } from './academicContract';
-import { backendErrorCodeSchema, backendErrorSchema } from './academicErrors';
+import { LOGIN_ENDPOINT, ACADEMIC_ENDPOINT, loginResponseSchema, parsePortalSchedule } from './academicHttp';
+import { createMockSession } from '../mocks/academicSession';
 
-describe('published API contract examples', () => {
-  const endpoint=contract.paths['/api/academic/schedule'].post;
-  it('provides a valid request and matching academic response', () => {
-    const request=credentialsSchema.parse(endpoint.requestBody.content['application/json'].example);
-    expect(parseAcademicResponse(endpoint.responses['200'].content['application/json'].example,request.studentId).schedule.classes).toHaveLength(1);
+describe('published development API contract', () => {
+  it('uses the documented POST routes and bearer authorization', () => {
+    expect(LOGIN_ENDPOINT).toBe(`/api${'/user/login'}`);
+    expect(ACADEMIC_ENDPOINT).toBe(`/api${'/schedule'}`);
+    expect(contract.paths['/user/login'].post.requestBody.required).toBe(true);
+    expect(contract.paths['/schedule'].post.security).toEqual([{HTTPBearer:[]}]);
+    expect(contract.components.securitySchemes.HTTPBearer.scheme).toBe('bearer');
   });
-  it('documents every backend error supported by the client', () => {
-    expect(contract.components.schemas.AcademicError.properties.error.properties.code.enum).toEqual(backendErrorCodeSchema.options);
-    for(const [status,response] of Object.entries(endpoint.responses)) {
-      if(status!=='200') expect(backendErrorSchema.safeParse(response.content['application/json'].example).success).toBe(true);
-    }
+  it('normalizes the documented flat response without changing storage', () => {
+    expect(contract.components.schemas.ScheduleResponse.required).toEqual(['student','fetchedAt','classes']);
+    const session=createMockSession('QA-STUDENT');
+    expect(parsePortalSchedule({student:session.student,...session.schedule},'QA-STUDENT')).toEqual(session);
+    expect(loginResponseSchema.parse({accessToken:'fictional-token',refreshToken:'unused',tokenType:'bearer',expiresIn:900})).not.toHaveProperty('refreshToken');
   });
 });

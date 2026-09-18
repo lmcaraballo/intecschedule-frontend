@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
     throw new Error('API_PROXY_TARGET debe ser un origen HTTP o HTTPS.');
   }
   return {
-  server: upstream ? { proxy: { '/api': { target: upstream, changeOrigin: true } } } : {},
+  server: upstream ? { proxy: { '/api': { target: upstream.replace(/\/$/, ''), changeOrigin: true, rewrite: (path: string) => path.replace(/^\/api(?=\/|$)/, '') } } } : {},
   plugins: [
     react(),
     VitePWA({

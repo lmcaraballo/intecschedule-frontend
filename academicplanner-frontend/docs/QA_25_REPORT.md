@@ -1,5 +1,15 @@
 # AcademicPlanner — revisión QA del primer incremento
 
+> Actualización posterior: el backend de desarrollo ya fue proporcionado y el adaptador fue actualizado. Consultar [BACKEND_INTEGRATION.md](BACKEND_INTEGRATION.md) para el estado vigente (186 pruebas de lógica y 37 de navegador); los resultados siguientes corresponden a la auditoría previa.
+
+**Resultado vigente de la segunda auditoría: READY FOR 25% DELIVERY**, limitado al incremento simulado.
+
+Esta ronda encontró **4 defectos nuevos: 0 Critical, 2 High, 2 Medium, 0 Low**. Los 4 están corregidos y reverificados; **0 pendientes**. Sumando el historial anterior: **11 defectos** (0 Critical, 3 High, 7 Medium, 1 Low), todos corregidos.
+
+Gate final vigente: **176/176 unitarias/integración**, **25/25 E2E demo**, **9/9 E2E HTTP**, TypeScript y build pasan; sin script lint. `npm audit`: cero vulnerabilidades conocidas. **No se ejecutó push, PR ni operación sobre ramas remotas en esta ronda.**
+
+Las secciones anteriores a «Segunda auditoría» conservan la evidencia histórica de la primera revisión (169/18/8 pruebas); no sustituyen estos resultados vigentes.
+
 Fecha: 18 de septiembre de 2026. Origen: copia local de `academicplanner-frontend`; archivos originales preservados. El repositorio remoto contiene infraestructura AWS CDK y no este frontend.
 
 ## Estado inicial, antes de corregir
@@ -126,3 +136,69 @@ Conectar el endpoint del contrato, acordar `isPino`, vacío frente a error y hor
 ## Valoración por pantalla
 
 Escala orientativa 1–10 basada en funcionalidad (40%), fidelidad al contrato/datos de prueba (25%), accesibilidad revisada (20%) y presentación (15%): acceso **9**, Ahora **9**, Horario **9**, Detalle **9**, Más **9**. Salud observada del alcance: **9/10**. Estas notas describen esta revisión, no una métrica de usuarios ni disponibilidad del backend; el margen restante corresponde a verificación con servicio y dispositivos reales.
+
+## Segunda auditoría local — pruebas de ruptura adicionales
+
+Base: commit `1a7f2a7`. Gate inicial: **169/169 pruebas** y build correctos. No hay lint. Se conservan los siete defectos corregidos en la auditoría anterior; los siguientes IDs son nuevos. En esta ronda no se permite push, PR, merge ni modificar ramas remotas.
+
+### QA-008 — Texto al 200 % desborda pantallas
+- Severidad: Medium. Área: Responsive / accesibilidad.
+- Precondición: vista 320/390 px, tamaño raíz de fuente al 200 %; también acceso a 768 px.
+- Pasos: abrir acceso/Ahora/Horario/Más; ampliar fuente; recorrer controles.
+- Resultado actual: scroll horizontal 454–513 px en móvil y 857 px en acceso de 768 px; cabecera y estructura de acceso no refluyen.
+- Resultado esperado: contenido legible y controles accesibles sin desbordamiento horizontal.
+- Estado: Fixed. Evidencia: `probe-before.json`, `font-before.png` de la segunda auditoría.
+
+### QA-009 — Borrado o corrupción manual no se relee al volver a la app
+- Severidad: Medium. Área: Storage / recuperación.
+- Precondición: horario mostrado; modificación local que no emite evento storage en la pestaña actual.
+- Pasos: eliminar la clave o escribir JSON corrupto manualmente; devolver el foco a la app.
+- Resultado actual: sigue visible el horario anterior en memoria.
+- Resultado esperado: revalidar, retirar datos inválidos y volver al acceso sin crash; una eliminación durante consulta no debe ser revertida por la respuesta pendiente.
+- Estado: Fixed. Evidencia: navegador y dos pruebas de integración fallidas.
+
+### QA-010 — Fallo de un proveedor superior deja la app sin recuperación
+- Severidad: High. Área: resiliencia.
+- Precondición: error inesperado de render en ThemeProvider, fuera del router.
+- Pasos: inyectar una excepción en el cálculo de tema; montar App.
+- Resultado actual: excepción sin fallback; el errorElement del router no cubre proveedores externos.
+- Resultado esperado: pantalla de recuperación genérica sin detalles privados y sin borrar el horario.
+- Estado: Fixed. Evidencia: prueba de inyección de fallo en `resilience.test.tsx`. Es un ensayo controlado, no un error observado durante uso normal.
+
+### QA-011 — Respuesta atrasada reemplaza un horario más reciente
+- Severidad: High. Área: concurrencia / almacenamiento.
+- Precondición: dos consultas concurrentes (por ejemplo, pestañas diferentes), misma matrícula.
+- Pasos: iniciar A; resolver B con fetchedAt 12:00; entregar A después con fetchedAt 11:00.
+- Resultado actual: A sustituye el horario nuevo con el antiguo.
+- Resultado esperado: mantener la versión temporalmente más reciente y comunicar el descarte.
+- Estado: Fixed. Evidencia: prueba de respuestas diferidas en `consultSchedule.test.ts`.
+
+
+## Cierre de la segunda auditoría
+
+Se agregaron **7 casos unitarios/integración y 8 casos de navegador**. Las pruebas de fallo de proveedor, eliminación/corrupción manual y respuesta fuera de orden fallaron primero (4 casos rojos). Reflow falló inicialmente en móvil y sus casos ahora pasan. Durante el desarrollo de pruebas se corrigió un argumento `exact` no admitido por Testing Library; el build final no silencia ni omite ese error.
+
+### Resultado por área
+
+| Área | Verificación y resultado |
+| --- | --- |
+| Acceso/carga | Entradas vacías/espacios/Unicode, Enter/doble envío, errores, timeout, cancelación y recarga durante loading. Sin nueva pérdida de navegación o credenciales. |
+| Seguridad | Contraseña de pruebas ausente de storage/sessionStorage/URL; sin console.log en código de producción; texto HTML externo se presenta como texto y no se ejecuta; variables públicas sin secretos. |
+| Almacenamiento | Nuevo QA-009 corregido; validación estructural/semántica y fallback anteriores pasan; listeners se limpian y foco sin cambios no notifica. |
+| Concurrencia | QA-011 corregido: respuesta más antigua descartada, probado con dos pestañas reales. Comparación de timestamps con offsets y aislamiento entre perfiles verificados. |
+| Ahora | Límites inicio inclusivo/fin exclusivo, medianoche y clases simultáneas mantienen resultados. No se encontraron nuevos errores en las funciones temporales. |
+| Horario/Detalle | Día/Semana y datos largos; recarga del deep link reconstruye el diálogo. Sin edición/eliminación. Misma función de color determinista en todas las vistas. |
+| Responsive/accesibilidad | QA-008 corregido; 8 anchos normales; 5 tamaños con texto 200 % y altura 450 px, detalle desplazable y controles táctiles. Axe, teclado y reduced motion pasan. |
+| Zoom real | Perfil temporal Chromium, zoom de pestaña 2.0: viewport CSS pasa de 1280 a 640 y DPR de 1 a 2. Acceso, Ahora, Día, Semana y Más: scrollWidth=640, sin overflow. No se usó pinch zoom como sustituto. |
+| Render inesperado | QA-010 corregido mediante boundary exterior; excepción de proveedor no expone el mensaje en pantalla ni altera el horario guardado. |
+| PWA/red | Reapertura en nueva pestaña offline, detalle y reconexión; API fuera de fallback. Configuración autoUpdate y limpieza de cachés revisada. No se simuló una migración entre dos despliegues cloud distintos. |
+| Tema/Pino | Cuatro contextos reconocidos; temas día/noche y ayudas isPino true/false verificados; regla institucional no inventada. |
+| Rendimiento | Bundle JS final 449.99 kB, gzip 140.04 kB; precaché 610.63 KiB. Reloj por minuto, sin polling por segundo; no se justificó añadir optimizaciones ni quitar dependencias. |
+| Tipos/arquitectura | Build estricto y typecheck pasan. Un `any` preexistente está limitado a la construcción deliberada de fixtures malformados; no aparece en lógica de producción. Sin ts-ignore. Storage sigue centralizado, sin nuevas claves ni estados derivados persistidos. |
+| Dependencias | npm audit sin vulnerabilidades reportadas, incluidas Critical/High; no se realizaron upgrades masivos ni se añadieron dependencias. |
+
+### Definition of Done
+
+Funcionalidad del incremento demostrada; build/TypeScript y pruebas críticas pasan; lint no aplica; sin Critical ni High abiertos; contraseña no persistida; último horario protegido; errores manejados; móvil/escritorio y teclado verificados; respuestas externas validadas; QA, correcciones y matriz de riesgos actualizadas.
+
+**READY FOR 25% DELIVERY.** Se refiere a la entrega académica con datos simulados. Los límites conocidos —backend institucional, otros navegadores/dispositivos, relojes/timestamps y caché entre despliegues— están delimitados en [QA_25_RISKS.md](QA_25_RISKS.md). No se declara terminado el producto completo ni la integración real.

@@ -1,0 +1,31 @@
+name: AcademicPlanner backend
+on:
+  push:
+    paths: ['academicplanner-backend/**', 'compose.academicplanner.yml', '.github/workflows/academicplanner-backend.yml']
+  pull_request:
+    paths: ['academicplanner-backend/**', 'compose.academicplanner.yml', '.github/workflows/academicplanner-backend.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: academicplanner-backend
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            academicplanner-backend/requirements.txt
+            academicplanner-backend/requirements-dev.txt
+      - run: python -m pip install -r requirements-dev.txt
+      - name: Tests with fictional portal responses
+        run: python -m pytest -q
+      - name: Validate local deployment configuration
+        run: docker compose -f ../compose.academicplanner.yml config --quiet
+      - name: Build backend image
+        run: docker build -t academicplanner-backend:ci .

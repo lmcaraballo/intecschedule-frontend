@@ -17,3 +17,13 @@ describe('access input boundaries', () => {
     expect(credentialsSchema.safeParse({ studentId: 'qa', password: 'p'.repeat(257) }).success).toBe(false);
   });
 });
+
+
+describe('institutional student email', () => {
+  it.each(['1127998@est.intec.edu.do','  1127998@EST.INTEC.EDU.DO  '])('converts %s to the student ID',studentId=>{
+    expect(credentialsSchema.parse({studentId,password:'  secret  '})).toEqual({studentId:'1127998',password:'  secret  '});
+  });
+  it.each(['name@est.intec.edu.do','1127998@gmail.com','1127998@intec.edu.do','1127998@est.intec.edu.do.evil','1127998@@est.intec.edu.do','1127998 @est.intec.edu.do','@est.intec.edu.do'])('rejects unsupported or malformed email %s',studentId=>{
+    expect(credentialsSchema.safeParse({studentId,password:'secret'}).success).toBe(false);
+  });
+});

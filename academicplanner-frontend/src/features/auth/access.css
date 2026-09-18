@@ -81,3 +81,9 @@
   .brand__mark { width: 25px; }
   .site-footer { flex-wrap: wrap; }
 }
+
+.access-panel, .access-card, .welcome { min-width: 0; }
+.access-card, .welcome { overflow-wrap: anywhere; }
+@media (min-width: 760px) {
+  .access-layout { grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); }
+}

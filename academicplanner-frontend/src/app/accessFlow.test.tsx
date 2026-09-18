@@ -277,3 +277,11 @@ describe('QA regression cases', () => {
     expect(router.state.location.pathname).toBe('/');
   });
 });
+
+it('does not resurrect manually deleted storage after focus during loading',async()=>{
+  savePrevious();const user=mount();await fillAndSubmit(user);
+  act(()=>{localStorage.removeItem(ACADEMIC_STORAGE_KEY);window.dispatchEvent(new Event('focus'));});
+  await finishRequest();expect(scheduleStorage.get()).toBeNull();
+  expect(router.state.location.pathname).toBe('/');
+  expect(screen.getByRole('alert')).toHaveTextContent('Se borraron los datos locales.');
+});

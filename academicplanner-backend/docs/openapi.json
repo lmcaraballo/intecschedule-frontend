@@ -1,91 +1,28 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "INTEC Schedule API",
-    "version": "1.0.0"
+    "title": "AcademicPlanner API",
+    "version": "0.1.0"
   },
   "paths": {
-    "/schedule": {
-      "post": {
-        "tags": [
-          "schedule"
-        ],
-        "summary": "Get Schedule",
-        "operationId": "get_schedule_schedule_post",
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ScheduleResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Bad Gateway",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Service Unavailable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
+                "schema": {}
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/user/login": {
       "post": {
-        "tags": [
-          "user"
-        ],
         "summary": "Login",
         "operationId": "login_user_login_post",
         "requestBody": {
@@ -122,18 +59,38 @@
         }
       }
     },
+    "/schedule": {
+      "post": {
+        "summary": "Schedule",
+        "operationId": "schedule_schedule_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/user/refresh-token": {
       "post": {
-        "tags": [
-          "user"
-        ],
-        "summary": "Refresh Token",
-        "operationId": "refresh_token_user_refresh_token_post",
+        "summary": "Refresh",
+        "operationId": "refresh_user_refresh_token_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RefreshTokenRequest"
+                "$ref": "#/components/schemas/RefreshRequest"
               }
             }
           },
@@ -162,28 +119,6 @@
           }
         }
       }
-    },
-    "/health": {
-      "get": {
-        "summary": "Get Health",
-        "operationId": "get_health_health_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "type": "object",
-                  "title": "Response Get Health Health Get"
-                }
-              }
-            }
-          }
-        }
-      }
     }
   },
   "components": {
@@ -192,14 +127,17 @@
         "properties": {
           "id": {
             "type": "string",
+            "minLength": 1,
             "title": "Id"
           },
           "subjectCode": {
             "type": "string",
+            "minLength": 1,
             "title": "Subjectcode"
           },
           "subjectName": {
             "type": "string",
+            "minLength": 1,
             "title": "Subjectname"
           },
           "section": {
@@ -208,28 +146,29 @@
           },
           "professor": {
             "type": "string",
-            "title": "Professor"
+            "title": "Professor",
+            "default": ""
           },
           "day": {
             "type": "integer",
             "maximum": 7.0,
             "minimum": 1.0,
-            "title": "Day",
-            "description": "ISO weekday: Monday=1"
+            "title": "Day"
           },
           "startTime": {
             "type": "string",
-            "pattern": "^\\d{2}:\\d{2}$",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
             "title": "Starttime"
           },
           "endTime": {
             "type": "string",
-            "pattern": "^\\d{2}:\\d{2}$",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
             "title": "Endtime"
           },
           "location": {
             "type": "string",
-            "title": "Location"
+            "title": "Location",
+            "default": ""
           }
         },
         "type": "object",
@@ -238,43 +177,11 @@
           "subjectCode",
           "subjectName",
           "section",
-          "professor",
           "day",
           "startTime",
-          "endTime",
-          "location"
+          "endTime"
         ],
         "title": "AcademicClass"
-      },
-      "ErrorDetail": {
-        "properties": {
-          "code": {
-            "type": "string",
-            "title": "Code"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "code",
-          "message"
-        ],
-        "title": "ErrorDetail"
-      },
-      "ErrorResponse": {
-        "properties": {
-          "error": {
-            "$ref": "#/components/schemas/ErrorDetail"
-          }
-        },
-        "type": "object",
-        "required": [
-          "error"
-        ],
-        "title": "ErrorResponse"
       },
       "HTTPValidationError": {
         "properties": {
@@ -314,10 +221,11 @@
         ],
         "title": "LoginRequest"
       },
-      "RefreshTokenRequest": {
+      "RefreshRequest": {
         "properties": {
           "refreshToken": {
             "type": "string",
+            "maxLength": 512,
             "minLength": 1,
             "format": "password",
             "title": "Refreshtoken",
@@ -329,7 +237,7 @@
         "required": [
           "refreshToken"
         ],
-        "title": "RefreshTokenRequest"
+        "title": "RefreshRequest"
       },
       "ScheduleResponse": {
         "properties": {
@@ -361,17 +269,19 @@
         "properties": {
           "id": {
             "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
             "title": "Id"
           },
           "isPino": {
             "type": "boolean",
-            "title": "Ispino"
+            "title": "Ispino",
+            "default": false
           }
         },
         "type": "object",
         "required": [
-          "id",
-          "isPino"
+          "id"
         ],
         "title": "Student"
       },
@@ -387,19 +297,19 @@
           },
           "tokenType": {
             "type": "string",
-            "title": "Tokentype"
+            "title": "Tokentype",
+            "default": "bearer"
           },
           "expiresIn": {
             "type": "integer",
-            "title": "Expiresin"
+            "title": "Expiresin",
+            "default": 900
           }
         },
         "type": "object",
         "required": [
           "accessToken",
-          "refreshToken",
-          "tokenType",
-          "expiresIn"
+          "refreshToken"
         ],
         "title": "TokenResponse"
       },
@@ -450,11 +360,5 @@
         "scheme": "bearer"
       }
     }
-  },
-  "servers": [
-    {
-      "url": "https://03lghnqjli.execute-api.us-east-1.amazonaws.com/dev",
-      "description": "Desarrollo; contrato verificado el 2026-09-18"
-    }
-  ]
+  }
 }

@@ -23,20 +23,44 @@ function emit(change: StorageChange) {
 }
 
 function subscribe(listener: (change: StorageChange) => void): () => void {
-  listeners.add(listener);
+  let snapshot = JSON.stringify(read());
+  const notify = (change: StorageChange) => {
+    snapshot = JSON.stringify(read());
+    listener(change);
+  };
+  const refresh = () => {
+    const current = read();
+    if (JSON.stringify(current) !== snapshot) notify(current.status === 'empty' ? 'cleared' : 'updated');
+  };
+  const onVisibility = () => { if (document.visibilityState === 'visible') refresh(); };
+  listeners.add(notify);
   const onStorage = (event: StorageEvent) => {
     if (event.key === STORAGE_KEY || event.key === null) {
-      listener(event.newValue === null ? 'cleared' : 'updated');
+      notify(event.newValue === null ? 'cleared' : 'updated');
     }
   };
   window.addEventListener('storage', onStorage);
-  return () => { listeners.delete(listener); window.removeEventListener('storage', onStorage); };
+  window.addEventListener('focus', refresh);
+  document.addEventListener('visibilitychange', onVisibility);
+  return () => {
+    listeners.delete(notify);
+    window.removeEventListener('storage', onStorage);
+    window.removeEventListener('focus', refresh);
+    document.removeEventListener('visibilitychange', onVisibility);
+  };
 }
 
 export class ScheduleStorageError extends Error {
-  constructor() {
-    super('No pudimos guardar los datos en este dispositivo. Revisa el espacio o los permisos de almacenamiento e inténtalo de nuevo.');
+  constructor(message = 'No pudimos guardar los datos en este dispositivo. Revisa el espacio o los permisos de almacenamiento e inténtalo de nuevo.') {
+    super(message);
     this.name = 'ScheduleStorageError';
+  }
+}
+
+export class StaleScheduleError extends ScheduleStorageError {
+  constructor() {
+    super('Esta consulta quedó desactualizada. Conservamos tu último horario válido.');
+    this.name = 'StaleScheduleError';
   }
 }
 
@@ -70,10 +94,17 @@ function write(data: StoredData): StoredData {
 }
 
 function save(session: AcademicSession): StoredData {
+  const valid = academicSessionSchema.parse(session);
+  const previous = get();
+  // Compare instants (not ISO strings); offsets may differ across responses.
+  if (previous?.session?.student.id === valid.student.id
+      && Date.parse(previous.session.schedule.fetchedAt) > Date.parse(valid.schedule.fetchedAt)) {
+    throw new StaleScheduleError();
+  }
   return write({
     version: 1,
-    session,
-    preferences: get()?.preferences ?? defaultPreferences,
+    session: valid,
+    preferences: previous?.preferences ?? defaultPreferences,
   });
 }
 

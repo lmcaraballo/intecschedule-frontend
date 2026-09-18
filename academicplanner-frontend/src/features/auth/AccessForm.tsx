@@ -44,8 +44,8 @@ export function AccessForm({ access, scenario, hasSavedSchedule }: {
   return <form ref={formRef} onSubmit={handleSubmit} noValidate aria-label="Consultar horario institucional">
     <fieldset disabled={isLoading || !online} className="access-fields">
       <legend className="sr-only">Acceso institucional</legend>
-      <Input id="student-id" name="studentId" label="Identificación o matrícula" placeholder="Ej. 1101234"
-        autoComplete="username" autoCapitalize="none" spellCheck={false} required maxLength={64} value={studentId}
+      <Input id="student-id" name="studentId" label="Identificación o matrícula" placeholder="Ej. 1101234 o tu correo institucional" hint="También puedes usar tu correo @est.intec.edu.do."
+        autoComplete="username" autoCapitalize="none" spellCheck={false} required maxLength={100} value={studentId}
         onChange={(event) => { setStudentId(event.target.value); setFieldErrors((previous) => ({ ...previous, studentId: undefined })); }} error={fieldErrors.studentId} />
       <Input id="password" name="password" label="Contraseña institucional" placeholder="Tu contraseña"
         type={visible ? 'text' : 'password'} autoComplete="off" required maxLength={256} value={password}

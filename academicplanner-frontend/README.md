@@ -36,7 +36,7 @@ Pendientes: conexión institucional real, eventos personales, conflictos, Google
 - [Contrato OpenAPI para backend](docs/openapi.json).
 - [Auditoría QA](docs/QA_25_REPORT.md) y [correcciones](docs/QA_25_FIXES.md).
 
-`VITE_ACADEMIC_API_MODE=http` activa el adaptador existente; `API_PROXY_TARGET` conecta el servidor de desarrollo. En producción, Docker recibe `API_UPSTREAM` y sirve SPA + proxy bajo el mismo origen. El backend institucional aún está pendiente.
+`VITE_ACADEMIC_API_MODE=http` activa el adaptador existente; `API_PROXY_TARGET` conecta el servidor de desarrollo. En producción, Docker recibe `API_UPSTREAM` y sirve SPA + proxy bajo el mismo origen. El adaptador ya corresponde al backend de desarrollo compartido: login con token temporal y consulta de horario. La prueba real confirmó login correcto y error del backend al leer el horario. También se admite el correo institucional de estudiante. Ver [diagnóstico vigente](docs/ACCOUNT_DIAGNOSTIC.md). Ver [integración y pruebas](docs/BACKEND_INTEGRATION.md).
 
 Pruebas de navegador reproducibles (ejecutar secuencialmente):
 
@@ -47,3 +47,5 @@ npm run test:e2e:http
 ```
 
 La primera suite construye la demo; la segunda construye en modo HTTP con respuestas controladas. Para volver a mostrar la demo local después, ejecutar `npm run build` con el modo `mock`. No hay script lint.
+
+- [Matriz de riesgos del 25 %](docs/QA_25_RISKS.md).

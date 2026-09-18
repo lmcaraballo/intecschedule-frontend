@@ -32,7 +32,7 @@ Entregar la base de una PWA de organización académica: acceso temporal, consul
 
 Rutas: `/` acceso, `/acceso` redirige a `/`, `/ahora`, `/horario`, `/eventos` informativo y `/mas` para datos locales. Rutas desconocidas vuelven al acceso. Las rutas académicas requieren un horario local validado; esta condición **no es autenticación del servidor**. `?class=<id>` abre el detalle. Horario conserva fecha/vista con `?date=YYYY-MM-DD&view=day|week`.
 
-La UI consume modelos normalizados. No conoce HTML, cookies, scraping ni sesiones institucionales. `useAcademicAccess → consultSchedule → academicApi → mock/HTTP → validación → scheduleStorage` separa presentación, consulta y persistencia.
+Un AppErrorBoundary exterior protege los proveedores; el errorElement del router protege las rutas. Ambos muestran recuperación genérica sin borrar storage. La UI consume modelos normalizados. No conoce HTML, cookies, scraping ni sesiones institucionales. `useAcademicAccess → consultSchedule → academicApi → mock/HTTP → validación → scheduleStorage` separa presentación, consulta y persistencia.
 
 ## 4. Flujo de acceso actual
 
@@ -99,7 +99,7 @@ Reglas del contrato:
 }
 ```
 
-`session` incluye perfil, clases y `fetchedAt`; puede ser `null` si solo se eligió un tema. Se actualiza tras una consulta completamente validada o un cambio de preferencias. `savePreferences` no sobrescribe registros corruptos/inaccesibles. `read()` distingue `ready`, `empty`, `corrupt` y `unavailable`; `get()` devuelve datos válidos o `null`.
+El storage también revalida al recuperar foco/visibilidad, sin polling. `session` incluye perfil, clases y `fetchedAt`; puede ser `null` si solo se eligió un tema. Se actualiza tras una consulta completamente validada o un cambio de preferencias. `savePreferences` no sobrescribe registros corruptos/inaccesibles. `read()` distingue `ready`, `empty`, `corrupt` y `unavailable`; `get()` devuelve datos válidos o `null`.
 
 Más → Limpiar datos locales → Borrar mis datos locales llama a `clearAcademicPlannerData()` de `src/storage/scheduleStorage.ts`. Elimina únicamente esta clave, restablece preferencias, actualiza otras pestañas y devuelve al acceso. `scheduleStorage.clear()` tiene el mismo efecto. No usar `localStorage.clear()` en producción: afectaría otras aplicaciones del mismo origen.
 
@@ -120,65 +120,25 @@ No se almacenan `currentClass`, `nextClass`, tiempo libre ni estado del día. El
 
 ## 8. Integración con backend
 
-`academicApi.fetchSession(credentials, options)` es la única fachada para consultar. `FetchOptions` acepta `signal`, `onProgress` y `scenario` (este último solo afecta al mock). Su retorno se trata como externo/no confiable y se valida antes de persistir.
+Actualizado el 2026-09-18 al [contrato publicado](openapi.json) por el backend de desarrollo. `academicApi.fetchSession(credentials, options)` conserva su interfaz y devuelve `AcademicSession`. `FetchOptions` acepta `signal`, `onProgress` y `scenario` (solo mock).
 
-Transporte preparado: `src/services/academicHttp.ts`.
+1. `POST /api/user/login`, JSON `{studentId,password}`. El proxy envía a `/dev/user/login`.
+2. Validar `accessToken`, `tokenType=bearer` y `expiresIn` positivo. Descartar `refreshToken`.
+3. `POST /api/schedule`, encabezado `Authorization: Bearer <accessToken>`, sin cuerpo. El proxy envía a `/dev/schedule`.
+4. Validar `{student,fetchedAt,classes}` y comprobar que `student.id` corresponde a la matrícula consultada.
+5. Transformar a `{student,schedule:{fetchedAt,classes}}` y guardar solo ese modelo. Se admiten timestamps con microsegundos y offset. No se completan nombres truncados ni profesores vacíos con información inventada.
 
-```http
-POST /api/academic/schedule
-Content-Type: application/json
-Accept: application/json
-```
+Matrícula: 1–64 caracteres tras trim; también se admite correo numérico @est.intec.edu.do y se convierte a matrícula antes del envío (el API admite hasta 100, pero el frontend mantiene su límite actual). Contraseña: 1–256 caracteres sin trim y al menos un carácter no blanco. No se envían escenarios ni preferencias.
 
-```json
-{
-  "studentId": "1127998",
-  "password": "CONTRASENA_FICTICIA_SOLO_PARA_EJEMPLO"
-}
-```
+Se usa `credentials: 'omit'`, `cache: 'no-store'`, `redirect: 'error'`, cancelación y 20 segundos para toda la operación. No hay reintentos automáticos ni tokens persistentes: cada consulta comienza con login. El token vive solo en la función de transporte; los componentes y storage nunca lo reciben. Se mantiene el acceso offline al último horario válido sin sesión permanente del portal.
 
-Request validado: matrícula de 1–64 caracteres tras trim; contraseña de 1–256 caracteres sin trim y con al menos un carácter no blanco. El cuerpo no contiene preferencias, `scenario` ni estado de UI.
+El backend debe devolver JSON y se recomienda `Cache-Control: no-store`; el proxy incluido fuerza no-store hacia el navegador. Errores, HTML o datos inválidos no reemplazan el horario guardado. Los mensajes del servidor nunca se muestran directamente.
 
-Respuesta **HTTP 200**, `Content-Type: application/json`, `Cache-Control: no-store`:
-
-```json
-{
-  "student": { "id": "1127998", "isPino": false },
-  "schedule": {
-    "fetchedAt": "2026-09-18T07:30:00-04:00",
-    "classes": [
-      {
-        "id": "IDS325L-01-thu-0800",
-        "subjectCode": "IDS325L",
-        "subjectName": "Aseguramiento de la Calidad del Software",
-        "section": "01",
-        "professor": "Nombre profesor",
-        "day": 4,
-        "startTime": "08:00",
-        "endTime": "10:00",
-        "location": "FD-301"
-      }
-    ]
-  },
-  "source": { "status": "ok" }
-}
-```
-
-`source` es opcional. Si existe, `status` debe ser `ok`; se elimina antes de almacenar. Una respuesta con otro estado no se admite como éxito. El backend no necesita replicar funciones, demoras ni escenarios internos del mock.
-
-Error: HTTP no exitoso, JSON mínimo y también `Cache-Control: no-store`:
-
-```json
-{ "error": { "code": "INVALID_CREDENTIALS" } }
-```
-
-Convención propuesta: 401 `INVALID_CREDENTIALS`, 503 `PORTAL_UNAVAILABLE`, 404 `SCHEDULE_NOT_FOUND`, 502 `PORTAL_STRUCTURE_CHANGED`/`INVALID_RESPONSE`, 500 `UNKNOWN_ERROR`. Para un request mal formado: 400 con `UNKNOWN_ERROR`; no intentar autenticarse. El frontend interpreta `error.code`, no depende de textos ni de un status particular para cada código. No enviar errores con HTTP 200.
-
-El cliente usa `credentials: 'omit'`, `cache: 'no-store'`, `redirect: 'error'`, cancelación y tiempo máximo de 20 segundos. No envía Authorization ni cookies del portal. Se requiere mismo origen o proxy inverso; CORS entre orígenes no está configurado. No hay reintentos automáticos: el estudiante decide reintentar. Error de red/timeout se muestra como indisponibilidad; HTML, JSON inválido o estructura inesperada no llegan a storage. El cliente nunca presenta un `message` o `stack` del backend.
+El PDF nombra GET `/schedule` y muestra `/schedule/sync` en una captura. La API desplegada publica **POST `/schedule`**: se implementó lo publicado. La renovación `/user/refresh-token` existe, pero no es necesaria para una consulta de 20 s con token de 900 s ni se implementa una sesión permanente en este incremento.
 
 ## 9. Responsabilidades del backend
 
-Servicio pequeño y **stateless**:
+Requisitos de calidad para el servicio (su implementación interna no fue auditada):
 
 1. Recibir temporalmente matrícula y contraseña por HTTPS.
 2. Validar el request antes de contactar al portal.
@@ -200,7 +160,7 @@ No asumir base de datos de estudiantes, cuentas propias, registro, recuperación
 
 **Contraseña:** vive solo durante la operación. No persistirla en base de datos, storage, caché, archivos, logs, trazas/APM, excepciones o respuestas. No registrar cuerpos del endpoint en servidor, proxy o herramientas de observabilidad. No incluirla en URLs. Ninguna variable `VITE_*` debe contener secretos: se incorpora al JavaScript público.
 
-**Sesión del portal:** cookies aisladas por consulta; destruir al finalizar mediante `finally`. No convertirla en sesión permanente de AcademicPlanner ni devolverla al navegador.
+**Sesión del portal:** el backend administra sus cookies; el frontend recibe un token de acceso temporal, nunca las cookies institucionales. No persiste tokens ni convierte el horario local en una sesión permanente del portal. La limpieza interna y rotación del backend deben verificarse por su equipo.
 
 **Errores:** códigos permitidos y mensajes humanos locales. No devolver HTML completo, credenciales, cookies, stack traces ni detalles internos. El frontend descarta campos adicionales antes de guardar, pero el backend debe evitarlos desde el origen.
 
@@ -210,6 +170,7 @@ No asumir base de datos de estudiantes, cuentas propias, registro, recuperación
 
 | Código backend | Significado | Comportamiento frontend |
 | --- | --- | --- |
+| `AUTHENTICATION_REQUIRED` | Token ausente o vencido. | «El acceso al portal venció. Vuelve a consultar con tus datos.» |
 | `INVALID_CREDENTIALS` | Acceso institucional rechazado. | «Revisa tu identificación o contraseña.» |
 | `PORTAL_UNAVAILABLE` | Portal temporalmente inaccesible. | «El portal no está disponible en este momento. Inténtalo más tarde.» |
 | `SCHEDULE_NOT_FOUND` | Acceso válido, pero sin horario utilizable encontrado. | «No encontramos un horario académico disponible.» |
@@ -223,7 +184,7 @@ La tabla describe `src/services/academicErrors.ts`. Códigos desconocidos se tra
 
 La respuesta se valida por completo antes de `scheduleStorage.save()`. Perfil incorrecto, IDs repetidos, horas inválidas, fuente en error, timeout, fallo del portal o cuota agotada no sustituyen el registro anterior. Se muestra cuándo se consultó y se ofrece «Continuar con horario guardado». Las vistas académicas indican que se está mostrando el último horario válido cuando se elige esa recuperación o se está offline.
 
-Un horario vacío **confirmado** reemplaza el anterior porque es una respuesta válida. Un horario no encontrado es error y no lo reemplaza. No hay caducidad automática ni actualización en segundo plano. El estado transitorio de haber elegido recuperación no se persiste; `fetchedAt` siempre permanece visible.
+Un horario vacío **confirmado** reemplaza el anterior porque es una respuesta válida. Un horario no encontrado es error y no lo reemplaza. Se descartan consultas anteriores de la misma instancia y snapshots con fetchedAt anterior al guardado para el mismo perfil. Se comparan instantes, no texto ISO. El backend debe proporcionar timestamps fiables; empates entre pestañas o relojes erróneos requieren versionado de servidor si se necesita garantía global. No hay caducidad automática ni actualización en segundo plano. El estado transitorio de haber elegido recuperación no se persiste; `fetchedAt` siempre permanece visible.
 
 ## 13. PWA y modo offline
 
@@ -263,25 +224,22 @@ npm run preview
 
 Vite muestra la URL de desarrollo. Preview sirve `dist` después del build. `npm run test:watch` ejecuta pruebas en modo interactivo; `npm run typecheck` comprueba TypeScript. No existe script `lint` en este proyecto. El servidor de producción debe servir archivos estáticos y resolver rutas de SPA con `index.html`, excepto `/api/*`, que debe ir al backend.
 
-## 18. Cómo conectar el backend posteriormente
+## 18. Cómo conectar el backend
 
-1. Implementar el endpoint y los códigos descritos en las secciones 8–11. Confirmar regla Pino y semántica del horario vacío.
-2. Publicarlo bajo el mismo origen en `/api/academic/schedule` mediante proxy inverso. En desarrollo se configura `API_PROXY_TARGET` en `.env.local`; el proxy de Vite ya está preparado, sin un puerto de backend predefinido. En producción se incluye una imagen Docker con Nginx y `API_UPSTREAM`. Ver [despliegue](DEPLOYMENT.md).
-3. Copiar `.env.example` a `.env.local` y cambiar **`VITE_ACADEMIC_API_MODE=http`**. Reiniciar Vite o reconstruir el despliegue: es configuración de build, no un interruptor de runtime.
-4. `src/services/academicApi.ts` selecciona entonces `fetchAcademicSession` de `academicHttp.ts`. El selector de escenarios desaparece en la pantalla de acceso. No cambiar componentes, dominio ni storage.
-5. Mantener las pruebas por defecto en modo mock (`VITE_ACADEMIC_API_MODE=mock npm test` si el entorno local quedó en HTTP). Los tests del adaptador prueban HTTP por separado con `fetch` controlado.
-6. Validar un caso de éxito, cada código, horario vacío, respuesta incompleta, cancelación y timeout contra el servidor real, confirmando ausencia de credenciales en logs y que el último horario no se pierde.
+Seguir [DEPLOYMENT.md](DEPLOYMENT.md). Configurar `VITE_ACADEMIC_API_MODE=http` y `API_PROXY_TARGET=https://03lghnqjli.execute-api.us-east-1.amazonaws.com/dev` para desarrollo. Reiniciar Vite. Docker usa `API_UPSTREAM` con la misma URL base sin barra final.
 
-Ausencia de variable u otro valor usa mock. No hay URL remota inventada ni conexión institucional activada en esta entrega. Si el equipo cambia el endpoint, modificar únicamente `ACADEMIC_ENDPOINT` en `academicHttp.ts` y el contrato/documentación. No incluir claves ni contraseñas en `.env.example`.
+Las pantallas y el almacenamiento no cambian. La API real se encapsula en `academicHttp.ts`. La ausencia del modo usa mock; un modo desconocido detiene el build. No incluir credenciales ni tokens en variables de entorno. Las pruebas unitarias se ejecutan en mock salvo las pruebas específicas del transporte.
+
+Antes de una publicación, realizar el acceso real en la UI y repetir consulta/offline/recuperación con una cuenta autorizada. Los resultados actuales y límites están en [BACKEND_INTEGRATION.md](BACKEND_INTEGRATION.md).
 
 ## 19. Estado de calidad
 
-La evidencia actual y el resultado de las pruebas están en [QA_25_REPORT.md](QA_25_REPORT.md), los cambios en [QA_25_FIXES.md](QA_25_FIXES.md) y la entrega en [FINAL_REVIEW.md](FINAL_REVIEW.md). Hay pruebas unitarias/integración, suites de navegador demo y HTTP, escaneo axe y un flujo de CI preparado para GitHub. No hay ESLint configurado; `typecheck` comprueba tipos/imports pero no sustituye un linter.
+La [matriz de riesgos](QA_25_RISKS.md) delimita las garantías y riesgos residuales. La evidencia actual y el resultado de las pruebas están en [QA_25_REPORT.md](QA_25_REPORT.md), los cambios en [QA_25_FIXES.md](QA_25_FIXES.md) y la entrega en [FINAL_REVIEW.md](FINAL_REVIEW.md). Hay pruebas unitarias/integración, suites de navegador demo y HTTP, escaneo axe y un flujo de CI preparado para GitHub. No hay ESLint configurado; `typecheck` comprueba tipos/imports pero no sustituye un linter.
 
-Las correcciones cubren validación de espacios, conservación de datos, metadatos vacíos, desbordamiento de detalle, clases simultáneas y exclusión de `/api` del fallback de la PWA. Los ejemplos [OpenAPI](openapi.json) se verifican contra los esquemas del frontend. Persisten dos advertencias no bloqueantes de anotaciones de Zod en el build.
+Las correcciones cubren validación de espacios, conservación de datos, metadatos vacíos, desbordamiento de detalle, clases simultáneas y exclusión de `/api` del fallback de la PWA. Las rutas y estructura del [OpenAPI](openapi.json) se comprueban contra el adaptador, con datos de prueba ficticios. Persisten dos advertencias no bloqueantes de anotaciones de Zod en el build.
 
 La revisión automatizada no certifica WCAG ni cubre lector de pantalla/dispositivos físicos. La integración institucional real está pendiente; el HTTP se probó con respuestas controladas y el proxy con un backend de prueba.
 
 ## 20. Resumen para el compañero de backend
 
-**El frontend necesita del backend lo siguiente:** un `POST /api/academic/schedule` que reciba temporalmente matrícula/contraseña y devuelva `AcademicSession` validado o `{ error: { code } }`, sin cookies, HTML ni secretos. Implementa primero validación, autenticación temporal y normalización; confirma cómo distinguir vacío de error y acuerda `isPino`. Destruye sesión y credenciales en todos los desenlaces. Sirve JSON con `Cache-Control: no-store`. Cuando esté disponible bajo el mismo origen, activa `VITE_ACADEMIC_API_MODE=http` y ejecuta juntos los casos de integración; las pantallas ya consumen ese contrato.
+El frontend ya consume `POST /user/login` y `POST /schedule` mediante un proxy bajo `/api`, admite la respuesta plana y mantiene el modelo local. El contrato desplegado tiene prioridad sobre las rutas contradictorias del PDF. El refresh token no se guarda ni utiliza: cada consulta inicia una autenticación temporal. Falta validar un acceso institucional exitoso desde la UI, confirmar tiempos reales y códigos de error del portal. No se ha hecho push, PR, merge ni despliegue cloud.

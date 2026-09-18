@@ -1,0 +1,27 @@
+services:
+  backend:
+    build: ./academicplanner-backend
+    environment:
+      # Ciclo confirmado por el usuario en el Volante de Selección.
+      ACADEMIC_TERM: ${ACADEMIC_TERM:-2230}
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,noexec,nosuid
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+  frontend:
+    build:
+      context: ./academicplanner-frontend
+      args:
+        ACADEMIC_API_MODE: http
+    environment:
+      API_UPSTREAM: http://backend:8000
+    ports:
+      - '127.0.0.1:4294:8080'
+    depends_on:
+      backend:
+        condition: service_healthy
+        restart: true
+    restart: unless-stopped

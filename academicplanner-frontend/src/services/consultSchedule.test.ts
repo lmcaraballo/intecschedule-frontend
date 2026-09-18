@@ -34,3 +34,18 @@ describe('consultSchedule transaction', () => {
     expect(scheduleStorage.get()).toBeNull();
   });
 });
+
+describe('out-of-order academic updates',()=>{
+  it('does not let an older completed snapshot replace the newest valid schedule',async()=>{
+    localStorage.clear();
+    const original=createMockSession('qa');original.schedule.fetchedAt='2026-09-18T10:00:00Z';scheduleStorage.save(original);
+    const older=createMockSession('qa');older.schedule.fetchedAt='2026-09-18T11:00:00Z';
+    const newer=createMockSession('qa');newer.schedule.fetchedAt='2026-09-18T12:00:00Z';newer.schedule.classes=[];
+    let resolveA!:(value:unknown)=>void;
+    vi.spyOn(academicApi,'fetchSession').mockImplementationOnce(()=>new Promise(resolve=>{resolveA=resolve;})).mockResolvedValueOnce(newer);
+    const a=consultSchedule({studentId:'qa',password:'fictional'}).catch(e=>e);
+    await consultSchedule({studentId:'qa',password:'fictional'});
+    resolveA(older);await a;
+    expect(scheduleStorage.get()?.session).toEqual(newer);
+  });
+});

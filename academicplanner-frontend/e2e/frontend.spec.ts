@@ -141,3 +141,42 @@ test('service worker does not intercept API navigation',async({page})=>{
   const response=await page.goto('/api/academic/schedule');
   expect(response?.fromServiceWorker()).toBe(false);
 });
+
+for (const width of [320,390,640,768,1440]) {
+  test(`200% font reflow, touch targets and short viewport at ${width}px`,async({page})=>{
+    await page.setViewportSize({width,height:450});await seed(page);
+    for (const route of ['/','/ahora','/horario?date=2026-09-14','/horario?date=2026-09-14&view=week','/mas']) {
+      await page.goto(route);await page.locator('main').waitFor();
+      await page.evaluate(()=>document.documentElement.style.fontSize='200%');
+      await noOverflow(page);
+      const undersized=await page.locator('button, .primary-nav a').evaluateAll(elements=>elements.filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&(r.width<24||r.height<24)}).map(e=>e.textContent));
+      expect(undersized).toEqual([]);
+    }
+    await page.goto('/horario?date=2026-09-14');await page.evaluate(()=>document.documentElement.style.fontSize='200%');
+    await page.getByRole('button',{name:/Ver detalle:/}).first().click();
+    const dialog=page.getByRole('dialog');await expect(dialog).toBeVisible();
+    expect(await dialog.evaluate(d=>d.scrollWidth-d.clientWidth)).toBeLessThanOrEqual(1);
+    await expect(page.getByRole('button',{name:'Cerrar detalle de clase'})).toBeInViewport();
+    await page.keyboard.press('Escape');
+  });
+}
+
+test('refresh during loading, detail deep link, missing route and Pino off',async({page})=>{
+  await page.goto('/');await login(page);await expect(page.getByRole('button',{name:'Consultando…'})).toBeVisible();
+  await page.reload();await expect(page.getByRole('button',{name:'Continuar',exact:true})).toBeEnabled();
+  await page.waitForTimeout(2500);expect(await page.evaluate(k=>localStorage.getItem(k),key)).toBeNull();
+  const data=storedSession();data.session.student.isPino=false;await seed(page,data);
+  await page.goto('/horario?date=2026-09-14&class=mat-01-mon');await expect(page.getByRole('dialog')).toBeVisible();
+  await page.reload();await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.getByText('¿Primera vez en este edificio?')).toHaveCount(0);
+  await page.keyboard.press('Escape');await page.goto('/ruta-que-no-existe');await expect(page).toHaveURL(/\/$/);
+});
+
+test('manually corrupted storage is ignored on refocus and untrusted text stays text',async({page})=>{
+  const data=storedSession();data.session.schedule.classes[0]!.subjectName='<img src=x onerror="window.qaInjection=true">';
+  await seed(page,data);await page.goto('/horario?date=2026-09-14');
+  await expect(page.getByText(data.session.schedule.classes[0]!.subjectName,{exact:true})).toBeVisible();
+  expect(await page.evaluate(()=>Reflect.get(window,'qaInjection'))).toBeUndefined();
+  await page.evaluate(k=>{localStorage.setItem(k,'{broken');window.dispatchEvent(new Event('focus'))},key);
+  await expect(page).toHaveURL(/\/$/);await expect(page.getByText(/No pudimos leer el horario guardado/)).toBeVisible();
+});
