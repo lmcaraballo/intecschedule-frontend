@@ -1,0 +1,43 @@
+name: AcademicPlanner frontend
+on:
+  push:
+    paths: ['academicplanner-frontend/**', '.github/workflows/academicplanner-frontend.yml']
+  pull_request:
+    paths: ['academicplanner-frontend/**', '.github/workflows/academicplanner-frontend.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: academicplanner-frontend
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: academicplanner-frontend/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - run: npm run test:e2e:http
+      - name: Build with HTTP adapter
+        run: npm run build
+        env:
+          VITE_ACADEMIC_API_MODE: http
+      - uses: actions/upload-artifact@v4
+        with:
+          name: academicplanner-frontend-http
+          path: academicplanner-frontend/dist
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-diagnostics
+          path: |
+            academicplanner-frontend/test-results
+            academicplanner-frontend/playwright-report

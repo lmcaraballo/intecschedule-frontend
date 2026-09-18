@@ -1,0 +1,129 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { scheduleStorage, ScheduleStorageError, clearAcademicPlannerData } from './scheduleStorage';
+import { createMockSession } from '../mocks/academicSession';
+
+const key = 'academicplanner:data:v1';
+
+describe('scheduleStorage', () => {
+  beforeEach(() => localStorage.clear());
+
+  it('returns null when nothing has been saved', () => {
+    expect(scheduleStorage.get()).toBeNull();
+  });
+
+  it('persists the last valid schedule, timestamp and basic profile', () => {
+    const session = createMockSession('1101234');
+    scheduleStorage.save(session);
+    expect(scheduleStorage.get()).toEqual({ version: 1, session, preferences: { theme: 'auto' } });
+  });
+
+  it('persists preferences before login and retains them on refresh', () => {
+    scheduleStorage.savePreferences({ theme: 'night' });
+    expect(scheduleStorage.get()?.session).toBeNull();
+    const session = createMockSession('1101234');
+    scheduleStorage.save(session);
+    expect(scheduleStorage.get()?.preferences.theme).toBe('night');
+    scheduleStorage.savePreferences({ theme: 'day' });
+    expect(scheduleStorage.get()?.session).toEqual(session);
+  });
+
+  it('strips passwords, portal sessions and tokens at all object levels', () => {
+    const original = createMockSession('1101234');
+    const session = {
+      ...original,
+      password: 'sensitive-password',
+      token: 'sensitive-token',
+      portalSession: 'sensitive-cookie',
+      student: { ...original.student, password: 'sensitive-password' },
+      schedule: {
+        ...original.schedule,
+        token: 'sensitive-token',
+        classes: original.schedule.classes.map((item) => ({ ...item, portalSession: 'sensitive-cookie' })),
+      },
+    };
+    scheduleStorage.save(session);
+    expect(scheduleStorage.get()?.session).toEqual(original);
+    expect(localStorage.getItem(key)).not.toContain('sensitive');
+    expect(localStorage.getItem(key)).not.toContain('password');
+    expect(localStorage.getItem(key)).not.toContain('token');
+    expect(localStorage.getItem(key)).not.toContain('portalSession');
+  });
+
+  it.each(['{broken json', '{}', 'null', '{"version":99}', '{"version":1,"session":{},"preferences":{"theme":"auto"}}'])('tolerates corrupted or unsupported data: %s', (raw) => {
+    localStorage.setItem(key, raw);
+    expect(scheduleStorage.get()).toBeNull();
+  });
+
+  it('rejects invalid data before replacing a valid schedule', () => {
+    const session = createMockSession('1101234');
+    scheduleStorage.save(session);
+    expect(() => scheduleStorage.save({ ...session, schedule: { ...session.schedule, fetchedAt: 'invalid' } })).toThrow();
+    expect(scheduleStorage.get()?.session).toEqual(session);
+  });
+
+  it('retains the previous schedule and reports a quota failure', () => {
+    const session = createMockSession('1101234');
+    scheduleStorage.save(session);
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('Full', 'QuotaExceededError'); });
+    expect(() => scheduleStorage.save(createMockSession('9999999'))).toThrow(ScheduleStorageError);
+    expect(scheduleStorage.get()?.session).toEqual(session);
+  });
+
+  it('handles unavailable storage reads without crashing', () => {
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new DOMException('Blocked', 'SecurityError'); });
+    expect(scheduleStorage.get()).toBeNull();
+  });
+
+  it('clears only AcademicPlanner data', () => {
+    localStorage.setItem('another-app', 'preserve');
+    scheduleStorage.save(createMockSession('1101234'));
+    scheduleStorage.clear();
+    expect(scheduleStorage.get()).toBeNull();
+    expect(localStorage.getItem('another-app')).toBe('preserve');
+  });
+
+  it('reports a failure to clear storage', () => {
+    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => { throw new DOMException('Blocked', 'SecurityError'); });
+    expect(() => scheduleStorage.clear()).toThrow(ScheduleStorageError);
+  });
+
+  it('distinguishes empty, corrupted, readable and unavailable storage', () => {
+    expect(scheduleStorage.read().status).toBe('empty');
+    localStorage.setItem(key, '');
+    expect(scheduleStorage.read().status).toBe('corrupt');
+    scheduleStorage.save(createMockSession('1101234'));
+    expect(scheduleStorage.read().status).toBe('ready');
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('unavailable'); });
+    expect(scheduleStorage.read().status).toBe('unavailable');
+  });
+
+  it('does not overwrite unreadable data when changing appearance', () => {
+    localStorage.setItem(key, '{damaged');
+    expect(() => scheduleStorage.savePreferences({ theme: 'night' })).toThrow(ScheduleStorageError);
+    expect(localStorage.getItem(key)).toBe('{damaged');
+  });
+
+  it('notifies live readers of saves and complete cleanup, without touching other apps', () => {
+    const callback = vi.fn();
+    const unsubscribe = scheduleStorage.subscribe(callback);
+    try {
+      localStorage.setItem('other-app', 'keep');
+      scheduleStorage.save(createMockSession('1101234'));
+      scheduleStorage.savePreferences({ theme: 'night' });
+      clearAcademicPlannerData();
+      expect(callback.mock.calls.map(([type]) => type)).toEqual(['updated', 'updated', 'cleared']);
+      expect(scheduleStorage.get()).toBeNull();
+      expect(localStorage.getItem('other-app')).toBe('keep');
+    } finally { unsubscribe(); }
+    callback.mockClear();
+    scheduleStorage.savePreferences({ theme: 'day' });
+    expect(callback).not.toHaveBeenCalled();
+  });
+
+  it('stores a confirmed empty schedule as valid data', () => {
+    const session = createMockSession('1101234');
+    session.schedule.classes = [];
+    scheduleStorage.save(session);
+    expect(scheduleStorage.get()?.session).toEqual(session);
+  });
+});

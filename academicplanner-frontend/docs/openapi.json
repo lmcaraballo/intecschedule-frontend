@@ -1,0 +1,395 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AcademicPlanner — contrato académico",
+    "version": "1.0.0",
+    "description": "Propuesta implementada por el frontend. Backend stateless pendiente. No usar credenciales reales en herramientas de ejemplo."
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/api/academic/schedule": {
+      "post": {
+        "operationId": "consultAcademicSchedule",
+        "summary": "Consultar horario con credenciales temporales",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credentials"
+              },
+              "example": {
+                "studentId": "QA-STUDENT",
+                "password": "FICTICIA-SOLO-EJEMPLO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Horario validado, incluyendo vacío confirmado. student.id coincide con studentId.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcademicResponse"
+                },
+                "example": {
+                  "student": {
+                    "id": "QA-STUDENT",
+                    "isPino": false
+                  },
+                  "schedule": {
+                    "fetchedAt": "2026-09-18T07:30:00-04:00",
+                    "classes": [
+                      {
+                        "id": "qa-mon-0800",
+                        "subjectCode": "QA101",
+                        "subjectName": "Asignatura de ejemplo",
+                        "section": "01",
+                        "day": 1,
+                        "startTime": "08:00",
+                        "endTime": "10:00",
+                        "professor": "Docente de ejemplo",
+                        "location": "Aula 101"
+                      }
+                    ]
+                  },
+                  "source": {
+                    "status": "ok"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "UNKNOWN_ERROR",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcademicError"
+                },
+                "example": {
+                  "error": {
+                    "code": "UNKNOWN_ERROR"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_CREDENTIALS",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcademicError"
+                },
+                "example": {
+                  "error": {
+                    "code": "INVALID_CREDENTIALS"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SCHEDULE_NOT_FOUND",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcademicError"
+                },
+                "example": {
+                  "error": {
+                    "code": "SCHEDULE_NOT_FOUND"
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "PORTAL_STRUCTURE_CHANGED",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcademicError"
+                },
+                "example": {
+                  "error": {
+                    "code": "PORTAL_STRUCTURE_CHANGED"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "PORTAL_UNAVAILABLE",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcademicError"
+                },
+                "example": {
+                  "error": {
+                    "code": "PORTAL_UNAVAILABLE"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "UNKNOWN_ERROR",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcademicError"
+                },
+                "example": {
+                  "error": {
+                    "code": "UNKNOWN_ERROR"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Credentials": {
+        "type": "object",
+        "required": [
+          "studentId",
+          "password"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "studentId": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S",
+            "maxLength": 64,
+            "description": "Matrícula sin espacios exteriores."
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S",
+            "maxLength": 256,
+            "writeOnly": true,
+            "description": "Temporal. Preservar espacios significativos. Nunca registrar ni persistir."
+          }
+        }
+      },
+      "StudentProfile": {
+        "type": "object",
+        "required": [
+          "id",
+          "isPino"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S",
+            "maxLength": 64
+          },
+          "isPino": {
+            "type": "boolean",
+            "description": "Regla pendiente de definir por el equipo."
+          }
+        }
+      },
+      "AcademicClass": {
+        "type": "object",
+        "required": [
+          "id",
+          "subjectCode",
+          "subjectName",
+          "section",
+          "day",
+          "startTime",
+          "endTime"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "Único dentro del horario; estable entre consultas."
+          },
+          "subjectCode": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "subjectName": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "section": {
+            "type": "string",
+            "description": "Cadena vacía si no disponible."
+          },
+          "professor": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "day": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 7
+          },
+          "startTime": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+          },
+          "endTime": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "description": "Estríctamente posterior a startTime; sin cruce de medianoche."
+          }
+        }
+      },
+      "Schedule": {
+        "type": "object",
+        "required": [
+          "fetchedAt",
+          "classes"
+        ],
+        "properties": {
+          "fetchedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Zona explícita Z o ±HH:mm."
+          },
+          "classes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AcademicClass"
+            },
+            "description": "IDs únicos. Vacío solo si se confirmó un horario sin clases."
+          }
+        }
+      },
+      "AcademicResponse": {
+        "type": "object",
+        "required": [
+          "student",
+          "schedule"
+        ],
+        "properties": {
+          "student": {
+            "$ref": "#/components/schemas/StudentProfile"
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/Schedule"
+          },
+          "source": {
+            "type": "object",
+            "required": [
+              "status"
+            ],
+            "properties": {
+              "status": {
+                "const": "ok"
+              }
+            }
+          }
+        }
+      },
+      "AcademicError": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "INVALID_CREDENTIALS",
+                  "PORTAL_UNAVAILABLE",
+                  "SCHEDULE_NOT_FOUND",
+                  "PORTAL_STRUCTURE_CHANGED",
+                  "INVALID_RESPONSE",
+                  "UNKNOWN_ERROR"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,3 +1,11 @@
+# AcademicPlanner
+
+El frontend del primer incremento está en [`academicplanner-frontend/`](academicplanner-frontend/README.md). Incluye [informe QA](academicplanner-frontend/docs/QA_25_REPORT.md), [contrato y handoff](academicplanner-frontend/docs/FRONTEND_25_HANDOFF.md) y [despliegue](academicplanner-frontend/docs/DEPLOYMENT.md).
+
+La infraestructura AWS CDK existente se conserva en la raíz. Sus comandos y contratos son independientes del frontend académico.
+
+## Infraestructura existente
+
 # Welcome to your CDK TypeScript project
 
 This is a blank project for CDK development with TypeScript.
