@@ -57,7 +57,7 @@ El sufijo `_14` proviene de la URL proporcionada y funcionó en la sesión compr
 
 `app/parser.py` identifica encabezados por nombre, no por posiciones fijas. Verifica matrícula, códigos, nombres, secciones, siete días, intervalos, IDs únicos y paginación completa. Divide las reuniones por día y genera IDs determinísticos. Conserva códigos, profesores y ubicación tal como los devuelve la fuente; no une automáticamente códigos históricos y actuales.
 
-No inventa horas para «A anunciar». Las asignaturas con todas las celdas de días vacías se conservan en `unscheduledSubjects` y se muestran como «Sin horario asignado» en Ahora y Horario, sin inventar reuniones. Los textos de horas no reconocidos y las respuestas parciales siguen produciendo error. Una tabla vacía devuelve SCHEDULE_NOT_FOUND; no se interpreta silenciosamente como éxito vacío. `isPino=false` es el valor provisional hasta acordar una regla verificable. No consulta notas, pagos, selección ni modifica inscripciones.
+No inventa horas para «A anunciar»: conserva el componente con `reason=to_be_announced`. Las asignaturas con todas las celdas de días vacías se conservan en `unscheduledSubjects` y se muestran como componentes sin horario semanal en Ahora y Horario, sin inventar reuniones. Una etiqueta explícita de asincronía se conserva con `reason=asynchronous`; las celdas vacías sin esa evidencia usan `not_reported`, incluso si el aula dice VIRTUAL. Una misma fila puede conservar encuentros programados y componentes pendientes/asíncronos. Los textos de horas no reconocidos y las respuestas parciales siguen produciendo error. Una tabla vacía devuelve SCHEDULE_NOT_FOUND; no se interpreta silenciosamente como éxito vacío. `isPino=false` es el valor provisional hasta acordar una regla verificable. No consulta notas, pagos, selección ni modifica inscripciones.
 
 ## Pruebas y desarrollo
 
@@ -68,7 +68,7 @@ python3 -m venv .venv
 ACADEMIC_TERM=2230 .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --no-access-log --no-proxy-headers
 ```
 
-40 pruebas locales: contrato, correo/matrícula, redacción de errores, sesión de un solo uso, rotación, expiración, limpieza, límites, redirecciones, TLS restringido por origen y parser. La suite automatizada usa únicamente datos ficticios y no envía credenciales a INTEC. Además se hizo una prueba real autorizada del navegador: correo institucional normalizado, identidad coincidente, 11 reuniones (lunes–sábado: 0/3/2/3/2/1), detalle accesible, sin errores de consola ni desbordamiento móvil y sin contraseña/tokens en storage. Hay dos advertencias de obsolescencia de Starlette/AnyIO en su cliente de pruebas; no afectan el resultado.
+51 pruebas locales: contrato, correo/matrícula, redacción de errores, sesión de un solo uso, rotación, expiración, limpieza, límites, redirecciones, TLS restringido por origen y parser. La suite automatizada usa únicamente datos ficticios y no envía credenciales a INTEC. Además se hizo una prueba real autorizada del navegador: correo institucional normalizado, identidad coincidente, 11 reuniones (lunes–sábado: 0/3/2/3/2/1), detalle accesible, sin errores de consola ni desbordamiento móvil y sin contraseña/tokens en storage. Hay dos advertencias de obsolescencia de Starlette/AnyIO en su cliente de pruebas; no afectan el resultado.
 
 FastAPI publica `/openapi.json` y `/docs` para inspección local. Para publicar externamente: validar otras cuentas y períodos; configurar HTTPS, proxy de confianza y límites acordes al número de usuarios. No se cambió ni desplegó la infraestructura AWS CDK existente.
 
@@ -80,3 +80,5 @@ FastAPI publica `/openapi.json` y `/docs` para inspección local. Para publicar 
 ### Validación adicional de cuentas
 
 Se reprodujo y corrigió el rechazo de una materia con las siete celdas de días vacías. Dos cuentas adicionales autorizadas pasaron login y consulta desde el navegador: una devolvió 10 reuniones; la otra, 9 reuniones y 1 materia sin horario. Se verificaron identidad, vistas diaria/semanal, detalle, aviso visible, ausencia de credenciales/tokens en storage y ausencia de errores de consola y desbordamiento a 390 px. Frontend: 200 pruebas; backend: 40. Esto valida estos casos, no todos los posibles formatos del portal.
+
+Investigación y matriz de casos: [Modalidades y horarios INTEC](docs/INTEC_MODALIDADES.md).

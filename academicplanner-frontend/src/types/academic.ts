@@ -26,6 +26,7 @@ export const academicClassSchema = z.object({
 export const scheduleSchema = z.object({
   fetchedAt: z.iso.datetime({ offset: true }),
   unscheduledSubjects: z.array(z.object({
+    reason: z.enum(['not_reported', 'to_be_announced', 'asynchronous']).optional(),
     id: z.string().trim().min(1),
     subjectCode: z.string().trim().min(1),
     subjectName: z.string().trim().min(1),

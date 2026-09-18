@@ -145,3 +145,37 @@ test('unsupported email is rejected before any backend request',async({page})=>{
   await expect(page.getByText('Usa tu matrícula o tu correo de estudiante @est.intec.edu.do.')).toBeVisible();
   expect(calls).toBe(0);
 });
+
+test('virtual meetings, Sunday and asynchronous components survive login and reload', async ({ page }) => {
+  const session=storedSession().session;
+  session.schedule.classes=[{...session.schedule.classes[0]!,id:'virtual-sunday',subjectName:'Encuentro virtual QA',day:7,startTime:'10:00',endTime:'11:00',location:'VIRTUAL'}];
+  const response={...flat(session),unscheduledSubjects:[
+    {id:'async',subjectCode:'QA-A',subjectName:'Trabajo autónomo QA',section:'01',reason:'asynchronous',location:'VIRTUAL'},
+    {id:'unknown',subjectCode:'QA-U',subjectName:'Modalidad sin confirmar QA',section:'02',reason:'not_reported',location:'VIRTUAL'},
+    {id:'pending',subjectCode:'QA-P',subjectName:'Encuentro pendiente QA',section:'03',reason:'to_be_announced'},
+  ]};
+  await page.route('**/api/schedule',route=>route.fulfill({json:response}));
+  await page.goto('/');await login(page);await expect(page).toHaveURL(/\/ahora$/);
+  await expect(page.getByText(/Asíncrona: el portal lo indica expresamente/)).toBeVisible();
+  await expect(page.getByText(/puede ser asíncrona o tener un horario pendiente/)).toBeVisible();
+  await expect(page.getByText(/Horario por anunciar:/)).toBeVisible();
+  await page.goto('/horario?date=2026-09-20&view=week');
+  await expect(page.getByLabel('Horario semanal de lunes a domingo')).toBeVisible();
+  await expect(page.getByRole('button',{name:/Ver detalle: Encuentro virtual QA/})).toHaveCount(1);
+  await expect(page.getByText('VIRTUAL · con horario programado')).toBeVisible();
+  await page.getByRole('button',{name:/Ver domingo/}).click();
+  await expect(page).toHaveURL(/date=2026-09-20/);
+  await page.reload();await expect(page.getByRole('button',{name:/Ver detalle: Encuentro virtual QA/})).toHaveCount(1);
+  await expect(page.getByText(/Trabajo autónomo QA/)).toBeVisible();
+  await page.setViewportSize({width:390,height:844});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});
+
+test('only asynchronous subjects do not claim the student has no registered classes', async ({ page }) => {
+  const session=storedSession().session;session.schedule.classes=[];
+  await page.route('**/api/schedule',route=>route.fulfill({json:{...flat(session),unscheduledSubjects:[{id:'async',subjectCode:'QA-A',subjectName:'Trabajo autónomo QA',section:'01',reason:'asynchronous'}]}}));
+  await page.goto('/');await login(page);await expect(page).toHaveURL(/\/ahora$/);
+  await expect(page.getByRole('heading',{name:'Hoy no hay encuentros con hora en tu horario.'})).toBeVisible();
+  await expect(page.getByText('Tu horario no tiene clases registradas.')).toHaveCount(0);
+  await expect(page.getByText(/Revisa las actividades y fechas de entrega/)).toBeVisible();
+});

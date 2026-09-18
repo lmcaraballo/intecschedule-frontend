@@ -17,7 +17,7 @@ export function WeekSchedule({ schedule, days, now, onSelectDay }: { schedule: S
   const start = allClasses.length ? Math.floor(Math.min(...allClasses.map((item) => minutes(item.startTime))) / 60) * 60 : 480;
   const end = allClasses.length ? Math.ceil(Math.max(...allClasses.map((item) => minutes(item.endTime))) / 60) * 60 : 1020;
   const hours = Array.from({ length: (end - start) / 60 }, (_, index) => start + index * 60);
-  return <div className={`week-schedule${timeline ? ' week-schedule--timeline' : ''}`} style={{ '--week-slots': (end - start) / 5 } as CSSProperties} aria-label="Horario semanal de lunes a sábado">
+  return <div className={`week-schedule${timeline ? ' week-schedule--timeline' : ''}`} style={{ '--week-slots': (end - start) / 5, '--week-days': days.length } as CSSProperties} aria-label={`Horario semanal de lunes a ${days.length === 7 ? 'domingo' : 'sábado'}`}>
     {timeline && hours.map((hour) => <span key={hour} className="week-time-label" aria-hidden="true" style={{ gridRow: `${(hour - start) / 5 + 2} / span 12` }}>{formatTime(`${String(hour / 60).padStart(2, '0')}:00`)}</span>)}
     {columns.map(({ date, classes }, column) => <section key={dateKey(date)} className={`week-day${isSameDay(date, now) ? ' week-day--today' : ''}`} style={{ '--week-column': column + 2 } as CSSProperties} aria-label={formatDate(date)}>
       <Button variant="plain" type="button" className="week-day__heading" onClick={() => onSelectDay(date)} aria-label={`Ver ${formatDate(date)}`}><span>{weekdayNames[isoWeekday(date) - 1]}</span><strong>{date.getDate()}</strong>{isSameDay(date, now) && <span className="week-day__today">Hoy</span>}</Button>

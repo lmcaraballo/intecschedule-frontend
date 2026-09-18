@@ -322,6 +322,16 @@
       },
       "UnscheduledSubject": {
         "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "not_reported",
+              "to_be_announced",
+              "asynchronous"
+            ],
+            "title": "Reason",
+            "default": "not_reported"
+          },
           "id": {
             "type": "string",
             "minLength": 1,

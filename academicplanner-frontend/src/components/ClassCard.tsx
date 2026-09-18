@@ -1,3 +1,4 @@
+import { scheduledLocationLabel } from '../features/schedule/classLocation';
 import { Button } from './Button';
 import type { ReactNode } from 'react';
 import { useSearchParams } from 'react-router';
@@ -25,7 +26,7 @@ export function ClassCard({ academicClass: item, eyebrow, children, compact = fa
       <span className="class-card__top"><span className="subject-code">{item.subjectCode} <span>· {item.section || 'Sección por confirmar'}</span></span>{eyebrow && <span className="class-badge">{eyebrow}</span>}<Icon name="chevron-right" width="16" height="16" /></span>
       <span className="class-card__name">{item.subjectName}</span>
       <span className="class-card__meta"><Icon name="clock" width="16" height="16" /><span>{formatTime(item.startTime)} – {formatTime(item.endTime)}</span></span>
-      <span className="class-card__meta"><Icon name="pin" width="16" height="16" /><span>{item.location || 'Ubicación por confirmar'}</span></span>
+      <span className="class-card__meta"><Icon name="pin" width="16" height="16" /><span>{scheduledLocationLabel(item.location)}</span></span>
     </Button>
     {children && <div className="class-card__extra">{children}</div>}
   </article>;

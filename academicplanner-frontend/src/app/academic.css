@@ -149,13 +149,13 @@
   .today-agenda { border-left: 1px solid var(--border); padding-left: var(--space-8); }
 }
 @media (min-width: 1350px) {
-  .week-schedule { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-2); }
+  .week-schedule { grid-template-columns: repeat(var(--week-days, 6), minmax(0, 1fr)); gap: var(--space-2); }
   .week-day { padding: 6px; }
   .week-day__heading { flex-direction: column; gap: 2px; align-items: flex-start; min-height: 90px; padding: var(--space-2); }
   .week-day__today { margin-left: 0; }
   .week-day .class-card__button { padding: var(--space-3) var(--space-2); }
   .week-day .class-card__top > svg { display: none; }
-  .week-schedule--timeline { grid-template-columns: 58px repeat(6, minmax(0, 1fr)); grid-template-rows: 84px repeat(var(--week-slots), minmax(6px, auto)); gap: 0 8px; }
+  .week-schedule--timeline { grid-template-columns: 58px repeat(var(--week-days, 6), minmax(0, 1fr)); grid-template-rows: 84px repeat(var(--week-slots), minmax(6px, auto)); gap: 0 8px; }
   .week-schedule--timeline .week-time-label { display: block; grid-column: 1; border-top: 1px solid var(--border); font-size: .6rem; color: var(--muted); padding-top: 3px; }
   .week-schedule--timeline .week-day { display: grid; grid-template-rows: subgrid; grid-row: 1 / -1; grid-column: var(--week-column); padding: 0 4px; border-left: 1px solid var(--border); border-radius: 0; background: transparent; }
   .week-schedule--timeline .week-day__heading { grid-row: 1; min-height: 0; margin: 0 0 8px; }

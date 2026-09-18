@@ -1,4 +1,5 @@
 import re
+from typing import Literal
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
 
@@ -51,6 +52,7 @@ class AcademicClass(BaseModel):
         return self
 
 class UnscheduledSubject(BaseModel):
+    reason: Literal["not_reported", "to_be_announced", "asynchronous"] = "not_reported"
     id: str = Field(min_length=1)
     subjectCode: str = Field(min_length=1)
     subjectName: str = Field(min_length=1)
@@ -68,6 +70,8 @@ class ScheduleResponse(BaseModel):
     def valid_schedule(self):
         if self.fetchedAt.tzinfo is None:
             raise ValueError('Timezone required')
+        if len({item.id for item in self.unscheduledSubjects}) != len(self.unscheduledSubjects):
+            raise ValueError('Duplicate unscheduled subject IDs')
         if len({item.id for item in self.classes}) != len(self.classes):
             raise ValueError('Duplicate class IDs')
         return self

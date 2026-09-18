@@ -34,9 +34,24 @@ def clock(value, meridiem=None):
     return f'{hours:02}:{minutes:02}'
 
 
+# Explicit markers only. Blank times and VIRTUAL alone do not prove asynchronous study.
+PENDING_MARKERS = {'AANUNCIAR', 'PORANUNCIAR', 'PORCONFIRMAR'}
+ASYNC_MARKERS = {'ASINCRONA', 'ASINCRONO', 'ASINCRONICA', 'ASINCRONICO',
+                 'VIRTUALASINCRONA', 'VIRTUALASINCRONO', 'VIRTUALASINCRONICA', 'VIRTUALASINCRONICO'}
+
+
+def unscheduled_reason(cell):
+    value = normalized(cell.get_text(' ', strip=True))
+    if value in PENDING_MARKERS:
+        return 'to_be_announced'
+    if value in ASYNC_MARKERS:
+        return 'asynchronous'
+    return None
+
+
 def intervals(cell):
     text = clean(cell.get_text(' ', strip=True))
-    if text in ('', '-', '—'):
+    if text in ('', '-', '—') or unscheduled_reason(cell):
         return []
     matches = list(INTERVAL.finditer(text))
     remainder = INTERVAL.sub('', text).strip(' ,;/')
@@ -91,6 +106,7 @@ def parse_selection(html: str, student_id: str, fetched_at=None) -> ScheduleResp
         if not code or not name or not section:
             raise ApiError('PORTAL_STRUCTURE_CHANGED')
         row_count = 0
+        reasons = {unscheduled_reason(cells[i]) for i in days.values()} - {None}
         for day, index in days.items():
             for start, end in intervals(cells[index]):
                 identity = '|'.join([student_id, code, section, str(day), start, end])
@@ -98,9 +114,13 @@ def parse_selection(html: str, student_id: str, fetched_at=None) -> ScheduleResp
                     subjectCode=code, subjectName=name, section=section, professor=value('PROFESOR'),
                     day=day, startTime=start, endTime=end, location=value('AULA')))
                 row_count += 1
-        if not row_count:
-            identity = '|'.join([student_id, code, section, 'unscheduled'])
-            unscheduled.append(UnscheduledSubject(id=hashlib.sha256(identity.encode()).hexdigest()[:16],
+        if not row_count and normalized(value('AULA')) in ASYNC_MARKERS:
+            reasons.add('asynchronous')
+        if not row_count and not reasons:
+            reasons.add('not_reported')
+        for reason in sorted(reasons):
+            identity = '|'.join([student_id, code, section, 'unscheduled', reason])
+            unscheduled.append(UnscheduledSubject(reason=reason, id=hashlib.sha256(identity.encode()).hexdigest()[:16],
                 subjectCode=code, subjectName=name, section=section,
                 professor=value('PROFESOR'), location=value('AULA')))
     for first, last, total in re.findall(r'\b(\d+)\s*-\s*(\d+)\s+de\s+(\d+)\b', soup.get_text(' ', strip=True), re.I):
