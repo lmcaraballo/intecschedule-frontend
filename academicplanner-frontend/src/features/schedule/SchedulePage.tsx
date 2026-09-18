@@ -1,3 +1,4 @@
+import { UnscheduledSubjects } from '../../components/UnscheduledSubjects';
 import { Button } from '../../components/Button';
 import { useSearchParams } from 'react-router';
 import { useAcademicSession } from '../../app/AcademicLayout';
@@ -45,6 +46,7 @@ export function SchedulePage() {
     </> : <WeekSchedule schedule={session.schedule} days={days} now={now} onSelectDay={(date) => update(date, 'day')} />}
     </div>
     <p className="schedule-note"><Icon name="calendar" width="16" height="16" /> Horario semanal recurrente · las fechas siguen la hora de tu dispositivo.</p>
+    <UnscheduledSubjects schedule={session.schedule} />
     <LastUpdated fetchedAt={session.schedule.fetchedAt} />
   </main>;
 }

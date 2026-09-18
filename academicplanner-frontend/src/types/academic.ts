@@ -25,6 +25,14 @@ export const academicClassSchema = z.object({
 
 export const scheduleSchema = z.object({
   fetchedAt: z.iso.datetime({ offset: true }),
+  unscheduledSubjects: z.array(z.object({
+    id: z.string().trim().min(1),
+    subjectCode: z.string().trim().min(1),
+    subjectName: z.string().trim().min(1),
+    section: z.string().trim(),
+    professor: z.string().trim().optional(),
+    location: z.string().trim().optional(),
+  })).optional(),
   classes: z.array(academicClassSchema).refine(
     (classes) => new Set(classes.map((item) => item.id)).size === classes.length,
     'Los identificadores de clase deben ser únicos',

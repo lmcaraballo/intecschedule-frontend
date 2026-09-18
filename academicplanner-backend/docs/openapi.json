@@ -255,6 +255,13 @@
             },
             "type": "array",
             "title": "Classes"
+          },
+          "unscheduledSubjects": {
+            "items": {
+              "$ref": "#/components/schemas/UnscheduledSubject"
+            },
+            "type": "array",
+            "title": "Unscheduledsubjects"
           }
         },
         "type": "object",
@@ -312,6 +319,47 @@
           "refreshToken"
         ],
         "title": "TokenResponse"
+      },
+      "UnscheduledSubject": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Id"
+          },
+          "subjectCode": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Subjectcode"
+          },
+          "subjectName": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Subjectname"
+          },
+          "section": {
+            "type": "string",
+            "title": "Section"
+          },
+          "professor": {
+            "type": "string",
+            "title": "Professor",
+            "default": ""
+          },
+          "location": {
+            "type": "string",
+            "title": "Location",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "subjectCode",
+          "subjectName",
+          "section"
+        ],
+        "title": "UnscheduledSubject"
       },
       "ValidationError": {
         "properties": {

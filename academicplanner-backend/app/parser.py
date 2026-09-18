@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from bs4 import BeautifulSoup
 from pydantic import ValidationError
 from .errors import ApiError
-from .models import AcademicClass, ScheduleResponse, Student
+from .models import AcademicClass, ScheduleResponse, Student, UnscheduledSubject
 
 
 def clean(value):
@@ -74,7 +74,7 @@ def parse_selection(html: str, student_id: str, fetched_at=None) -> ScheduleResp
     table = header.find_parent('table')
     rows = [r for r in table.find_all('tr') if r.find_parent('table') is table]
     rows = rows[rows.index(header)+1:]
-    classes, found_rows = [], 0
+    classes, unscheduled, found_rows = [], [], 0
     for row in rows:
         cells = row.find_all(['th', 'td'], recursive=False)
         if not cells:
@@ -99,8 +99,10 @@ def parse_selection(html: str, student_id: str, fetched_at=None) -> ScheduleResp
                     day=day, startTime=start, endTime=end, location=value('AULA')))
                 row_count += 1
         if not row_count:
-            # The current frontend cannot represent an enrolled course without a weekly time.
-            raise ApiError('PORTAL_STRUCTURE_CHANGED')
+            identity = '|'.join([student_id, code, section, 'unscheduled'])
+            unscheduled.append(UnscheduledSubject(id=hashlib.sha256(identity.encode()).hexdigest()[:16],
+                subjectCode=code, subjectName=name, section=section,
+                professor=value('PROFESOR'), location=value('AULA')))
     for first, last, total in re.findall(r'\b(\d+)\s*-\s*(\d+)\s+de\s+(\d+)\b', soup.get_text(' ', strip=True), re.I):
         if int(first) != 1 or int(last) != int(total) or int(total) != found_rows:
             raise ApiError('PORTAL_STRUCTURE_CHANGED')
@@ -110,6 +112,6 @@ def parse_selection(html: str, student_id: str, fetched_at=None) -> ScheduleResp
     try:
         return ScheduleResponse(student=Student(id=student_id),
             fetchedAt=fetched_at or datetime.now(timezone.utc),
-            classes=sorted(classes, key=lambda item: (item.day, item.startTime, item.subjectCode)))
+            unscheduledSubjects=unscheduled, classes=sorted(classes, key=lambda item: (item.day, item.startTime, item.subjectCode)))
     except ValidationError:
         raise ApiError('PORTAL_STRUCTURE_CHANGED') from None

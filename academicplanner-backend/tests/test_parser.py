@@ -38,3 +38,22 @@ def test_wrong_student_rejected():
 def test_partial_pagination_is_not_accepted():
     with pytest.raises(ApiError):parse_selection(html()+'<p>Primero 1-1 de 8 Último</p>','1234567')
     assert len(parse_selection(html()+'<p>Primero 1-1 de 1 Último</p>','1234567').classes)==2
+
+
+def test_course_without_weekly_times_preserved_alongside_timed_classes():
+    row=ROW.copy();row[5]='QA 300';row[11]='';row[13]=''
+    schedule=parse_selection(html([ROW,row])+'<p>Primero 1-2 de 2 Último</p>','1234567')
+    assert len(schedule.classes)==2
+    assert len(schedule.unscheduledSubjects)==1
+    subject=schedule.unscheduledSubjects[0]
+    assert subject.subjectCode=='QA300'
+    assert subject.subjectName==row[7]
+    assert subject.section==row[6]
+    assert 'day' not in subject.model_dump()
+
+
+def test_only_unscheduled_courses_is_not_missing_schedule():
+    row=ROW.copy();row[11]='';row[13]=''
+    schedule=parse_selection(html([row]),'1234567')
+    assert schedule.classes==[]
+    assert len(schedule.unscheduledSubjects)==1

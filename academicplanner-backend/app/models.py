@@ -50,10 +50,19 @@ class AcademicClass(BaseModel):
             raise ValueError('Invalid time interval')
         return self
 
+class UnscheduledSubject(BaseModel):
+    id: str = Field(min_length=1)
+    subjectCode: str = Field(min_length=1)
+    subjectName: str = Field(min_length=1)
+    section: str
+    professor: str = ""
+    location: str = ""
+
 class ScheduleResponse(BaseModel):
     student: Student
     fetchedAt: datetime
     classes: list[AcademicClass]
+    unscheduledSubjects: list[UnscheduledSubject] = Field(default_factory=list)
 
     @model_validator(mode='after')
     def valid_schedule(self):
