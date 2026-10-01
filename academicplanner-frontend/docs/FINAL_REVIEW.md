@@ -1,46 +1,59 @@
-# AcademicPlanner — revisión final local del 25 %
+# AcademicPlanner — revisión final de desarrollo
 
-> Actualización posterior: el backend de desarrollo ya fue proporcionado y el adaptador fue actualizado. Consultar [BACKEND_INTEGRATION.md](BACKEND_INTEGRATION.md) para el estado vigente (186 pruebas de lógica y 37 de navegador); los resultados siguientes corresponden a la auditoría previa.
+**Estado al 1 de octubre de 2026: alcance funcional de desarrollo 100 % implementado.**
 
-**READY FOR 25% DELIVERY** — primer incremento con consulta institucional simulada.
+Esta conclusión se refiere al código del frontend y del backend, sus contratos,
+pruebas reproducibles y ejecución local integrada. No afirma que el despliegue en
+producción, la aprobación de OAuth ni la aceptación académica estén terminados.
 
-## Resultado vigente
+## Alcance implementado
 
-Esta segunda auditoría partió del commit `1a7f2a7`, con 169 pruebas y build correctos. Encontró 4 defectos nuevos: 0 Critical, 2 High, 2 Medium, 0 Low. Los 4 fueron corregidos y vueltos a probar; 0 pendientes. Historial acumulado: 11 defectos corregidos (3 High, 7 Medium, 1 Low).
+- Acceso institucional temporal, importación y conservación del último horario válido.
+- Vistas Ahora, Día, Semana y Mes, incluidas materias sin hora y encuentros dominicales.
+- Modalidad y ubicación por encuentro; detalle de clase y mapa 3D con enfoque y reinicio.
+- Período agosto–octubre 2026 limitado por fechas oficiales, feriados y 13 hitos académicos.
+- Eventos personales y sincronización bidireccional e idempotente con un calendario de Google dedicado.
+- Recordatorios de clases e hitos institucionales, preferencias, accesibilidad y modo sin conexión.
+- Acción para terminar una clase antes de tiempo y conservar esa decisión localmente.
+- Errores de dominio, límites, caché segura, encabezados de seguridad y TLS verificado hacia BeeCampus.
 
-- `npm test`: **176/176** (12 archivos).
-- `npm run build`: **correcto**, modo demo y HTTP comprobados durante las suites.
-- `npm run typecheck`: **correcto**.
-- `npm run lint`: **no existe**; no ejecutado ni sustituido por una afirmación de lint.
-- `npm run test:e2e`: **25/25**.
-- `npm run test:e2e:http`: **9/9**.
-- `npm audit`: **0 vulnerabilidades reportadas**.
-- Se añadieron **7 tests unitarios/integración y 8 de navegador**.
-- Persisten dos warnings no bloqueantes de anotaciones de Zod en el build; no se ocultaron.
+## Verificación reproducible
 
-## Cambios principales
+- Frontend: **218/218** pruebas unitarias y de integración.
+- Navegador en modo demostración: **27/27** recorridos.
+- Navegador en modo HTTP: **16/16** recorridos.
+- Backend local integrado: **54/54** pruebas.
+- Backend AWS: **45/45** pruebas Python y **1/1** prueba de infraestructura.
+- Builds de Vite y TypeScript/CDK correctos; Ruff y comprobación de formato correctos.
+- Auditoría de dependencias de producción del frontend: **0 vulnerabilidades conocidas**.
+- Ejecución Docker comprobada a través del mismo origen para salud, calendario institucional y errores de Google Calendar.
+- Recorrido manual: Ahora, Horario, detalle, mapa 3D, Eventos y Preferencias sin errores de consola.
 
-1. Reflow al ampliar fuente al 200 %: cabecera, acceso, toolbar y días del horario.
-2. Revalidación del almacenamiento al recuperar foco/visibilidad; cancelación tras borrado.
-3. Boundary exterior para fallos de proveedores que el router no cubría.
-4. Rechazo de consultas/snapshots antiguos, con evidencia entre dos pestañas.
+El build de Vite conserva dos avisos no bloqueantes: anotaciones de Zod y un
+chunk principal mayor de 500 kB. No afectan la compilación ni las pruebas, pero
+son una oportunidad de optimización posterior.
 
-Archivos principales: `src/storage/scheduleStorage.ts`, `src/services/consultSchedule.ts`, `src/app/App.tsx`, `src/app/AppErrorBoundary.tsx`, `src/theme/global.css`, `src/app/academic.css`, `src/features/auth/access.css`, tests de integración y suites `e2e/`.
+## Evidencia y límites de publicación
 
-No se encontraron nuevas filtraciones de contraseñas, vulnerabilidades npm conocidas ni defectos en las funciones de lógica temporal. Los problemas nuevos de almacenamiento/concurrencia y responsive/accesibilidad están corregidos. No se añadieron funcionalidades fuera del 25 %.
+El calendario institucional fue contrastado con la publicación oficial vigente
+de INTEC y conserva su URL de origen. La integración de Google usa solo el client
+ID público, permisos mínimos de calendario y tokens mantenidos en memoria; nunca
+requiere un client secret en el navegador.
 
-## Evidencia y riesgos
+Para una publicación real todavía se necesita configurar el client ID OAuth del
+entorno, mantener las cuentas de prueba autorizadas mientras Google esté en modo
+de prueba, desplegar ambos servicios por HTTPS y ejecutar aceptación con cuentas
+institucionales autorizadas. El siguiente trimestre debe añadirse cuando INTEC lo
+publique; no se extrapola.
 
-[Reporte QA](QA_25_REPORT.md), [correcciones](QA_25_FIXES.md), [matriz de riesgos](QA_25_RISKS.md), [handoff](FRONTEND_25_HANDOFF.md) y [despliegue](DEPLOYMENT.md).
+Azure conserva las Features F01–F06 en `In Progress`, F07–F08 y HU36–HU45 en
+`New`. Es intencional: los estados no se cerraron sin la evidencia de aceptación
+y despliegue correspondiente, y no se eliminó ningún elemento histórico.
 
-La matriz mantiene como límites relevantes: integración institucional pendiente, otros motores y dispositivos, dependencia de timestamps fiables para ordenar snapshots entre pestañas, precaché necesario para offline, cambios de versión del service worker en despliegues reales y horario recurrente según reloj del dispositivo.
+## Ramas revisadas
 
-Se verificó zoom real Chromium 200 % (1280 px físicos lógicos de ventana → 640 CSS px, DPR 2), además del aumento de fuente, ocho anchos, teclado, contraste automatizado, refresh de detalle y rutas desconocidas. Las pruebas no constituyen certificación completa WCAG.
+- Frontend e integración local: `feat/academicplanner-100`.
+- Backend e infraestructura AWS: `feat/academicplanner-calendar-50`.
 
-## Git
-
-Rama local: `qa/academicplanner-frontend-25`. Esta ronda conserva los cambios locales sobre `1a7f2a7`; no crea un nuevo commit.
-
-**No se hizo push, no se creó PR, no se mergeó ni se modificaron ramas remotas.** Tampoco se repitió el dry-run de publicación de la ronda anterior. La restricción actual es mantener toda la auditoría local, independientemente de los permisos disponibles.
-
-El ZIP de esta revisión incluye los cambios locales actuales; el bundle/ZIP de la entrega anterior no los incluye. La infraestructura AWS preexistente se conserva.
+Los documentos de 25 % y 50 % permanecen como historial de incrementos; este
+archivo es el estado vigente del desarrollo.

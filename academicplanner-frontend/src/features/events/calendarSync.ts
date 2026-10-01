@@ -81,7 +81,10 @@ export function institutionalReminderEvents(reminderMinutes: number): DesiredEve
       title: `Inicia ${period.title}`,
       detail: `Inicio oficial del período académico. Fuente: ${period.sourceUrl}`,
     };
-    const milestones = [start, ...period.dates.filter((entry) => entry.kind === 'milestone')];
+    const milestones = [
+      start,
+      ...period.dates.filter((entry) => entry.kind === 'milestone' && entry.date !== period.startsOn),
+    ];
     return milestones.map((entry) => ({
       sourceId: stableSourceId(`institutional:${period.id}:${entry.date}:${entry.title}`),
       sourceType: 'institutional' as const,

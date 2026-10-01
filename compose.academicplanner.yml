@@ -4,6 +4,9 @@ services:
     environment:
       # Ciclo confirmado por el usuario en el Volante de Selección.
       ACADEMIC_TERM: ${ACADEMIC_TERM:-2230}
+      # Client ID público del OAuth web de AcademicPlanner. Sin este valor la
+      # aplicación mantiene Calendar deshabilitado y explica cómo configurarlo.
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
     init: true
     read_only: true
     tmpfs:

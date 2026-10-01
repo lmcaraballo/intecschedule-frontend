@@ -24,9 +24,9 @@ El mock es el modo predeterminado para pruebas reproducibles. El modo HTTP consu
 
 Se conserva únicamente perfil básico, horario, fecha de actualización, preferencias y marcas locales de una clase terminada antes bajo `academicplanner:data:v1`. Más permite limpiar esos datos. No se guardan contraseñas, sesiones del portal ni tokens de Google.
 
-- [Handoff frontend/backend: modelos, contrato, seguridad e integración](docs/FRONTEND_25_HANDOFF.md)
-- [Verificación final y estado de entrega](docs/FINAL_REVIEW.md)
-- [Alcance del incremento](docs/INCREMENTO_25.md)
+- [Verificación final vigente del desarrollo](docs/FINAL_REVIEW.md)
+- [Handoff frontend/backend del primer incremento](docs/FRONTEND_25_HANDOFF.md)
+- [Alcance histórico del primer incremento](docs/INCREMENTO_25.md)
 - [Calendario académico, preferencias y contrato de Google](docs/FRONTEND_50_CALENDARIO_Y_PREFERENCIAS.md)
 - [Mapa 3D del campus y contrato de ubicación](docs/FRONTEND_50_CAMPUS.md)
 
@@ -50,4 +50,4 @@ npm run test:e2e:http
 
 La primera suite construye la demo; la segunda construye en modo HTTP con respuestas controladas. Para volver a mostrar la demo local después, ejecutar `npm run build` con el modo `mock`. No hay script lint.
 
-- [Matriz de riesgos del 25 %](docs/QA_25_RISKS.md).
+- [Matriz histórica de riesgos del 25 %](docs/QA_25_RISKS.md).

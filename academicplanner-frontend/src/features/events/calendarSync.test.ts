@@ -29,5 +29,6 @@ describe('calendar synchronization plan', () => {
     expect(events.some((event) => event.draft.title === 'Finaliza la docencia')).toBe(true);
     expect(events.every((event) => event.reminderMinutes === 30 && event.sourceType === 'institutional')).toBe(true);
     expect(new Set(events.map((event) => event.sourceId)).size).toBe(events.length);
+    expect(events.filter((event) => event.draft.date === '2026-08-03')).toHaveLength(1);
   });
 });

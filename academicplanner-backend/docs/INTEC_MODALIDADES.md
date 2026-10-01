@@ -39,9 +39,9 @@ Como evidencia complementaria, la oferta de formación del profesorado combina e
 | Clases consecutivas o superpuestas | Final exclusivo y orden estable; la semana usa listas si hay superposición. No prueba que la inscripción autorice el choque. |
 | Domingo y horarios nocturnos | Domingo visible cuando existe; horas válidas 00:00–23:59 dentro del mismo día. |
 | Aula diferente según reunión / modalidad híbrida | Se conserva lo que devuelve el reporte. Su única columna AULA no permite reconstruir un aula distinta por día; falta enriquecer desde Mis Clases. |
-| Feriados, reposiciones, exámenes extraordinarios | No integrados al cálculo de Ahora. Se advierte que la vista es recurrente; falta un calendario de excepciones con fuente y vigencia. |
-| Inicio/fin de cada sección, semanas alternas | El reporte actual no aporta esas fechas al modelo; falta leerlas de Mis Clases. No se puede garantizar la próxima clase fuera del período. |
-| Cambio de trimestre | ACADEMIC_TERM sigue configurado en el servidor; falta selección/detección fiable y mostrar período en la interfaz. No reutilizar 2230 indefinidamente. |
+| Feriados, hitos y evaluaciones institucionales | Integrados desde el calendario oficial versionado. Los feriados suprimen la repetición semanal; los hitos se muestran y pueden sincronizarse como recordatorios. Las reposiciones particulares aún requieren una publicación verificable. |
+| Inicio/fin del trimestre | El horario se limita del 3 de agosto al 17 de octubre de 2026; fuera del período no se inventan clases. Las semanas alternas por sección siguen dependiendo de datos que BeeCampus no expone en el reporte actual. |
+| Cambio de trimestre | La interfaz muestra el período y su fuente, pero `ACADEMIC_TERM` sigue configurado en el servidor. El próximo calendario debe añadirse cuando INTEC lo publique; no reutilizar 2230 indefinidamente. |
 | Viaje o dispositivo en otra zona horaria | Aún se calcula con la zona del dispositivo. Pendiente fijar America/Santo_Domingo en cálculos y navegación; advertencia visible. |
 | Retiro, cambio de sección o aula | Requiere volver a consultar; los datos guardados son una instantánea, no sincronización continua. |
 | Paginación / datos parciales | Se rechazan; pendiente navegar Ver Todo y probar cuentas con más filas. |
@@ -53,7 +53,7 @@ Como evidencia complementaria, la oferta de formación del profesorado combina e
 
 ## Validación
 
-51 pruebas de backend, 201 de frontend, comprobación de tipos y build; 16 pruebas HTTP en navegador. Las nuevas cubren asincronía explícita, modalidad desconocida, horario por anunciar, componentes mixtos, solo trabajo sin hora, domingo, recarga y móvil.
+54 pruebas del backend local, 218 del frontend, comprobación de tipos y build; 27 recorridos de navegador en demo y 16 en modo HTTP. Las pruebas cubren asincronía explícita, modalidad desconocida, horario por anunciar, componentes mixtos, solo trabajo sin hora, domingo, recarga, móvil, vigencia institucional, mapa 3D y sincronización de calendario.
 
 Las pruebas reales anteriores validaron tres cuentas, incluida una con una materia sin horas. No demostraron una etiqueta explícita de asincronía ni todos los formatos posibles del portal. Los nuevos marcadores se verifican con fixtures sintéticos. No se almacenan aquí identidades, contraseñas ni horarios personales.
 
