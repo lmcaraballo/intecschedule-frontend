@@ -16,6 +16,7 @@ import { CampusPreview } from '../campus/CampusPreview';
 import { getInstitutionalNotice, getInstitutionalPeriod } from '../institutional/institutionalCalendar';
 import { dateKey } from '../../utils/dateFormat';
 import { Button } from '../../components/Button';
+import { useInstitutionalCalendar } from '../institutional/InstitutionalCalendarProvider';
 
 const greetings = { morning: 'Buenos días', day: 'A tu ritmo', sunset: 'Buenas tardes', night: 'Buenas noches' };
 
@@ -25,6 +26,7 @@ export function NowPage() {
   const online = useNetworkStatus();
   const institutionalNotice = getInstitutionalNotice(now);
   const period = getInstitutionalPeriod(now);
+  const institutionalCalendar = useInstitutionalCalendar();
   const finishedEarlyClass = status.today.find((item) => classOverrides[`${dateKey(now)}:${item.id}`]);
   // This value is derived from the current clock and schedule. It is never persisted.
   const campusClass = status.current ?? status.next?.academicClass;
@@ -51,6 +53,6 @@ export function NowPage() {
     </div>
     {preferences.showUnscheduledSubjects && <UnscheduledSubjects schedule={session.schedule} />}
     <LastUpdated fetchedAt={session.schedule.fetchedAt} />
-    {period && <p className="schedule-note"><Icon name="calendar" width="16" height="16" /> {period.title} · horario válido hasta el {period.endsOn.split('-').reverse().join('/')}.</p>}
+    {period && <p className="schedule-note"><Icon name="calendar" width="16" height="16" /><span>{period.title} · horario válido hasta el {period.endsOn.split('-').reverse().join('/')} · <a href={period.sourceUrl} target="_blank" rel="noopener noreferrer">fuente INTEC</a> (actualizada el {formatDate(new Date(institutionalCalendar.lastUpdatedAt), { day: 'numeric', month: 'long', year: 'numeric' })}).</span></p>}
   </main>;
 }

@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { storedSession, key, login, demoPassword } from './helpers';
+import { institutionalPeriods } from '../src/features/institutional/institutionalCalendar';
 
 const flat = (session: ReturnType<typeof storedSession>['session']) => ({student: session.student, ...session.schedule});
 test.beforeEach(async ({context}) => {
+  await context.route('**/api/calendar/institutional', route => route.fulfill({ json: institutionalPeriods }));
   await context.route('**/api/user/login', async route => {
     expect(route.request().method()).toBe('POST');
     expect(route.request().postDataJSON()).toEqual({studentId:'QA-STUDENT',password:demoPassword});

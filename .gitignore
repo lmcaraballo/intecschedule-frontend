@@ -1,6 +1,7 @@
 .idea
 *.js
 !jest.config.js
+!academicplanner-frontend/src/features/campus/threeD/*.js
 *.d.ts
 node_modules
 

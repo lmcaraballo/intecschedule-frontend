@@ -8,10 +8,11 @@ import { atTime, getTodayClasses } from '../schedule/scheduleDomain';
 import { dateKey, formatDate } from '../../utils/dateFormat';
 import { useCalendarConnection } from './CalendarConnectionProvider';
 import { createCalendarEvent, deleteCalendarEvent, listCalendarEvents, updateCalendarEvent } from './calendarApi';
+import { syncInstitutionalReminders, syncScheduleToCalendar } from './calendarSync';
 import { emptyEventDraft, type CalendarEvent, type EventDraft } from './eventSchema';
 
 export function EventsPage() {
-  const { session, now } = useAcademicSession();
+  const { session, now, preferences } = useAcademicSession();
   const connection = useCalendarConnection();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [draft, setDraft] = useState<EventDraft>(() => ({ ...emptyEventDraft(), date: dateKey(now), startTime: '16:00', endTime: '17:00' }));
@@ -20,6 +21,7 @@ export function EventsPage() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
 
   async function refresh(token = connection.token) {
     if (!token) return;
@@ -27,12 +29,35 @@ export function EventsPage() {
     setError(null);
     const from = new Date(now);
     const to = new Date(now); to.setDate(to.getDate() + 180);
-    try { setEvents(await listCalendarEvents(token, from, to)); }
+    try { setEvents(await listCalendarEvents(token, from, to)); setLastSyncedAt(new Date()); }
     catch (caught) { setError(readableError(caught)); }
     finally { setBusy(false); }
   }
 
-  useEffect(() => { if (connection.token) void refresh(connection.token); else setEvents([]); }, [connection.token]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!connection.token) { setEvents([]); setLastSyncedAt(null); return; }
+    const token = connection.token;
+    void (async () => {
+      try {
+        await syncInstitutionalReminders(token, preferences.institutionalReminders, preferences.reminderMinutes);
+      } catch (caught) {
+        setError(readableError(caught));
+      }
+      await refresh(token);
+    })();
+  }, [connection.token, preferences.institutionalReminders, preferences.reminderMinutes]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function syncSchedule() {
+    if (!connection.token) return;
+    setBusy(true); setError(null); setMessage(null);
+    try {
+      const result = await syncScheduleToCalendar(connection.token, session);
+      await syncInstitutionalReminders(connection.token, preferences.institutionalReminders, preferences.reminderMinutes);
+      setMessage(`Horario sincronizado: ${result.created} creadas, ${result.updated} actualizadas y ${result.removed} retiradas. No se duplicaron ${result.unchanged} ocurrencias.`);
+      await refresh(connection.token);
+    } catch (caught) { setError(readableError(caught)); }
+    finally { setBusy(false); }
+  }
 
   const conflicts = useMemo(() => {
     if (!draft.date || !draft.startTime || !draft.endTime) return [];
@@ -52,7 +77,10 @@ export function EventsPage() {
     if (!connection.token) return;
     setBusy(true); setError(null); setMessage(null);
     try {
-      if (editing) await updateCalendarEvent(connection.token, editing.id, draft);
+      if (editing) await updateCalendarEvent(connection.token, editing.id, draft, {
+        sourceType: editing.sourceType,
+        reminderMinutes: editing.reminderMinutes,
+      });
       else await createCalendarEvent(connection.token, draft, crypto.randomUUID());
       setMessage(editing ? 'Evento actualizado en Google Calendar.' : 'Evento creado en Google Calendar.');
       setEditing(null);
@@ -100,7 +128,13 @@ export function EventsPage() {
         <div className="event-form-actions">{editing && <Button variant="secondary" onClick={() => { setEditing(null); setDraft({ ...emptyEventDraft(), date: dateKey(now), startTime: '16:00', endTime: '17:00' }); }}>Cancelar edición</Button>}<Button type="submit" disabled={busy}>{busy ? 'Guardando…' : editing ? 'Guardar cambios' : 'Crear evento'}</Button></div>
       </form></section>
 
-      <section className="event-list-section" aria-labelledby="event-list-title"><div className="section-heading"><h2 id="event-list-title">Próximos eventos</h2><Button variant="plain" disabled={busy} onClick={() => void refresh()}>Actualizar</Button></div>{message && <p role="status" className="event-success">{message}</p>}{error && <p role="alert" className="preference-warning">{error}</p>}{events.length ? <ol className="event-list">{events.map((event) => <li key={event.id} className="event-card"><div className="event-date"><strong>{formatDate(new Date(event.startAt), { day: 'numeric' })}</strong><span>{formatDate(new Date(event.startAt), { month: 'short' })}</span></div><div><h3>{event.title}</h3><p>{formatDate(new Date(event.startAt), { weekday: 'long', hour: 'numeric', minute: '2-digit' })} – {formatDate(new Date(event.endAt), { hour: 'numeric', minute: '2-digit' })}</p>{event.location && <p><Icon name="pin" width="14" height="14" /> {event.location}</p>}</div><div className="event-card-actions"><Button variant="plain" onClick={() => beginEdit(event)}>Editar</Button><Button variant="plain" onClick={() => setDeleting(event)}>Eliminar</Button></div></li>)}</ol> : <EmptyState compact icon="calendar" title={busy ? 'Sincronizando eventos…' : 'Todavía no tienes eventos'} description="Crea tu primera actividad y aparecerá en el calendario AcademicPlanner de Google." />}</section>
+      <section className="event-list-section" aria-labelledby="event-list-title">
+        <div className="section-heading"><div><h2 id="event-list-title">Próximos eventos</h2>{lastSyncedAt && <p className="event-sync-status">Última sincronización: {formatDate(lastSyncedAt, { hour: 'numeric', minute: '2-digit', hour12: true })}</p>}</div><div className="event-list-actions"><Button variant="secondary" disabled={busy} onClick={() => void syncSchedule()}>Sincronizar horario</Button><Button variant="plain" disabled={busy} onClick={() => void refresh()}>Actualizar desde Google</Button></div></div>
+        <p className="event-sync-rule">Los eventos personales y los creados directamente en este calendario toman su versión más reciente de Google. Las clases exportadas se actualizan desde el horario institucional al usar “Sincronizar horario”.</p>
+        {message && <p role="status" className="event-success">{message}</p>}
+        {error && <p role="alert" className="preference-warning">{error}</p>}
+        {events.length ? <ol className="event-list">{events.map((event) => <li key={event.id} className="event-card"><div className="event-date"><strong>{formatDate(new Date(event.startAt), { day: 'numeric' })}</strong><span>{formatDate(new Date(event.startAt), { month: 'short' })}</span></div><div><p className="section-label">{event.sourceType === 'schedule' ? 'Clase sincronizada' : event.sourceType === 'institutional' ? 'Fecha INTEC' : event.sourceType === 'google' ? 'Creado en Google' : 'Evento personal'}</p><h3>{event.title}</h3><p>{formatDate(new Date(event.startAt), { weekday: 'long', hour: 'numeric', minute: '2-digit' })} – {formatDate(new Date(event.endAt), { hour: 'numeric', minute: '2-digit' })}</p>{event.location && <p><Icon name="pin" width="14" height="14" /> {event.location}</p>}</div>{(event.sourceType === 'personal' || event.sourceType === 'google') && <div className="event-card-actions"><Button variant="plain" onClick={() => beginEdit(event)}>Editar</Button><Button variant="plain" onClick={() => setDeleting(event)}>Eliminar</Button></div>}</li>)}</ol> : <EmptyState compact icon="calendar" title={busy ? 'Sincronizando eventos…' : 'Todavía no tienes eventos'} description="Crea tu primera actividad o sincroniza tu horario para verlo en el calendario AcademicPlanner de Google." />}
+      </section>
     </div>}
     {deleting && <Dialog title="Eliminar evento" onClose={() => setDeleting(null)}><p>Se eliminará “{deleting.title}” del calendario AcademicPlanner de Google.</p><div className="dialog-actions"><Button variant="secondary" onClick={() => setDeleting(null)}>Cancelar</Button><Button disabled={busy} onClick={() => void confirmDelete()}>Eliminar</Button></div></Dialog>}
   </main>;

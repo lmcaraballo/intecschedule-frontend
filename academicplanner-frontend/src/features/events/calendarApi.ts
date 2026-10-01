@@ -12,6 +12,11 @@ export type CalendarConfig = z.infer<typeof configSchema>;
 
 const demoEvents: CalendarEvent[] = [];
 
+export interface CalendarEventOptions {
+  sourceType?: CalendarEvent['sourceType'];
+  reminderMinutes?: number | null;
+}
+
 async function parseResponse(response: Response) {
   if (response.ok) return response.status === 204 ? null : response.json();
   let code = 'UNKNOWN_ERROR';
@@ -31,8 +36,8 @@ export async function listCalendarEvents(token: string, from: Date, to: Date): P
   return calendarEventsSchema.parse(await parseResponse(response));
 }
 
-export async function createCalendarEvent(token: string, draft: EventDraft, sourceId: string): Promise<CalendarEvent> {
-  const payload = draftToPayload(draft, sourceId);
+export async function createCalendarEvent(token: string, draft: EventDraft, sourceId: string, options: CalendarEventOptions = {}): Promise<CalendarEvent> {
+  const payload = draftToPayload(draft, sourceId, options);
   if (isAcademicMock) {
     const existing = demoEvents.find((event) => event.sourceId === sourceId);
     if (existing) return existing;
@@ -45,8 +50,8 @@ export async function createCalendarEvent(token: string, draft: EventDraft, sour
   return calendarEventSchema.parse(await parseResponse(response));
 }
 
-export async function updateCalendarEvent(token: string, id: string, draft: EventDraft): Promise<CalendarEvent> {
-  const payload = draftToPayload(draft);
+export async function updateCalendarEvent(token: string, id: string, draft: EventDraft, options: CalendarEventOptions = {}): Promise<CalendarEvent> {
+  const payload = draftToPayload(draft, crypto.randomUUID(), options);
   if (isAcademicMock) {
     const index = demoEvents.findIndex((event) => event.id === id);
     if (index < 0) throw new Error('EVENT_NOT_FOUND');
@@ -55,7 +60,7 @@ export async function updateCalendarEvent(token: string, id: string, draft: Even
     demoEvents[index] = updated;
     return updated;
   }
-  const { sourceId: _, ...changes } = payload;
+  const { sourceId: _, sourceType: __, ...changes } = payload;
   const response = await fetch(`/api/events/${encodeURIComponent(id)}`, { method: 'PATCH', headers: jsonHeaders(token), body: JSON.stringify(changes) });
   return calendarEventSchema.parse(await parseResponse(response));
 }
@@ -73,7 +78,7 @@ function jsonHeaders(token: string) {
   return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 }
 
-function draftToPayload(draft: EventDraft, sourceId: string = crypto.randomUUID()) {
+function draftToPayload(draft: EventDraft, sourceId: string = crypto.randomUUID(), options: CalendarEventOptions = {}) {
   const start = new Date(`${draft.date}T${draft.startTime}:00`);
   const end = new Date(`${draft.date}T${draft.endTime}:00`);
   if (!draft.title.trim() || !draft.date || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) throw new Error('INVALID_EVENT_DATA');
@@ -85,5 +90,7 @@ function draftToPayload(draft: EventDraft, sourceId: string = crypto.randomUUID(
     timezone: 'America/Santo_Domingo',
     location: draft.location.trim() || null,
     sourceId,
+    sourceType: options.sourceType ?? 'personal',
+    reminderMinutes: options.reminderMinutes ?? null,
   };
 }

@@ -3,6 +3,16 @@ import { dateKey, formatDate } from '../../utils/dateFormat';
 export type InstitutionalDateKind = 'no_class' | 'milestone';
 export interface InstitutionalDate { date: string; kind: InstitutionalDateKind; title: string; detail: string; }
 export interface InstitutionalNotice extends InstitutionalDate { daysUntil: number; isUpcoming: boolean; }
+export interface InstitutionalPeriod {
+  id: string;
+  title: string;
+  startsOn: string;
+  endsOn: string;
+  timezone: string;
+  sourceUrl: string;
+  updatedAt: string;
+  dates: InstitutionalDate[];
+}
 
 // Fuente institucional revisada para el trimestre agosto–octubre de 2026.
 // Este registro versionado sustituye al horario semanal infinito. Cuando INTEC
@@ -14,6 +24,7 @@ export const institutionalPeriods = [{
   endsOn: '2026-10-17',
   timezone: 'America/Santo_Domingo',
   sourceUrl: 'https://www.intec.edu.do/estudiantes/calendarios/calendario-trimestral',
+  updatedAt: '2026-09-28T00:00:00-04:00',
   dates: [
     { date: '2026-08-16', kind: 'no_class', title: 'Día de la Restauración', detail: 'No hay actividades académicas por el feriado nacional.' },
     { date: '2026-09-24', kind: 'no_class', title: 'Feriado nacional', detail: 'No hay docencia programada.' },
@@ -22,16 +33,26 @@ export const institutionalPeriods = [{
     { date: '2026-10-12', kind: 'milestone', title: 'Última semana de docencia', detail: 'Revisa entregas, evaluaciones y cambios confirmados.' },
     { date: '2026-10-17', kind: 'milestone', title: 'Finaliza la docencia', detail: 'El próximo período se mostrará cuando INTEC publique su calendario.' },
   ] satisfies InstitutionalDate[],
-}] as const;
+}] satisfies InstitutionalPeriod[];
+
+let activeInstitutionalPeriods: InstitutionalPeriod[] = institutionalPeriods;
+
+export function setInstitutionalPeriods(periods: InstitutionalPeriod[]) {
+  activeInstitutionalPeriods = periods.length ? periods : institutionalPeriods;
+}
+
+export function getInstitutionalPeriods(): InstitutionalPeriod[] {
+  return activeInstitutionalPeriods;
+}
 
 export function getInstitutionalPeriod(date: Date) {
   const key = dateKey(date);
-  return institutionalPeriods.find((period) => period.startsOn <= key && key <= period.endsOn) ?? null;
+  return activeInstitutionalPeriods.find((period) => period.startsOn <= key && key <= period.endsOn) ?? null;
 }
 
 export function getInstitutionalDate(date: Date): InstitutionalDate | null {
   const key = dateKey(date);
-  return institutionalPeriods.flatMap((period) => period.dates).find((entry) => entry.date === key) ?? null;
+  return activeInstitutionalPeriods.flatMap((period) => period.dates).find((entry) => entry.date === key) ?? null;
 }
 
 export function isTeachingDate(date: Date): boolean {
@@ -41,7 +62,7 @@ export function isTeachingDate(date: Date): boolean {
 
 export function getNextInstitutionalDate(now: Date): InstitutionalDate | null {
   const key = dateKey(now);
-  return institutionalPeriods.flatMap((period) => period.dates).find((entry) => entry.date >= key) ?? null;
+  return activeInstitutionalPeriods.flatMap((period) => period.dates).find((entry) => entry.date >= key) ?? null;
 }
 
 /** Upcoming milestones must read as future notices, never as if they were happening today. */

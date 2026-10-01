@@ -14,6 +14,7 @@ export function Campus3DPreview({ academicClass, timing }: { academicClass: Acad
   const mapController = useRef<{ highlightBuilding(code?: string): void; focusCamera(code: string): void; zoomBy(amount: number): void; destroy(): void } | undefined>(undefined);
   const [unavailable, setUnavailable] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const titleId = useId();
   const instructionsId = useId();
   const title = timing === 'current' ? 'Maqueta 3D de tu clase en curso' : timing === 'next' ? 'Maqueta 3D de tu próxima clase' : 'Ubicación 3D en el campus';
@@ -50,7 +51,7 @@ export function Campus3DPreview({ academicClass, timing }: { academicClass: Acad
       if (mapController.current === controller) mapController.current = undefined;
       controller?.destroy();
     };
-  }, [building, timing]);
+  }, [building, timing, loadAttempt]);
 
   if (isVirtualLocation(academicClass.location)) {
     const virtualTitle = timing === 'current' ? 'Tu clase en curso es virtual' : timing === 'next' ? 'Tu próxima clase es virtual' : 'Este encuentro es virtual';
@@ -81,6 +82,6 @@ export function Campus3DPreview({ academicClass, timing }: { academicClass: Acad
       </div>
       <p id={instructionsId} className="campus-map-instructions">Arrastra para explorar. Usa los controles para ajustar la vista.</p>
     </div>
-    <div className="campus-preview__details"><div><Icon name="pin" /><span><strong>{building.name}</strong><small>{academicClass.location}</small></span></div><p>{unavailable ? 'La maqueta 3D no pudo cargarse en este navegador.' : 'Edificio resaltado. La cámara conserva una vista clara del entorno inmediato.'}</p></div>
+    <div className="campus-preview__details"><div><Icon name="pin" /><span><strong>{building.name}</strong><small>{academicClass.location}</small></span></div>{unavailable ? <div className="campus-map-recovery" role="alert"><p>La maqueta 3D no pudo cargarse. La ubicación escrita sigue disponible.</p><button type="button" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>Volver a intentar</button></div> : <p>Edificio resaltado. La cámara conserva una vista clara del entorno inmediato.</p>}</div>
   </section>;
 }

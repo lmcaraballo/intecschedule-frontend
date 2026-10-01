@@ -9,6 +9,8 @@ export const calendarEventSchema = z.object({
   timezone: z.string().min(1),
   location: z.string().nullable(),
   sourceId: z.string().uuid(),
+  sourceType: z.enum(['personal', 'schedule', 'institutional', 'google']).default('personal'),
+  reminderMinutes: z.number().int().min(0).max(10080).nullable().default(null),
   createdAt: z.iso.datetime({ offset: true }),
   updatedAt: z.iso.datetime({ offset: true }),
   revision: z.number().int().nonnegative(),

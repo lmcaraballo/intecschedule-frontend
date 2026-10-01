@@ -171,6 +171,38 @@ test('service worker does not intercept API navigation',async({page})=>{
   expect(response?.fromServiceWorker()).toBe(false);
 });
 
+test('Google Calendar demo synchronizes without duplicates and supports personal event CRUD', async ({ page }) => {
+  await seed(page);
+  await page.goto('/eventos');
+  await page.getByRole('button', { name: 'Conectar Google Calendar' }).click();
+  await expect(page.getByRole('heading', { name: 'Próximos eventos' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Sincronizar horario' }).click();
+  await expect(page.getByRole('status')).toContainText('Horario sincronizado');
+  await expect(page.getByText('Clase sincronizada').first()).toBeVisible();
+  await page.getByRole('button', { name: 'Sincronizar horario' }).click();
+  await expect(page.getByRole('status')).toContainText(/No se duplicaron [1-9]/);
+
+  await page.getByLabel('Título').fill('Preparar exposición QA');
+  await page.getByLabel('Fecha').fill('2026-10-08');
+  await page.getByLabel('Inicio', { exact: true }).fill('16:00');
+  await page.getByLabel('Fin', { exact: true }).fill('17:00');
+  await page.getByLabel(/Lugar/).fill('Biblioteca');
+  await page.getByRole('button', { name: 'Crear evento' }).click();
+  await expect(page.getByRole('heading', { name: 'Preparar exposición QA' })).toBeVisible();
+
+  const personalCard = page.getByRole('listitem').filter({ hasText: 'Preparar exposición QA' });
+  await personalCard.getByRole('button', { name: 'Editar' }).click();
+  await page.getByLabel('Título').fill('Preparar exposición final QA');
+  await page.getByRole('button', { name: 'Guardar cambios' }).click();
+  await expect(page.getByRole('heading', { name: 'Preparar exposición final QA' })).toBeVisible();
+
+  const updatedCard = page.getByRole('listitem').filter({ hasText: 'Preparar exposición final QA' });
+  await updatedCard.getByRole('button', { name: 'Eliminar' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Eliminar', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Preparar exposición final QA' })).toHaveCount(0);
+});
+
 for (const width of [320,390,640,768,1440]) {
   test(`200% font reflow, touch targets and short viewport at ${width}px`,async({page})=>{
     await page.setViewportSize({width,height:450});await seed(page);

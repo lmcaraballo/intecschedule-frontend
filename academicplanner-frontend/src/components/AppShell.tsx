@@ -11,12 +11,15 @@ import { LastValidSchedule } from './LastValidSchedule';
 import { useNetworkStatus } from '../utils/useNetworkStatus';
 import { useLocalData } from '../app/LocalDataProvider';
 import { defaultPreferences, getStartPath } from '../features/preferences/preferences';
+import { useInstitutionalCalendar } from '../features/institutional/InstitutionalCalendarProvider';
+import { formatDate } from '../utils/dateFormat';
 
 export function AppShell() {
   const { theme, preference, setPreference, storageWarning } = useTheme();
   const { pathname } = useLocation();
   const online = useNetworkStatus();
   const { data, usingLastValid } = useLocalData();
+  const institutionalCalendar = useInstitutionalCalendar();
   const session = data?.session;
   const academic = ['/ahora', '/horario', '/eventos', '/mas'].includes(pathname);
   const startPath = getStartPath(data?.preferences ?? defaultPreferences);
@@ -31,10 +34,11 @@ export function AppShell() {
           <Button variant="plain" className="theme-toggle" aria-label={theme === 'day' ? 'Activar tema nocturno' : 'Activar tema de día'} onClick={() => setPreference(theme === 'day' ? 'night' : 'day')}><Icon name={theme === 'day' ? 'moon' : 'sun'} /></Button>
         </div>
       </header>
-      {(!online || storageWarning || (academic && session && usingLastValid)) && <div className="shell-warning shell-notices">
+      {(!online || storageWarning || institutionalCalendar.status === 'stale' || (academic && session && usingLastValid)) && <div className="shell-warning shell-notices">
         {!online && <OfflineState hasSchedule={Boolean(session)} />}
         {academic && session && (usingLastValid || !online) && <LastValidSchedule session={session} />}
         {storageWarning && <StatusBanner tone="warning">El tema cambió, pero no pudimos guardar tu preferencia en este dispositivo.</StatusBanner>}
+        {institutionalCalendar.status === 'stale' && <StatusBanner tone="warning">No pudimos actualizar el calendario institucional. Se muestra la última versión válida, actualizada el {formatDate(new Date(institutionalCalendar.lastUpdatedAt), { day: 'numeric', month: 'long', year: 'numeric' })}.</StatusBanner>}
       </div>}
       <Outlet />
       <footer className="site-footer"><span>Hecho para tu ritmo.</span><span className="footer-note"><span aria-hidden="true" className="small-dot" /> Un espacio para enfocarte</span></footer>
