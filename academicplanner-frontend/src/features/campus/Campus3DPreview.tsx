@@ -14,6 +14,7 @@ export function Campus3DPreview({ academicClass, timing }: { academicClass: Acad
   const mapController = useRef<{ highlightBuilding(code?: string): void; focusCamera(code: string): void; zoomBy(amount: number): void; destroy(): void } | undefined>(undefined);
   const [unavailable, setUnavailable] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
+  const [cameraView, setCameraView] = useState<'building' | 'campus'>('building');
   const [loadAttempt, setLoadAttempt] = useState(0);
   const titleId = useId();
   const instructionsId = useId();
@@ -28,6 +29,7 @@ export function Campus3DPreview({ academicClass, timing }: { academicClass: Acad
     let cancelled = false;
     setUnavailable(false);
     setIsMapReady(false);
+    setCameraView('building');
     let controller: { highlightBuilding(code?: string): void; focusCamera(code: string): void; zoomBy(amount: number): void; destroy(): void } | undefined;
 
     const handleMapReady = () => setIsMapReady(true);
@@ -78,8 +80,8 @@ export function Campus3DPreview({ academicClass, timing }: { academicClass: Acad
       <div className="campus-map-controls" role="group" aria-label="Controles de la maqueta 3D">
         <button type="button" onClick={() => mapController.current?.zoomBy(0.65)} disabled={!isMapReady} aria-label="Acercar mapa" title="Acercar">+</button>
         <button type="button" onClick={() => mapController.current?.zoomBy(-0.65)} disabled={!isMapReady} aria-label="Alejar mapa" title="Alejar">−</button>
-        <button type="button" onClick={() => mapController.current?.focusCamera(building.code)} disabled={!isMapReady} aria-label={`Enfocar ${building.name}`}>Edificio</button>
-        <button type="button" onClick={() => mapController.current?.focusCamera('campus')} disabled={!isMapReady} aria-label="Ver campus completo">Campus</button>
+        <button type="button" onClick={() => { mapController.current?.focusCamera(building.code); setCameraView('building'); }} disabled={!isMapReady} aria-pressed={cameraView === 'building'} aria-label={`Enfocar ${building.name}`}>Edificio</button>
+        <button type="button" onClick={() => { mapController.current?.focusCamera('campus'); setCameraView('campus'); }} disabled={!isMapReady} aria-pressed={cameraView === 'campus'} aria-label="Ver campus completo">Campus</button>
       </div>
       <p id={instructionsId} className="campus-map-instructions">Arrastra para explorar. Usa los controles para ajustar la vista.</p>
     </div>

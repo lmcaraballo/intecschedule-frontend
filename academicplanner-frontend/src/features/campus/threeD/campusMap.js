@@ -285,9 +285,9 @@ function getFocusedCamera(presetId, containerWidth, compact) {
     // demasiado el edificio. Conservamos el volumen 3D y el contexto cercano.
     if (!compact) return preset;
     if (containerWidth <= 420) {
-        return { ...preset, zoom: Math.min(preset.zoom || 17, 18.05), pitch: Math.min(preset.pitch ?? 52, 49) };
+        return { ...preset, zoom: Math.min(preset.zoom || 17, 18.18), pitch: Math.min(preset.pitch ?? 52, 50) };
     }
-    return { ...preset, zoom: Math.min(preset.zoom || 17, 18.3), pitch: Math.min(preset.pitch ?? 52, 52) };
+    return { ...preset, zoom: Math.min(preset.zoom || 17, 18.48), pitch: Math.min(preset.pitch ?? 52, 55) };
 }
 
 function moveCamera(map, camera, compact) {
@@ -331,7 +331,7 @@ export function initCampusMap(containerId, options = {}) {
                 {
                     id: 'background',
                     type: 'background',
-                    paint: { 'background-color': '#FFFFFF' }
+                    paint: { 'background-color': '#EEF3EA' }
                 }
             ]
         },
@@ -1117,8 +1117,8 @@ export function initCampusMap(containerId, options = {}) {
                 'text-size': ['interpolate', ['linear'], ['zoom'], 16, 8.5, 19, 11],
                 'text-line-height': 1.1,
                 'text-max-width': 10,
-                'text-allow-overlap': true,
-                'text-ignore-placement': true
+                'text-allow-overlap': false,
+                'text-ignore-placement': false
             },
             paint: {
                 'text-color': '#514C45',
@@ -1172,7 +1172,9 @@ export function initCampusMap(containerId, options = {}) {
             id: 'campus-key-poi-labels',
             type: 'symbol',
             source: 'campus-pois',
-            filter: ['any', ['==', ['get', 'type'], 'cafeteria'], ['==', ['get', 'type'], 'plaza']],
+            // La cafetería tiene una etiqueta superior propia; repetirla aquí
+            // superponía dos textos al enfocar FD en tarjetas angostas.
+            filter: ['==', ['get', 'type'], 'plaza'],
             layout: {
                 'text-field': ['get', 'name'],
                 'text-font': ['Open Sans Bold'],
@@ -1180,8 +1182,8 @@ export function initCampusMap(containerId, options = {}) {
                 'text-offset': [0, 1.4],
                 'text-anchor': 'top',
                 'text-max-width': 9,
-                'text-allow-overlap': true,
-                'text-ignore-placement': true
+                'text-allow-overlap': false,
+                'text-ignore-placement': false
             },
             paint: {
                 'text-color': '#39342E',
@@ -1512,10 +1514,10 @@ export function initCampusMap(containerId, options = {}) {
                 'text-field': ['get', 'name'],
                 'text-font': ['Open Sans Bold'],
                 'text-size': ['interpolate', ['linear'], ['zoom'], 17, 9, 19, 12],
-                'text-offset': [1.5, -0.2],
-                'text-anchor': 'left',
-                'text-allow-overlap': true,
-                'text-ignore-placement': true
+                'text-variable-anchor': ['top', 'left', 'right', 'bottom'],
+                'text-radial-offset': 0.9,
+                'text-allow-overlap': false,
+                'text-ignore-placement': false
             },
             paint: {
                 'text-color': '#A90022',
@@ -1633,7 +1635,7 @@ export function initCampusMap(containerId, options = {}) {
             if (!map.isStyleLoaded()) return;
             const isNight = themeId === 'night';
             // El campus conserva la mayor jerarquía; el contexto queda desaturado.
-            map.setPaintProperty('background', 'background-color', isNight ? '#F8F8F6' : '#FFFFFF');
+            map.setPaintProperty('background', 'background-color', isNight ? '#E5ECE3' : '#EEF3EA');
             map.setPaintProperty('campus-ground', 'fill-color', isNight ? '#E8E3DA' : '#F2EDE4');
             map.setPaintProperty('buildings-base', 'fill-color', buildingWallColor(isNight));
             map.setPaintProperty('buildings-3d', 'fill-extrusion-color', buildingWallColor(isNight));

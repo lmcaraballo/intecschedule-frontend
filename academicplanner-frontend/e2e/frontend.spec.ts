@@ -34,6 +34,52 @@ test('ambient breeze stays decorative and honors reduced motion', async ({ page 
   await expect(page.locator('.breeze-background')).toBeHidden();
 });
 
+test('bottom navigation stays tactile, above content and clear at the page end', async ({ page }) => {
+  await page.setViewportSize({ width: 954, height: 911 });
+  await seed(page);
+  await page.goto('/ahora');
+  const nav = page.getByRole('navigation', { name: 'Navegación principal' });
+  const active = nav.getByRole('link', { name: 'Ahora', exact: true });
+  await expect(nav).toBeVisible();
+  expect(await nav.evaluate((element) => getComputedStyle(element).position)).toBe('fixed');
+  expect(await nav.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
+  expect(await active.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
+  expect(await active.evaluate((element) => getComputedStyle(element).transform)).not.toBe('none');
+
+  const centerIsNavigation = await active.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return Boolean(document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)?.closest('.primary-nav'));
+  });
+  expect(centerIsNavigation).toBe(true);
+
+  await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+  const clearance = await page.evaluate(() => {
+    const navRect = document.querySelector('.primary-nav')!.getBoundingClientRect();
+    const footerRect = document.querySelector('.site-footer')!.getBoundingClientRect();
+    return navRect.top - footerRect.bottom;
+  });
+  expect(clearance).toBeGreaterThanOrEqual(8);
+});
+
+test('campus model keeps controls out of the map caption and reports the active camera', async ({ page }) => {
+  await page.setViewportSize({ width: 954, height: 911 });
+  await seed(page);
+  await page.goto('/ahora');
+  const controls = page.getByRole('group', { name: 'Controles de la maqueta 3D' });
+  await expect(controls.getByRole('button', { name: /Enfocar/ })).toBeEnabled();
+  await expect(controls.getByRole('button', { name: /Enfocar/ })).toHaveAttribute('aria-pressed', 'true');
+  await controls.getByRole('button', { name: 'Ver campus completo' }).click();
+  await expect(controls.getByRole('button', { name: 'Ver campus completo' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(controls.getByRole('button', { name: /Enfocar/ })).toHaveAttribute('aria-pressed', 'false');
+  const overlap = await page.evaluate(() => {
+    const controlsRect = document.querySelector('.campus-map-controls')!.getBoundingClientRect();
+    const captionRect = document.querySelector('.campus-map-instructions')!.getBoundingClientRect();
+    return Math.max(0, Math.min(controlsRect.right, captionRect.right) - Math.max(controlsRect.left, captionRect.left))
+      * Math.max(0, Math.min(controlsRect.bottom, captionRect.bottom) - Math.max(controlsRect.top, captionRect.top));
+  });
+  expect(overlap).toBe(0);
+});
+
 test('access validation, Enter, repeated submission, privacy, reload and detail keyboard', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Continuar', exact: true }).click();
