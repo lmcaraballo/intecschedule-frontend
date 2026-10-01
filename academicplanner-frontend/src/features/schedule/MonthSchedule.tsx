@@ -26,22 +26,27 @@ export function MonthSchedule({ schedule, selected, now, showInstitutionalDates,
   const month = selected.getMonth();
 
   return <section className="month-schedule" aria-label={`Horario mensual de ${formatDate(selected, { month: 'long', year: 'numeric' })}`}>
-    <div className="month-weekdays" aria-hidden="true">{weekdayNames.map((name) => <span key={name}>{name.slice(0, 3)}</span>)}</div>
-    <div className="month-grid">{days.map((date) => {
+    <div className="month-calendar">
+      <div className="month-weekdays" aria-hidden="true">{weekdayNames.map((name) => <span key={name}>{name.slice(0, 3)}</span>)}</div>
+      <div className="month-grid">{days.map((date) => {
       const classes = getTodayClasses(schedule, date);
       const institutional = showInstitutionalDates ? getInstitutionalDate(date) : undefined;
       const outside = date.getMonth() !== month;
+      const selectedDay = isSameDay(date, selected);
+      const today = isSameDay(date, now);
+      const weekend = isoWeekday(date) >= 6;
       const description = [formatDate(date), `${classes.length} ${classes.length === 1 ? 'clase' : 'clases'}`, institutional?.title].filter(Boolean).join('. ');
       return <Button
         variant="plain"
         type="button"
         key={dateKey(date)}
-        className={`month-day${outside ? ' month-day--outside' : ''}${isSameDay(date, now) ? ' month-day--today' : ''}${institutional ? ' month-day--institutional' : ''}`}
+        className={`month-day${outside ? ' month-day--outside' : ''}${weekend ? ' month-day--weekend' : ''}${today ? ' month-day--today' : ''}${selectedDay ? ' month-day--selected' : ''}${institutional ? ' month-day--institutional' : ''}${institutional?.kind === 'no_class' ? ' month-day--no-class' : ''}`}
         aria-label={description}
-        aria-current={isSameDay(date, now) ? 'date' : undefined}
+        aria-current={today ? 'date' : undefined}
+        aria-pressed={selectedDay}
         onClick={() => onSelectDay(date)}
       >
-        <span className="month-day__number">{date.getDate()}</span>
+        <span className="month-day__top"><span className="month-day__number">{date.getDate()}</span>{today && <span className="month-day__today-label">Hoy</span>}</span>
         {institutional && <span className="month-day__institutional" title={institutional.title}>{institutional.title}</span>}
         {classes.length > 0 && <>
           <span className="month-day__count">{classes.length} {classes.length === 1 ? 'clase' : 'clases'}</span>
@@ -49,6 +54,10 @@ export function MonthSchedule({ schedule, selected, now, showInstitutionalDates,
         </>}
       </Button>;
     })}</div>
-    <p className="month-schedule__hint">Selecciona un día para ver sus clases y detalles.</p>
+    </div>
+    <div className="month-schedule__footer">
+      <p className="month-schedule__hint">Selecciona un día para ver sus clases y detalles.</p>
+      <div className="month-legend" aria-label="Leyenda del calendario"><span><i className="month-legend__class" /> Clase</span><span><i className="month-legend__date" /> Fecha INTEC</span></div>
+    </div>
   </section>;
 }

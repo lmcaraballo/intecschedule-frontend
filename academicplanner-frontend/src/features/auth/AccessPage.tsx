@@ -29,6 +29,10 @@ export function AccessPage() {
         <span className="eyebrow"><span className="small-dot" /> TU VIDA ACADÉMICA, EN ORDEN</span>
         <h1 id="welcome-title">Un poco de orden.<br /><em>Más espacio<br className="desktop-break" /> para ti.</em></h1>
         <p className="welcome__description">Tus clases, tu tiempo, tu ritmo.<br />Empieza por tener tu horario en un solo lugar.</p>
+        <ul className="welcome__benefits" aria-label="Ventajas de AcademicPlanner">
+          <li><Icon name="calendar" /><span><strong>Tu semana, clara</strong><small>Clases y fechas INTEC en contexto.</small></span></li>
+          <li><Icon name="lock" /><span><strong>Privado por diseño</strong><small>Tu contraseña nunca se guarda.</small></span></li>
+        </ul>
         <div className="quiet-art" aria-hidden="true">
           <div className="orbit orbit--one" /><div className="orbit orbit--two" />
           <div className="paper paper--back" />
