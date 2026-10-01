@@ -226,6 +226,16 @@ function createMapPattern(map, id, draw, size = 32) {
     map.addImage(id, context.getImageData(0, 0, canvas.width, canvas.height), { pixelRatio: 2 });
 }
 
+function escapeMapText(value) {
+    return String(value ?? '').replace(/[&<>'"]/g, character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;'
+    })[character]);
+}
+
 // Pre-compute centroids for parking labels
 function computeCentroids(featureCollection) {
     return {
@@ -1878,14 +1888,8 @@ export function initCampusMap(containerId, options = {}) {
         map.on('mouseenter', 'buildings-3d', () => { map.getCanvas().style.cursor = 'pointer'; });
         map.on('mouseleave', 'buildings-3d', () => { map.getCanvas().style.cursor = ''; });
 
-        // ── Popup reutilizable ──
-        const popup = new maplibregl.Popup({
-            closeButton: true,
-            closeOnClick: false,
-            className: 'campus-popup',
-            maxWidth: '240px',
-            offset: [0, -10]
-        });
+        // ── Ficha reutilizable, compacta y colocada al lado del volumen ──
+        let popup = null;
 
         // ── Click en edificio: popup con datos oficiales ──
         map.on('click', 'buildings-3d', (e) => {
@@ -1899,36 +1903,73 @@ export function initCampusMap(containerId, options = {}) {
                 options.onBuildingSelect?.({ code, name: props.name || props.shortName || code });
             }
 
-            // Build facilities list from JSON string
+            // Muestra primero lo esencial y deja el inventario largo bajo
+            // divulgación progresiva para no cubrir la maqueta completa.
             let facilitiesList = '';
             try {
                 const facs = typeof props.facilities === 'string'
                     ? JSON.parse(props.facilities)
                     : (props.facilities || []);
                 if (facs.length > 0) {
-                    facilitiesList = `<ul class="popup-facilities">${facs.slice(0, 5).map(f => `<li>${f}</li>`).join('')}${facs.length > 5 ? `<li class="popup-more">+${facs.length - 5} más...</li>` : ''}</ul>`;
+                    const primaryFacilities = facs.slice(0, 3);
+                    const remainingFacilities = facs.slice(3);
+                    const primaryList = `<ul class="popup-facilities">${primaryFacilities.map(f => `<li>${escapeMapText(f)}</li>`).join('')}</ul>`;
+                    const remainingList = remainingFacilities.length > 0
+                        ? `<details class="popup-more"><summary>Ver ${remainingFacilities.length} espacio${remainingFacilities.length === 1 ? '' : 's'} más</summary><ul class="popup-facilities popup-facilities--more">${remainingFacilities.map(f => `<li>${escapeMapText(f)}</li>`).join('')}</ul></details>`
+                        : '';
+                    facilitiesList = `<div class="popup-body"><p class="popup-section-label">Espacios principales</p>${primaryList}${remainingList}</div>`;
                 }
             } catch {}
 
             const html = `
                 <div class="popup-header">
-                    <span class="popup-code">${code || '—'}</span>
-                    <span class="popup-name">${props.name || props.shortName || ''}</span>
+                    <span class="popup-code">${escapeMapText(code || '—')}</span>
+                    <span class="popup-name">${escapeMapText(props.name || props.shortName || '')}</span>
                 </div>
                 ${facilitiesList}
             `;
 
+            const mapWidth = container?.clientWidth || map.getCanvas().clientWidth;
+            const anchor = e.point.x <= mapWidth / 2 ? 'left' : 'right';
+            popup?.remove();
+            popup = new maplibregl.Popup({
+                closeButton: true,
+                closeOnClick: false,
+                className: `campus-popup campus-popup--${anchor}`,
+                maxWidth: '276px',
+                anchor,
+                offset: anchor === 'left' ? [18, 0] : [-18, 0]
+            });
             popup
                 .setLngLat(e.lngLat)
                 .setHTML(html)
                 .addTo(map);
+
+            const popupBody = popup.getElement()?.querySelector('.popup-body');
+            const moreDetails = popupBody?.querySelector('.popup-more');
+            moreDetails?.addEventListener('toggle', () => {
+                if (!moreDetails.open) {
+                    popupBody.scrollTo({ top: 0, behavior: 'auto' });
+                    return;
+                }
+                window.requestAnimationFrame(() => {
+                    const bodyTop = popupBody.getBoundingClientRect().top;
+                    const detailsTop = moreDetails.getBoundingClientRect().top;
+                    const nextTop = popupBody.scrollTop + detailsTop - bodyTop - 6;
+                    popupBody.scrollTo({
+                        top: Math.max(0, nextTop),
+                        behavior: selectionMotionIsReduced() ? 'auto' : 'smooth'
+                    });
+                });
+            });
         });
 
         // ── Click en fondo → cerrar popup y salir de focus ──
         map.on('click', (e) => {
             const features = map.queryRenderedFeatures(e.point, { layers: ['buildings-3d'] });
             if (features.length === 0) {
-                popup.remove();
+                popup?.remove();
+                popup = null;
             }
         });
 

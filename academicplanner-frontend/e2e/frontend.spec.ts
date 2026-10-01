@@ -81,6 +81,11 @@ test('day schedule controls read as one compact tactile workspace', async ({ pag
   expect(await scheduleCard.evaluate((element) => getComputedStyle(element).transform)).not.toBe('none');
 
   await page.goto('/ahora');
+  const nowHero = page.locator('.now-hero');
+  await expect(nowHero).toBeVisible();
+  expect(await nowHero.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
+  expect(await nowHero.locator('.day-status').evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
+  expect(await nowHero.getByRole('link', { name: /Ver horario/ }).evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
   const nowCard = page.locator('.now-page .class-card').first();
   expect(await nowCard.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
   expect(await nowCard.locator('.class-card__top > svg').evaluate((element) => getComputedStyle(element).borderRadius)).toBe('50%');
@@ -93,6 +98,26 @@ test('campus model keeps controls out of the map caption and reports the active 
   const controls = page.getByRole('group', { name: 'Controles de la maqueta 3D' });
   await expect(controls.getByRole('button', { name: /Enfocar/ })).toBeEnabled();
   await expect(controls.getByRole('button', { name: /Enfocar/ })).toHaveAttribute('aria-pressed', 'true');
+
+  const map = page.locator('.campus-3d-map');
+  await map.scrollIntoViewIfNeeded();
+  const mapBox = await map.boundingBox();
+  expect(mapBox).not.toBeNull();
+  await page.mouse.click(mapBox!.x + mapBox!.width * 0.5, mapBox!.y + mapBox!.height * 0.42);
+  const popup = page.locator('.campus-popup');
+  await expect(popup).toBeVisible();
+  await expect(popup.locator('.popup-code')).not.toHaveText('');
+  await expect(popup.locator('.popup-body > .popup-facilities > li')).toHaveCount(3);
+  const moreFacilities = popup.locator('.popup-more');
+  await expect(moreFacilities.locator('summary')).toHaveText(/Ver \d+ espacios más/);
+  const closeButtonBox = await popup.getByRole('button', { name: /Close popup|Cerrar/ }).boundingBox();
+  expect(closeButtonBox).not.toBeNull();
+  expect(closeButtonBox!.width).toBeGreaterThanOrEqual(36);
+  expect(closeButtonBox!.height).toBeGreaterThanOrEqual(36);
+  await moreFacilities.locator('summary').click();
+  expect(await moreFacilities.locator('.popup-facilities--more > li').count()).toBeGreaterThan(0);
+  await expect.poll(() => popup.locator('.popup-body').evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+
   await controls.getByRole('button', { name: 'Ver campus completo' }).click();
   await expect(controls.getByRole('button', { name: 'Ver campus completo' })).toHaveAttribute('aria-pressed', 'true');
   await expect(controls.getByRole('button', { name: /Enfocar/ })).toHaveAttribute('aria-pressed', 'false');

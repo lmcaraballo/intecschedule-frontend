@@ -31,8 +31,10 @@ export function NowPage() {
   // This value is derived from the current clock and schedule. It is never persisted.
   const campusClass = status.current ?? status.next?.academicClass;
   return <main id="main-content" className="academic-page now-page">
-    <header className="page-heading"><div><p className="page-eyebrow">{greetings[getContextualTheme(now)]} · tu espacio académico</p><h1 id="page-title" tabIndex={-1}>Ahora</h1><p className="page-date">{formatDate(now)} <span aria-hidden="true">· </span><time dateTime={now.toISOString()}>{formatDate(now, { hour: 'numeric', minute: '2-digit', hour12: true })}</time></p></div><Link className="quick-link" to="/horario">Ver horario <Icon name="arrow" width="17" height="17" /></Link></header>
-    <DayStatus status={status} hasUnscheduled={Boolean(session.schedule.unscheduledSubjects?.length)} />
+    <section className="now-hero" aria-label="Resumen de tu día">
+      <header className="page-heading"><div><p className="page-eyebrow">{greetings[getContextualTheme(now)]} · tu espacio académico</p><h1 id="page-title" tabIndex={-1}>Ahora</h1><p className="page-date">{formatDate(now)} <span aria-hidden="true">· </span><time dateTime={now.toISOString()}>{formatDate(now, { hour: 'numeric', minute: '2-digit', hour12: true })}</time></p></div><Link className="quick-link" to="/horario">Ver horario <Icon name="arrow" width="17" height="17" /></Link></header>
+      <DayStatus status={status} hasUnscheduled={Boolean(session.schedule.unscheduledSubjects?.length)} />
+    </section>
     {finishedEarlyClass && <section className="early-finish-notice" role="status"><div><strong>{finishedEarlyClass.subjectName}</strong><p>Marcaste esta clase como terminada antes. El horario institucional no cambió.</p></div><Button variant="plain" onClick={() => undoClassOverride(finishedEarlyClass)}>Deshacer</Button></section>}
     {preferences.showInstitutionalDates && institutionalNotice && <section className="institutional-note" aria-label="Calendario institucional"><Icon name="calendar" /><div><p className="section-label">{institutionalNotice.isUpcoming ? 'Próxima fecha INTEC' : 'Hoy en el calendario INTEC'}</p><h2>{institutionalNotice.title}</h2><p>{institutionalNotice.detail}</p></div></section>}
     <div className="now-columns">
