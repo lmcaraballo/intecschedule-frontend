@@ -109,6 +109,18 @@ test('campus model keeps controls out of the map caption and reports the active 
   const mapBox = await map.boundingBox();
   expect(mapBox).not.toBeNull();
   await page.mouse.click(mapBox!.x + mapBox!.width * 0.5, mapBox!.y + mapBox!.height * 0.42);
+  const expandedPreview = page.getByRole('dialog', { name: /Explorando/ });
+  await expect(expandedPreview).toBeVisible();
+  await expect(expandedPreview.getByRole('button', { name: 'Cerrar vista ampliada' })).toBeFocused();
+  expect(await expandedPreview.evaluate((element) => getComputedStyle(element).position)).toBe('fixed');
+  const navigationIsCovered = await page.evaluate(() => {
+    const navigation = document.querySelector('.primary-nav')!.getBoundingClientRect();
+    return Boolean(document.elementFromPoint(
+      navigation.left + navigation.width / 2,
+      navigation.top + navigation.height / 2,
+    )?.closest('.campus-preview--expanded'));
+  });
+  expect(navigationIsCovered).toBe(true);
   const popup = page.locator('.campus-popup');
   await expect(popup).toBeVisible();
   await expect(popup.locator('.popup-code')).not.toHaveText('');
@@ -122,6 +134,9 @@ test('campus model keeps controls out of the map caption and reports the active 
   await moreFacilities.locator('summary').click();
   expect(await moreFacilities.locator('.popup-facilities--more > li').count()).toBeGreaterThan(0);
   await expect.poll(() => popup.locator('.popup-body').evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+
+  await page.keyboard.press('Escape');
+  await expect(expandedPreview).toHaveCount(0);
 
   await controls.getByRole('button', { name: 'Ver campus completo' }).click();
   await expect(controls.getByRole('button', { name: 'Ver campus completo' })).toHaveAttribute('aria-pressed', 'true');
@@ -158,6 +173,9 @@ test('preference cards stay compact and provide clear control feedback', async (
 
 test('access validation, Enter, repeated submission, privacy, reload and detail keyboard', async ({ page }) => {
   await page.goto('/');
+  for (const selector of ['.welcome', '.access-card', '.continue-button']) {
+    expect(await page.locator(selector).evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
+  }
   await page.getByRole('button', { name: 'Continuar', exact: true }).click();
   await expect(page.getByLabel('Identificación o matrícula')).toBeFocused();
   await page.getByLabel('Identificación o matrícula').fill('  QA-Á🐝  ');

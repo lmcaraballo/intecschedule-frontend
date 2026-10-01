@@ -1551,8 +1551,8 @@ export function initCampusMap(containerId, options = {}) {
             }
         });
 
-        // Una veladura cálida ilumina el volumen activo sin sustituir su
-        // material, ventanas ni rasgos de fachada.
+        // El volumen activo se vuelve rojo por completo para que la selección
+        // sea inequívoca incluso entre edificios con fachadas similares.
         map.addLayer({
             id: 'building-selection-tint',
             type: 'fill-extrusion',
@@ -1560,14 +1560,14 @@ export function initCampusMap(containerId, options = {}) {
             filter: ['==', ['get', 'code'], ''],
             layout: { 'fill-extrusion-rounded-corner-distance': 0.22 },
             paint: {
-                'fill-extrusion-color': '#FFF0D2',
+                'fill-extrusion-color': '#B31734',
                 'fill-extrusion-height': [
-                    '*',
-                    ['coalesce', ['get', 'levels'], 2],
-                    CAMPUS_FLOOR_HEIGHT_METERS
+                    '+',
+                    ['*', ['coalesce', ['get', 'levels'], 2], CAMPUS_FLOOR_HEIGHT_METERS],
+                    0.9
                 ],
                 'fill-extrusion-base': 0,
-                'fill-extrusion-opacity': 0.1,
+                'fill-extrusion-opacity': 0.96,
                 'fill-extrusion-vertical-gradient': true,
                 'fill-extrusion-opacity-transition': { duration: 320 }
             }
@@ -1683,7 +1683,11 @@ export function initCampusMap(containerId, options = {}) {
             }
         });
 
-        // Halo de selección: conserva el material real del volumen.
+        // Mantiene el rojo de selección por encima de ventanas, murales,
+        // paneles y remates del techo para que se lea como un volumen único.
+        map.moveLayer('building-selection-tint');
+
+        // Halo de selección: refuerza el perímetro del volumen activo.
         map.addLayer({
             id: 'building-selection-halo',
             type: 'line',

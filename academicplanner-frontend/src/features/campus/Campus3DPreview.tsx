@@ -15,9 +15,12 @@ export function Campus3DPreview({ academicClass, timing }: { academicClass: Acad
   const [unavailable, setUnavailable] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
   const [cameraView, setCameraView] = useState<'building' | 'campus'>('building');
+  const [isExpanded, setIsExpanded] = useState(false);
   const [mapSelection, setMapSelection] = useState<{ code: string; name: string } | undefined>(
     building ? { code: building.code, name: building.name } : undefined,
   );
+  const previewElement = useRef<HTMLElement>(null);
+  const closeExpandedButton = useRef<HTMLButtonElement>(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const titleId = useId();
   const instructionsId = useId();
@@ -47,6 +50,7 @@ export function Campus3DPreview({ academicClass, timing }: { academicClass: Acad
           onBuildingSelect: (selection: { code: string; name: string }) => {
             setMapSelection(selection);
             setCameraView('building');
+            setIsExpanded(true);
           },
         });
         controller = nextController;
@@ -66,6 +70,45 @@ export function Campus3DPreview({ academicClass, timing }: { academicClass: Acad
     };
   }, [building, timing, loadAttempt]);
 
+  useEffect(() => {
+    if (!isExpanded) return;
+    const previousOverflow = document.body.style.overflow;
+    const containExpandedFocus = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsExpanded(false);
+        return;
+      }
+      if (event.key !== 'Tab' || !previewElement.current) return;
+      const focusable = Array.from(previewElement.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+      ));
+      const first = focusable.at(0);
+      const last = focusable.at(-1);
+      if (!first || !last) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', containExpandedFocus);
+    closeExpandedButton.current?.focus();
+    let refocusFrame = window.requestAnimationFrame(() => {
+      refocusFrame = window.requestAnimationFrame(() => {
+        mapController.current?.focusCamera(mapSelection?.code || building?.code || 'campus');
+      });
+    });
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', containExpandedFocus);
+      window.cancelAnimationFrame(refocusFrame);
+      mapElement.current?.querySelector<HTMLElement>('.maplibregl-canvas')?.focus();
+    };
+  }, [building?.code, isExpanded, mapSelection?.code]);
+
   if (isVirtualLocation(academicClass.location)) {
     const virtualTitle = timing === 'current' ? 'Tu clase en curso es virtual' : timing === 'next' ? 'Tu próxima clase es virtual' : 'Este encuentro es virtual';
     return <section className="campus-location-pending campus-location-virtual" aria-labelledby={titleId}>
@@ -83,8 +126,8 @@ export function Campus3DPreview({ academicClass, timing }: { academicClass: Acad
     </section>;
   }
 
-  return <section className={`campus-preview campus-preview--3d campus-preview--${timing}`} aria-labelledby={titleId}>
-    <div className="campus-preview__heading"><div><p className="section-label">Campus INTEC</p><h2 id={titleId}>{title}</h2></div><span>{building.code}</span></div>
+  return <section ref={previewElement} className={`campus-preview campus-preview--3d campus-preview--${timing}${isExpanded ? ' campus-preview--expanded' : ''}`} role={isExpanded ? 'dialog' : undefined} aria-modal={isExpanded || undefined} aria-labelledby={titleId}>
+    <div className="campus-preview__heading"><div><p className="section-label">Campus INTEC</p><h2 id={titleId}>{isExpanded ? `Explorando ${mapSelection?.name || building.name}` : title}</h2></div><div className="campus-preview__actions"><span>{mapSelection?.code || building.code}</span>{isExpanded && <button ref={closeExpandedButton} type="button" onClick={() => setIsExpanded(false)}><Icon name="close" width="16" height="16" />Cerrar vista ampliada</button>}</div></div>
     <div className="campus-3d-map-shell">
       <div className="campus-3d-map" ref={mapElement} role="region" aria-label={`Maqueta 3D del campus INTEC con ${mapSelection?.name || building.name} resaltado`} aria-describedby={instructionsId} />
       <div className="campus-map-controls" role="group" aria-label="Controles de la maqueta 3D">
@@ -93,8 +136,8 @@ export function Campus3DPreview({ academicClass, timing }: { academicClass: Acad
         <button type="button" onClick={() => { mapController.current?.highlightBuilding(building.code); mapController.current?.focusCamera(building.code); setMapSelection({ code: building.code, name: building.name }); setCameraView('building'); }} disabled={!isMapReady} aria-pressed={cameraView === 'building'} aria-label={`Enfocar ${building.name}`}>Edificio</button>
         <button type="button" onClick={() => { mapController.current?.focusCamera('campus'); setCameraView('campus'); }} disabled={!isMapReady} aria-pressed={cameraView === 'campus'} aria-label="Ver campus completo">Campus</button>
       </div>
-      <p id={instructionsId} className="campus-map-instructions">Arrastra para explorar. Usa los controles para ajustar la vista.</p>
+      <p id={instructionsId} className="campus-map-instructions">{isExpanded ? 'Vista ampliada. Arrastra para explorar y pulsa Esc para cerrar.' : 'Selecciona un edificio para ampliar. Arrastra para explorar.'}</p>
     </div>
-    <div className="campus-preview__details"><div><Icon name="pin" /><span><strong>{building.name}</strong><small>{academicClass.location}</small></span></div>{unavailable ? <div className="campus-map-recovery" role="alert"><p>La maqueta 3D no pudo cargarse. La ubicación escrita sigue disponible.</p><button type="button" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>Volver a intentar</button></div> : <p>Edificio resaltado. La cámara conserva una vista clara del entorno inmediato.</p>}</div>
+    <div className="campus-preview__details"><div><Icon name="pin" /><span><strong>{mapSelection?.name || building.name}</strong><small>{mapSelection?.code || academicClass.location}</small></span></div>{unavailable ? <div className="campus-map-recovery" role="alert"><p>La maqueta 3D no pudo cargarse. La ubicación escrita sigue disponible.</p><button type="button" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>Volver a intentar</button></div> : <p>Edificio resaltado en rojo. La cámara conserva una vista clara del entorno inmediato.</p>}</div>
   </section>;
 }
