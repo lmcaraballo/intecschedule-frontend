@@ -86,6 +86,7 @@ describe('academic day domain', () => {
     expect(getTodayClasses(schedule, new Date(2026, 8, 24, 9))).toEqual([]);
     expect(getCurrentClass(schedule, new Date(2026, 8, 24, 9))).toBeNull();
     expect(getNextClass(schedule, new Date(2026, 9, 19, 9))).toBeNull();
+    expect(getTodayClasses(schedule, new Date(2026, 10, 2, 9))).toEqual([]);
   });
 
   it('removes an early-finished class from the current state without changing the agenda', () => {

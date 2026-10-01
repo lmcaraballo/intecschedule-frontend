@@ -775,6 +775,17 @@
             "type": "string",
             "title": "Date"
           },
+          "endsOn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endson"
+          },
           "kind": {
             "type": "string",
             "enum": [

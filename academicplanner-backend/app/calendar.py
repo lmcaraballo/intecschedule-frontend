@@ -103,7 +103,10 @@ class GoogleCalendarConfig(BaseModel):
 
 
 class InstitutionalDate(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     date: str
+    ends_on: str | None = Field(default=None, alias="endsOn")
     kind: Literal["no_class", "milestone"]
     title: str
     detail: str
@@ -120,6 +123,40 @@ class InstitutionalPeriod(BaseModel):
     source_url: str = Field(alias="sourceUrl")
     updated_at: str = Field(alias="updatedAt")
     dates: list[InstitutionalDate]
+
+
+ANNUAL_CALENDAR_SOURCE = (
+    "https://www.intec.edu.do/estudiantes/calendarios/calendario-anual"
+)
+
+
+def _annual_period(
+    id_: str,
+    title: str,
+    starts_on: str,
+    ends_on: str,
+    dates: list[tuple[str, str, str, str] | tuple[str, str, str, str, str]],
+) -> InstitutionalPeriod:
+    entries = [
+        InstitutionalDate(
+            date=item[0],
+            kind=item[1],
+            title=item[2],
+            detail=item[3],
+            **({"endsOn": item[4]} if len(item) == 5 else {}),
+        )
+        for item in dates
+    ]
+    return InstitutionalPeriod(
+        id=id_,
+        title=title,
+        startsOn=starts_on,
+        endsOn=ends_on,
+        timezone="America/Santo_Domingo",
+        sourceUrl=ANNUAL_CALENDAR_SOURCE,
+        updatedAt="2026-10-01T00:00:00-04:00",
+        dates=entries,
+    )
 
 
 class GoogleCalendarService:
@@ -368,6 +405,7 @@ async def calendar_config():
     "/calendar/institutional",
     response_model=list[InstitutionalPeriod],
     response_model_by_alias=True,
+    response_model_exclude_none=True,
 )
 async def institutional_calendar():
     return [
@@ -377,7 +415,7 @@ async def institutional_calendar():
             startsOn="2026-08-03",
             endsOn="2026-10-17",
             timezone="America/Santo_Domingo",
-            sourceUrl="https://www.intec.edu.do/estudiantes/calendarios/calendario-trimestral",
+            sourceUrl=ANNUAL_CALENDAR_SOURCE,
             updatedAt="2026-10-01T00:00:00-04:00",
             dates=[
                 InstitutionalDate(
@@ -471,7 +509,243 @@ async def institutional_calendar():
                     detail="El próximo período se mostrará cuando INTEC publique su calendario.",
                 ),
             ],
-        )
+        ),
+        _annual_period(
+            "2026-T4",
+            "Trimestre noviembre 2026–enero 2027",
+            "2026-11-02",
+            "2027-01-23",
+            [
+                (
+                    "2026-10-20",
+                    "milestone",
+                    "Selección de nuevo ingreso",
+                    "Selección de asignaturas para estudiantes de grado.",
+                ),
+                (
+                    "2026-10-22",
+                    "milestone",
+                    "Selección de posgrado",
+                    "Selección de asignaturas para estudiantes de posgrado.",
+                ),
+                (
+                    "2026-10-27",
+                    "milestone",
+                    "Selección de estudiantes activos",
+                    "Disponible en línea hasta el 29 de octubre.",
+                ),
+                (
+                    "2026-11-02",
+                    "milestone",
+                    "Inicio de docencia",
+                    "Inicio oficial del trimestre.",
+                ),
+                (
+                    "2026-11-09",
+                    "no_class",
+                    "Día de la Constitución",
+                    "No hay actividades académicas por el feriado trasladado.",
+                ),
+                (
+                    "2026-11-30",
+                    "milestone",
+                    "Evaluaciones de medio término",
+                    "Finalizan el 5 de diciembre.",
+                ),
+                (
+                    "2026-12-24",
+                    "no_class",
+                    "Asueto de Navidad",
+                    "No hay actividades académicas del 24 de diciembre al 3 de enero.",
+                    "2027-01-03",
+                ),
+                (
+                    "2027-01-04",
+                    "no_class",
+                    "Día de los Santos Reyes",
+                    "No hay actividades académicas por el feriado trasladado.",
+                ),
+                (
+                    "2027-01-18",
+                    "milestone",
+                    "Última semana de docencia",
+                    "Docencia y evaluaciones finales hasta el 23 de enero.",
+                ),
+                (
+                    "2027-01-23",
+                    "milestone",
+                    "Finaliza la docencia",
+                    "Último día del trimestre.",
+                ),
+                (
+                    "2027-01-25",
+                    "no_class",
+                    "Natalicio de Juan Pablo Duarte",
+                    "No hay actividades académicas por el feriado trasladado.",
+                ),
+                (
+                    "2027-01-26",
+                    "milestone",
+                    "Calificaciones finales",
+                    "Fecha límite de entrega para el trimestre.",
+                ),
+            ],
+        ),
+        _annual_period(
+            "2027-T1",
+            "Trimestre febrero–abril 2027",
+            "2027-02-01",
+            "2027-04-24",
+            [
+                (
+                    "2027-01-12",
+                    "milestone",
+                    "Preselección de asignaturas",
+                    "Disponible en línea hasta el 18 de enero.",
+                ),
+                (
+                    "2027-01-19",
+                    "milestone",
+                    "Selección de nuevo ingreso",
+                    "Selección de asignaturas para estudiantes de grado.",
+                ),
+                (
+                    "2027-02-01",
+                    "milestone",
+                    "Inicio de docencia",
+                    "Inicio oficial del trimestre.",
+                ),
+                (
+                    "2027-02-27",
+                    "no_class",
+                    "Día de la Independencia Nacional",
+                    "No hay actividades académicas por el feriado nacional.",
+                ),
+                (
+                    "2027-03-01",
+                    "milestone",
+                    "Evaluaciones de medio término",
+                    "Período institucional de evaluaciones.",
+                ),
+                (
+                    "2027-03-21",
+                    "no_class",
+                    "Asueto de Semana Santa",
+                    "No hay actividades académicas del 21 al 28 de marzo.",
+                    "2027-03-28",
+                ),
+                (
+                    "2027-04-09",
+                    "milestone",
+                    "Fecha límite para solicitar grado",
+                    "Aplica a la graduación de octubre de 2027.",
+                ),
+                (
+                    "2027-04-10",
+                    "milestone",
+                    "Último día para retirar asignaturas",
+                    "El retiro está disponible únicamente en línea.",
+                ),
+                (
+                    "2027-04-17",
+                    "milestone",
+                    "Ceremonia de graduación",
+                    "Actividad institucional sujeta a cambio.",
+                ),
+                (
+                    "2027-04-19",
+                    "milestone",
+                    "Última semana de docencia",
+                    "Docencia y evaluaciones finales hasta el 24 de abril.",
+                ),
+                (
+                    "2027-04-24",
+                    "milestone",
+                    "Finaliza la docencia",
+                    "Último día del trimestre.",
+                ),
+                (
+                    "2027-04-27",
+                    "milestone",
+                    "Calificaciones finales",
+                    "Fecha límite de entrega para el trimestre.",
+                ),
+            ],
+        ),
+        _annual_period(
+            "2027-T2",
+            "Trimestre mayo–julio 2027",
+            "2027-05-03",
+            "2027-07-17",
+            [
+                (
+                    "2027-04-13",
+                    "milestone",
+                    "Preselección de asignaturas",
+                    "Disponible en línea hasta el 19 de abril.",
+                ),
+                (
+                    "2027-04-20",
+                    "milestone",
+                    "Selección de nuevo ingreso",
+                    "Selección de asignaturas para estudiantes de grado.",
+                ),
+                (
+                    "2027-04-30",
+                    "no_class",
+                    "Día del Trabajo",
+                    "No hay actividades académicas por el feriado trasladado.",
+                ),
+                (
+                    "2027-05-03",
+                    "milestone",
+                    "Inicio de docencia",
+                    "Inicio oficial del trimestre.",
+                ),
+                (
+                    "2027-05-27",
+                    "no_class",
+                    "Corpus Christi",
+                    "No hay actividades académicas por el feriado nacional.",
+                ),
+                (
+                    "2027-05-31",
+                    "milestone",
+                    "Evaluaciones de medio término",
+                    "Finalizan el 5 de junio.",
+                ),
+                (
+                    "2027-07-02",
+                    "milestone",
+                    "Fecha límite para solicitar grado",
+                    "Aplica a la graduación de octubre de 2027.",
+                ),
+                (
+                    "2027-07-03",
+                    "milestone",
+                    "Último día para retirar asignaturas",
+                    "El retiro está disponible únicamente en línea.",
+                ),
+                (
+                    "2027-07-12",
+                    "milestone",
+                    "Última semana de docencia",
+                    "Docencia y evaluaciones finales hasta el 17 de julio.",
+                ),
+                (
+                    "2027-07-17",
+                    "milestone",
+                    "Finaliza la docencia",
+                    "Último día del trimestre.",
+                ),
+                (
+                    "2027-07-20",
+                    "milestone",
+                    "Calificaciones finales",
+                    "Fecha límite de entrega para el trimestre.",
+                ),
+            ],
+        ),
     ]
 
 

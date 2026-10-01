@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getInstitutionalDate, getInstitutionalNotice, getInstitutionalPeriod, getNextInstitutionalDate, isTeachingDate } from './institutionalCalendar';
+import { getInstitutionalDate, getInstitutionalNotice, getInstitutionalPeriod, getInstitutionalPeriods, getNextInstitutionalDate, isTeachingDate } from './institutionalCalendar';
 
 describe('institutional calendar', () => {
   it('keeps classes inside the confirmed academic period', () => {
@@ -17,9 +17,18 @@ describe('institutional calendar', () => {
     expect(getNextInstitutionalDate(new Date(2026, 8, 25, 8))?.date).toBe('2026-09-26');
   });
 
+  it('covers the four official trimesters and multi-day closures', () => {
+    expect(getInstitutionalPeriods()).toHaveLength(4);
+    expect(getInstitutionalPeriod(new Date(2027, 1, 1, 8))?.id).toBe('2027-T1');
+    expect(getInstitutionalPeriod(new Date(2027, 6, 17, 8))?.id).toBe('2027-T2');
+    expect(getInstitutionalDate(new Date(2026, 11, 28, 8))).toMatchObject({ title: 'Asueto de Navidad', kind: 'no_class' });
+    expect(getInstitutionalDate(new Date(2027, 2, 24, 8))).toMatchObject({ title: 'Asueto de Semana Santa', kind: 'no_class' });
+    expect(isTeachingDate(new Date(2027, 2, 24, 8))).toBe(false);
+  });
+
   it('labels future milestones as upcoming instead of claiming they are happening now', () => {
     const notice = getInstitutionalNotice(new Date(2026, 8, 28, 8));
-    expect(notice).toMatchObject({ date: '2026-10-02', daysUntil: 4, isUpcoming: true, title: 'En 4 días: finaliza el período para solicitar grado' });
+    expect(notice).toMatchObject({ date: '2026-10-02', daysUntil: 4, isUpcoming: true, title: 'En 4 días: fecha límite para solicitar grado' });
     expect(notice?.detail).toContain('viernes, 2 de octubre');
     expect(notice?.title).not.toContain('última semana');
     expect(getInstitutionalNotice(new Date(2026, 9, 11, 8))?.title).toBe('Mañana: última semana de docencia');

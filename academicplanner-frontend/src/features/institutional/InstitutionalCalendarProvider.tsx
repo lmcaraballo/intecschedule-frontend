@@ -11,10 +11,11 @@ import {
 const CACHE_KEY = 'academicplanner:institutional:v1';
 const dateSchema = z.object({
   date: z.iso.date(),
+  endsOn: z.iso.date().nullish().transform((value) => value ?? undefined),
   kind: z.enum(['no_class', 'milestone']),
   title: z.string().min(1),
   detail: z.string().min(1),
-});
+}).refine((entry) => !entry.endsOn || entry.date <= entry.endsOn, { message: 'INVALID_DATE_RANGE' });
 const periodSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),

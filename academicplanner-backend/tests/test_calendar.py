@@ -59,13 +59,20 @@ def test_calendar_configuration_and_institutional_dates(monkeypatch):
     assert config.status_code == 200
     assert config.json()["available"] is False
     assert config.json()["clientId"] is None
-    period = institutional.json()[0]
+    periods = institutional.json()
+    assert len(periods) == 4
+    period = periods[0]
     assert period["startsOn"] == "2026-08-03"
     assert period["endsOn"] == "2026-10-17"
     assert len(period["dates"]) == 15
     assert any(item["kind"] == "no_class" for item in period["dates"])
     dates = {item["date"]: item for item in period["dates"]}
     assert dates["2026-09-24"]["title"] == "Día de Nuestra Señora de las Mercedes"
+    assert periods[-1]["endsOn"] == "2027-07-17"
+    christmas = next(
+        item for item in periods[1]["dates"] if item["date"] == "2026-12-24"
+    )
+    assert christmas["endsOn"] == "2027-01-03"
 
 
 def test_calendar_event_crud_contract():

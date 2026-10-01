@@ -1,6 +1,6 @@
 import type { AcademicClass, Schedule } from '../../types/academic';
 import { dateKey } from '../../utils/dateFormat';
-import { isTeachingDate } from '../institutional/institutionalCalendar';
+import { getInstitutionalPeriod, isTeachingDate } from '../institutional/institutionalCalendar';
 
 export interface ClassOccurrence {
   academicClass: AcademicClass;
@@ -39,6 +39,9 @@ export function isSameDay(a: Date, b: Date): boolean {
 
 /** Weekly recurring classes, ordered without mutating the stored schedule. */
 export function getTodayClasses(schedule: Schedule, now: Date = new Date()): AcademicClass[] {
+  const schedulePeriod = getInstitutionalPeriod(new Date(schedule.fetchedAt));
+  const target = dateKey(now);
+  if (!schedulePeriod || target < schedulePeriod.startsOn || target > schedulePeriod.endsOn) return [];
   if (!isTeachingDate(now)) return [];
   return schedule.classes.filter((item) => item.day === isoWeekday(now))
     .sort((a, b) => a.startTime.localeCompare(b.startTime) || a.endTime.localeCompare(b.endTime) || a.id.localeCompare(b.id));

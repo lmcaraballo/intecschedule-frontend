@@ -1,7 +1,7 @@
 import type { AcademicClass, AcademicSession } from '../../types/academic';
 import { dateKey } from '../../utils/dateFormat';
 import { getTodayClasses } from '../schedule/scheduleDomain';
-import { getInstitutionalPeriods, type InstitutionalDate } from '../institutional/institutionalCalendar';
+import { getInstitutionalPeriod, getInstitutionalPeriods, type InstitutionalDate } from '../institutional/institutionalCalendar';
 import {
   createCalendarEvent,
   deleteCalendarEvent,
@@ -43,17 +43,17 @@ export function stableSourceId(value: string): string {
 }
 
 export function scheduleEventsForSession(session: AcademicSession): DesiredEvent[] {
-  return getInstitutionalPeriods().flatMap((period) => {
-    const start = new Date(`${period.startsOn}T12:00:00`);
-    const end = new Date(`${period.endsOn}T12:00:00`);
-    const desired: DesiredEvent[] = [];
-    for (let day = new Date(start); day <= end; day.setDate(day.getDate() + 1)) {
-      for (const academicClass of getTodayClasses(session.schedule, day)) {
-        desired.push(scheduleEvent(session.student.id, academicClass, new Date(day)));
-      }
+  const period = getInstitutionalPeriod(new Date(session.schedule.fetchedAt));
+  if (!period) return [];
+  const start = new Date(`${period.startsOn}T12:00:00`);
+  const end = new Date(`${period.endsOn}T12:00:00`);
+  const desired: DesiredEvent[] = [];
+  for (let day = new Date(start); day <= end; day.setDate(day.getDate() + 1)) {
+    for (const academicClass of getTodayClasses(session.schedule, day)) {
+      desired.push(scheduleEvent(session.student.id, academicClass, new Date(day)));
     }
-    return desired;
-  });
+  }
+  return desired;
 }
 
 function scheduleEvent(studentId: string, academicClass: AcademicClass, date: Date): DesiredEvent {

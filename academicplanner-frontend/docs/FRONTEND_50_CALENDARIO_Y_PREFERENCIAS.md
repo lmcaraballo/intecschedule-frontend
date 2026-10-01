@@ -2,7 +2,7 @@
 
 ## Resultado incorporado
 
-AcademicPlanner ya no repite el horario semanal indefinidamente. El frontend aplica el período académico confirmado **3 de agosto–17 de octubre de 2026**, excluye el feriado registrado del 24 de septiembre y comunica los hitos de cierre del trimestre. La fecha institucional se muestra en **Ahora** y el usuario puede ocultar esos avisos desde **Más → Preferencias**.
+AcademicPlanner ya no repite el horario semanal indefinidamente. El frontend incorpora los cuatro trimestres del año académico oficial **agosto de 2026–julio de 2027**, con feriados, asuetos de varios días, selección, retiro, evaluaciones y cierres. Cada horario importado sigue limitado al trimestre en que fue consultado. Las fechas institucionales se muestran en **Ahora**, **Horario** y el resumen anual de **Más**.
 
 También se incorporó una vista mensual real. Resume las clases por día, distingue los encuentros virtuales, muestra hitos institucionales y permite abrir cualquier fecha en la vista diaria. Día, Semana y Mes comparten la misma fuente de horario y respetan feriados y límites del trimestre.
 
@@ -22,7 +22,7 @@ La sección **Eventos** ya permite conectar Google Calendar, crear, editar, actu
 - No se guardan contraseñas, tokens de portal ni credenciales de Google en `localStorage`.
 - El horario regular conserva sus días y horas, pero solo genera ocurrencias dentro de un período académico publicado.
 - Una finalización anticipada es una preferencia local; no modifica una clase institucional ni se sincroniza como cambio de horario.
-- El registro institucional actual es intencionalmente acotado al trimestre confirmado. No se inventan clases posteriores al 17 de octubre de 2026.
+- El registro institucional está acotado al año oficial publicado. Conocer trimestres futuros no reutiliza el horario importado en otro período ni inventa clases.
 
 ## Archivos del incremento
 
@@ -53,8 +53,8 @@ El calendario de Google es la fuente persistente de los eventos personales; no s
 
 El backend no es un almacén de eventos. Ahora traduce el contrato hacia Google Calendar y publica los datos institucionales que el frontend necesita:
 
-- período activo con `startsOn`, `endsOn`, zona horaria y URL de la fuente oficial;
-- excepciones con fecha, tipo (`no_class` o `milestone`), título y detalle;
+- períodos del año académico con `startsOn`, `endsOn`, zona horaria y URL de la fuente oficial;
+- excepciones con fecha, rango opcional `endsOn`, tipo (`no_class` o `milestone`), título y detalle;
 - cambios de horario o reposiciones confirmadas;
 - un `updatedAt` y versión para que el frontend sepa cuándo refrescar el calendario.
 
@@ -63,7 +63,7 @@ La dependencia SQLite que existía en `develop` fue retirada en la rama `feat/ac
 ## Verificación realizada
 
 - TypeScript y compilación de producción pasan.
-- 215 pruebas automatizadas pasan, incluidas las de cuadrícula mensual, migración de preferencias, modalidad por encuentro, feriado, límite de trimestre, finalización anticipada e idempotencia de eventos.
+- 219 pruebas automatizadas pasan, incluidas las de cuadrícula mensual, migración de preferencias, calendario anual, asuetos de varios días, límite del horario importado, finalización anticipada e idempotencia de eventos.
 - 26 pruebas integrales de interfaz y 16 de integración HTTP pasan sobre el build de producción.
 - El caso de una asignatura presencial un día y virtual otro está cubierto tanto en el parser del backend como en el recorrido HTTP del frontend.
 - Pruebas de navegador móvil y escritorio: acceso, navegación, mapa 3D, feriado, fin de trimestre, preferencias, finalización anticipada y estado de Google; sin errores de consola, excepciones, peticiones fallidas ni desbordamiento horizontal.

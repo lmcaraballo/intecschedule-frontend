@@ -11,7 +11,7 @@ producción, la aprobación de OAuth ni la aceptación académica estén termina
 - Acceso institucional temporal, importación y conservación del último horario válido.
 - Vistas Ahora, Día, Semana y Mes, incluidas materias sin hora y encuentros dominicales.
 - Modalidad y ubicación por encuentro; detalle de clase y mapa 3D con enfoque y reinicio.
-- Período agosto–octubre 2026 limitado por fechas oficiales, feriados y 13 hitos académicos.
+- Año académico agosto 2026–julio 2027 con cuatro trimestres, feriados, asuetos y actividades estudiantiles; cada horario importado permanece limitado a su propio trimestre.
 - Eventos personales y sincronización bidireccional e idempotente con un calendario de Google dedicado.
 - Recordatorios de clases e hitos institucionales, preferencias, accesibilidad y modo sin conexión.
 - Acción para terminar una clase antes de tiempo y conservar esa decisión localmente.
@@ -19,7 +19,7 @@ producción, la aprobación de OAuth ni la aceptación académica estén termina
 
 ## Verificación reproducible
 
-- Frontend: **218/218** pruebas unitarias y de integración.
+- Frontend: **219/219** pruebas unitarias y de integración.
 - Navegador en modo demostración: **27/27** recorridos.
 - Navegador en modo HTTP: **16/16** recorridos.
 - Backend local integrado: **54/54** pruebas.
@@ -44,7 +44,7 @@ Para una publicación real todavía se necesita configurar el client ID OAuth de
 entorno, mantener las cuentas de prueba autorizadas mientras Google esté en modo
 de prueba, desplegar ambos servicios por HTTPS y ejecutar aceptación con cuentas
 institucionales autorizadas. El siguiente trimestre debe añadirse cuando INTEC lo
-publique; no se extrapola.
+publique el siguiente año académico; no se extrapola.
 
 Azure conserva las Features F01–F06 en `In Progress`, F07–F08 y HU36–HU45 en
 `New`. Es intencional: los estados no se cerraron sin la evidencia de aceptación

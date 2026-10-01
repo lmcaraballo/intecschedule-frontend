@@ -30,7 +30,7 @@ Se conserva únicamente perfil básico, horario, fecha de actualización, prefer
 - [Calendario académico, preferencias y contrato de Google](docs/FRONTEND_50_CALENDARIO_Y_PREFERENCIAS.md)
 - [Mapa 3D del campus y contrato de ubicación](docs/FRONTEND_50_CAMPUS.md)
 
-Dependencias externas para la validación final: mantener el correo del probador en la pantalla de consentimiento OAuth mientras la aplicación siga en modo de prueba, publicar el siguiente calendario trimestral cuando INTEC lo confirme y ejecutar la prueba de aceptación con las cuentas institucionales autorizadas. No hay base de datos propia en el alcance. Servir `dist/` por HTTPS con fallback SPA y reservar `/api/*` para la integración institucional.
+Dependencias externas para la validación final: mantener el correo del probador en la pantalla de consentimiento OAuth mientras la aplicación siga en modo de prueba, actualizar el calendario al próximo año académico cuando INTEC lo publique y ejecutar la prueba de aceptación con las cuentas institucionales autorizadas. No hay base de datos propia en el alcance. Servir `dist/` por HTTPS con fallback SPA y reservar `/api/*` para la integración institucional.
 
 ## Integración y despliegue
 

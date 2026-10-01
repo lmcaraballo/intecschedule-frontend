@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { Button } from '../../components/Button';
 import { Dialog } from '../../components/Dialog';
 import { ErrorState } from '../../components/ErrorState';
+import { Icon } from '../../components/Icon';
 import { clearAcademicPlannerData } from '../../storage/scheduleStorage';
 
 export function LocalDataSettings() {
@@ -20,10 +21,12 @@ export function LocalDataSettings() {
   }
 
   return <section className="local-data-settings" aria-labelledby="local-data-title">
-    <h2 id="local-data-title">Tus datos en este dispositivo</h2>
-    <p>Guardamos tu perfil básico, tu último horario válido y la apariencia que elegiste.</p>
-    <p>Tu contraseña y la sesión del portal no se guardan.</p>
-    <Button variant="secondary" onClick={() => { setError(null); setConfirming(true); }}>Limpiar datos locales</Button>
+    <div className="local-data-settings__heading"><span><Icon name="lock" /></span><div><p className="section-label">Privacidad</p><h2 id="local-data-title">Tus datos, bajo tu control</h2></div></div>
+    <ul className="local-data-facts">
+      <li><Icon name="check" /><span><strong>Solo en este dispositivo</strong>Perfil básico, último horario válido y preferencias.</span></li>
+      <li><Icon name="lock" /><span><strong>Nunca almacenamos</strong>Tu contraseña ni la sesión del portal.</span></li>
+    </ul>
+    <div className="local-data-danger"><div><strong>Empezar de nuevo</strong><p>Borra la información de AcademicPlanner sin afectar otras aplicaciones.</p></div><Button variant="secondary" onClick={() => { setError(null); setConfirming(true); }}>Limpiar datos locales</Button></div>
     {confirming && <Dialog title="Limpiar datos locales" className="confirmation-dialog" onClose={() => setConfirming(false)}>
       <p>Se borrarán el horario, el perfil y las preferencias de AcademicPlanner en este dispositivo.</p>
       <p>Para volver a usar tu horario necesitarás conexión y una nueva consulta. Los datos de otras aplicaciones se conservan.</p>

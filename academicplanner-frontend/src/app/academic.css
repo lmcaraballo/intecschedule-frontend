@@ -93,25 +93,67 @@
 .early-finish-notice strong { color: var(--heading); }
 .early-finish-notice p { margin-top: 2px; line-height: 1.5; }
 .early-finish-notice button { flex: 0 0 auto; min-height: 44px; padding: 0 var(--space-3); color: var(--heading); font-weight: 600; }
-.preference-settings, .local-data-settings { display: grid; gap: var(--space-4); width: 100%; max-width: 760px; min-width: 0; padding: var(--space-5); margin-bottom: var(--space-6); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
+.more-layout { display: grid; align-items: start; gap: var(--space-6); min-width: 0; }
+.preference-settings { display: grid; gap: var(--space-5); min-width: 0; overflow-wrap: anywhere; }
 .preference-settings > *, .preference-settings fieldset, .preference-toggle > span, .preference-select > span { min-width: 0; }
-.preference-settings { overflow-wrap: anywhere; }
-.preference-settings h2, .local-data-settings h2 { color: var(--heading); font-size: 1.125rem; font-weight: 600; }
-.preference-settings > div > p:last-child, .preference-settings small, .calendar-connection p { color: var(--muted); font-size: .75rem; line-height: 1.5; }
-.preference-settings fieldset { display: grid; gap: var(--space-3); padding: 0; border: 0; }
-.preference-settings legend { width: 100%; max-width: 100%; color: var(--heading); font-size: .8125rem; font-weight: 600; overflow-wrap: anywhere; }
+.preference-settings h2, .local-data-settings h2, .academic-year-card h2 { color: var(--heading); font-size: 1.125rem; font-weight: 600; }
+.preference-settings__heading { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); }
+.preference-settings__heading > div > p:last-child, .preference-settings small, .calendar-connection p { color: var(--muted); font-size: .75rem; line-height: 1.5; }
+.preference-save-state { display: inline-flex; align-items: center; gap: 5px; min-height: 28px; padding: 4px 9px; border-radius: var(--radius-pill); background: var(--success-bg); color: var(--heading); font-size: .6875rem; font-weight: 600; }
+.preference-save-state svg { width: 14px; height: 14px; }
+.preference-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: var(--space-4); }
+.preference-card { display: grid; align-content: start; gap: var(--space-2); min-width: 0; padding: var(--space-5); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); box-shadow: 0 10px 30px rgb(31 39 25 / .035); }
+.preference-card legend { display: flex; align-items: center; gap: var(--space-2); width: auto; max-width: 100%; padding: 0 var(--space-2); margin-left: calc(var(--space-2) * -1); color: var(--heading); font-size: .875rem; font-weight: 700; overflow-wrap: anywhere; }
+.preference-card legend svg { width: 18px; height: 18px; color: var(--primary); }
 .preference-options { display: flex; gap: var(--space-2); flex-wrap: wrap; }
-.preference-options button { min-height: 40px; padding: var(--space-2) var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.preference-options button { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: var(--space-2) var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-pill); }
+.preference-options button svg { width: 16px; height: 16px; }
 .preference-options button[aria-pressed='true'] { background: var(--success-bg); border-color: var(--heading); color: var(--heading); font-weight: 600; }
-.preference-toggle, .preference-select { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4); padding: var(--space-3) 0; border-top: 1px solid var(--border); color: var(--heading); font-size: .8125rem; }
+.preference-toggle, .preference-select { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) 0; border-top: 1px solid var(--border); color: var(--heading); font-size: .8125rem; }
 .preference-toggle > span, .preference-select > span { flex: 1 1 180px; overflow-wrap: anywhere; }
-.preference-toggle strong, .preference-toggle small { display: block; }
-.preference-toggle small { margin-top: 2px; }
-.preference-toggle input { inline-size: 20px; block-size: 20px; accent-color: var(--primary); flex: 0 0 auto; }
-.preference-select select { min-height: 44px; max-width: 100%; border: 1px solid var(--input-border); border-radius: var(--radius-sm); background: var(--input-bg); color: var(--text); padding: 0 var(--space-2); }
-.calendar-connection { padding: var(--space-4); border-radius: var(--radius-md); background: var(--surface-soft); }
-.calendar-connection p { margin: var(--space-2) 0 var(--space-3); }
+.preference-toggle strong, .preference-toggle small, .preference-select strong, .preference-select small { display: block; }
+.preference-toggle small, .preference-select small { margin-top: 2px; }
+.preference-toggle input { position: relative; appearance: none; inline-size: 42px; block-size: 24px; flex: 0 0 auto; border: 1px solid var(--input-border); border-radius: var(--radius-pill); background: var(--surface-soft); cursor: pointer; transition: background var(--duration-fast), border-color var(--duration-fast); }
+.preference-toggle input::after { content: ''; position: absolute; inset: 3px auto auto 3px; inline-size: 16px; block-size: 16px; border-radius: 50%; background: var(--muted); transition: transform var(--duration-fast), background var(--duration-fast); }
+.preference-toggle input:checked { border-color: var(--primary); background: var(--primary); }
+.preference-toggle input:checked::after { background: var(--on-primary); transform: translateX(18px); }
+.preference-toggle input:focus-visible { outline: 2px solid var(--heading); outline-offset: 2px; }
+.preference-select select { min-height: 44px; max-width: 46%; border: 1px solid var(--input-border); border-radius: var(--radius-sm); background: var(--input-bg); color: var(--text); padding: 0 var(--space-2); }
+.calendar-connection { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-1); padding: var(--space-4); border-radius: var(--radius-md); background: var(--surface-soft); }
+.calendar-connection > div { min-width: 0; }
+.calendar-connection p { margin-top: 3px; }
+.calendar-connection .button { flex: 0 0 auto; }
 .preference-warning { color: var(--error-text); font-size: .75rem; }
+
+.academic-year-card, .local-data-settings { min-width: 0; padding: var(--space-5); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
+.academic-year-card__heading { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); align-items: start; }
+.academic-year-card__icon, .local-data-settings__heading > span { display: grid; place-items: center; width: 40px; height: 40px; border-radius: var(--radius-md); background: var(--success-bg); color: var(--heading); }
+.academic-year-card__heading .section-label, .local-data-settings__heading .section-label { margin-bottom: 2px; }
+.academic-year-card__heading > div > p:last-child { margin-top: 3px; color: var(--muted); font-size: .75rem; }
+.calendar-data-status { grid-column: 2; justify-self: start; padding: 3px 7px; border-radius: var(--radius-pill); background: var(--success-bg); color: var(--heading); font-size: .625rem; font-weight: 700; }
+.calendar-data-status--stale { background: var(--warning-bg); color: var(--warning-text); }
+.academic-periods { display: grid; gap: var(--space-2); margin: var(--space-5) 0; padding: 0; list-style: none; }
+.academic-periods li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: var(--space-2); min-height: 52px; padding: var(--space-2); border: 1px solid transparent; border-radius: var(--radius-md); background: var(--surface-soft); }
+.academic-periods li > span { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 50%; color: var(--muted); font-size: .6875rem; font-weight: 700; }
+.academic-periods li strong, .academic-periods li small { display: block; }
+.academic-periods li strong { color: var(--heading); font-size: .75rem; line-height: 1.4; }
+.academic-periods li small { margin-top: 1px; color: var(--muted); font-size: .625rem; }
+.academic-periods li em { padding: 3px 7px; border-radius: var(--radius-pill); background: var(--primary); color: var(--on-primary); font-size: .625rem; font-style: normal; font-weight: 700; }
+.academic-periods li.is-active { border-color: var(--primary); background: var(--success-bg); }
+.academic-periods li.is-active > span { border-color: var(--primary); color: var(--heading); }
+.upcoming-academic-dates { padding-top: var(--space-4); border-top: 1px solid var(--border); }
+.upcoming-academic-dates h3 { color: var(--heading); font-size: .8125rem; font-weight: 700; }
+.upcoming-academic-dates > p { margin-top: var(--space-3); color: var(--muted); font-size: .75rem; }
+.upcoming-academic-dates ul { display: grid; gap: var(--space-1); margin: var(--space-3) 0 0; padding: 0; list-style: none; }
+.upcoming-academic-dates li { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: var(--space-3); align-items: center; padding: var(--space-2) 0; }
+.upcoming-academic-dates time { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 38px; min-height: 40px; border-radius: var(--radius-sm); background: var(--surface-soft); color: var(--heading); }
+.upcoming-academic-dates time strong { font-size: .875rem; }
+.upcoming-academic-dates time span { font-size: .5625rem; text-transform: uppercase; }
+.upcoming-academic-dates li div > strong, .upcoming-academic-dates li div > small { display: block; }
+.upcoming-academic-dates li div > strong { color: var(--heading); font-size: .75rem; line-height: 1.4; }
+.upcoming-academic-dates li div > small { margin-top: 2px; color: var(--muted); font-size: .625rem; }
+.academic-year-card footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--border); color: var(--muted); font-size: .625rem; }
+.academic-year-card footer a { min-height: 36px; display: inline-flex; align-items: center; color: var(--heading); font-weight: 700; text-underline-offset: 3px; }
 html[data-reduce-motion='true'] *, html[data-reduce-motion='true'] *::before, html[data-reduce-motion='true'] *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 .calendar-onboarding { display: flex; align-items: flex-start; gap: var(--space-4); max-width: 680px; padding: var(--space-6); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
 .calendar-onboarding > svg { flex: 0 0 auto; color: var(--heading); }
@@ -232,9 +274,16 @@ html[data-reduce-motion='true'] *, html[data-reduce-motion='true'] *::before, ht
 .class-detail .status-banner { font-size: .75rem; }
 .class-detail .status-banner strong { display: block; margin-bottom: var(--space-1); font-weight: 500; }
 .future-link { display: block; color: var(--muted); font-size: .6875rem; margin-top: var(--space-2); }
-.local-data-settings { max-width: 640px; display: grid; justify-items: start; gap: var(--space-4); padding: var(--space-6); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
-.local-data-settings h2 { font-size: 1.125rem; color: var(--heading); font-weight: 500; }
-.local-data-settings p { font-size: var(--text-sm); color: var(--muted); }
+.local-data-settings { display: grid; gap: var(--space-4); }
+.local-data-settings__heading { display: flex; align-items: center; gap: var(--space-3); }
+.local-data-facts { display: grid; gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
+.local-data-facts li { display: flex; gap: var(--space-3); color: var(--muted); font-size: .75rem; line-height: 1.5; }
+.local-data-facts li > svg { width: 17px; height: 17px; flex: 0 0 auto; margin-top: 2px; color: var(--heading); }
+.local-data-facts strong { display: block; color: var(--heading); font-weight: 600; }
+.local-data-danger { display: grid; gap: var(--space-3); padding-top: var(--space-4); border-top: 1px solid var(--border); }
+.local-data-danger strong { color: var(--heading); font-size: .75rem; }
+.local-data-danger p { margin-top: 2px; color: var(--muted); font-size: .6875rem; line-height: 1.5; }
+.local-data-danger .button { width: 100%; justify-content: center; }
 .confirmation-dialog > p { margin-block: var(--space-4); color: var(--muted); font-size: var(--text-sm); }
 .dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-3); margin-top: var(--space-6); }
 .view-content { animation: reveal var(--duration-fast) ease-out; }
@@ -274,6 +323,12 @@ html[data-reduce-motion='true'] *, html[data-reduce-motion='true'] *::before, ht
   .day-status { margin-bottom: var(--space-8); }
   .today-agenda { border-left: 1px solid var(--border); padding-left: var(--space-8); }
 }
+@media (min-width: 1200px) {
+  .more-layout { grid-template-columns: minmax(580px, 1fr) minmax(320px, 380px); gap: var(--space-8); }
+  .more-layout > .preference-settings { grid-column: 1; grid-row: 1 / span 2; }
+  .more-layout > .academic-year-card { grid-column: 2; grid-row: 1; position: sticky; top: var(--space-8); }
+  .more-layout > .local-data-settings { grid-column: 2; grid-row: 2; }
+}
 @media (min-width: 1350px) {
   .week-schedule { grid-template-columns: repeat(var(--week-days, 6), minmax(0, 1fr)); gap: var(--space-2); }
   .week-day { padding: 6px; }
@@ -299,6 +354,12 @@ html[data-reduce-motion='true'] *, html[data-reduce-motion='true'] *::before, ht
 }
 
 @media (max-width: 639px) {
+  .preference-card, .academic-year-card, .local-data-settings { padding: var(--space-4); }
+  .preference-select { align-items: stretch; flex-direction: column; gap: var(--space-2); }
+  .preference-select > span { flex: 0 1 auto; }
+  .preference-select select { width: 100%; max-width: none; }
+  .calendar-connection, .local-data-danger { align-items: stretch; flex-direction: column; }
+  .calendar-connection .button, .local-data-danger .button { width: 100%; justify-content: center; }
   .month-day.button, .schedule-page--compact .month-day.button { min-height: 72px; padding: 2px; }
   .month-day__number { align-self: center; min-width: 24px; min-height: 24px; }
   .month-day__classes { display: none; }
