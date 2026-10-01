@@ -213,10 +213,10 @@ const campusExteriorMask = {
     }]
 };
 
-function createMapPattern(map, id, draw) {
+function createMapPattern(map, id, draw, size = 32) {
     const canvas = document.createElement('canvas');
-    canvas.width = 32;
-    canvas.height = 32;
+    canvas.width = size;
+    canvas.height = size;
     const context = canvas.getContext('2d');
     draw(context, canvas.width, canvas.height);
     map.addImage(id, context.getImageData(0, 0, canvas.width, canvas.height), { pixelRatio: 2 });
@@ -243,6 +243,65 @@ function computeCentroids(featureCollection) {
     };
 }
 
+function circularFootprint([lng, lat], radiusMeters, sides = 14) {
+    const latitudeScale = 1 / 111320;
+    const longitudeScale = 1 / (111320 * Math.cos(lat * Math.PI / 180));
+    const ring = Array.from({ length: sides }, (_, index) => {
+        const angle = (Math.PI * 2 * index) / sides;
+        return [
+            lng + Math.cos(angle) * radiusMeters * longitudeScale,
+            lat + Math.sin(angle) * radiusMeters * latitudeScale
+        ];
+    });
+    ring.push(ring[0]);
+    return { type: 'Polygon', coordinates: [ring] };
+}
+
+function createTreeVolumes() {
+    const trunks = [];
+    const lowerCanopies = [];
+    const upperCanopies = [];
+    campusTrees.features.forEach((feature) => {
+        const coordinates = feature.geometry.coordinates;
+        const size = Number(feature.properties.size) || 1;
+        const palm = feature.properties.kind === 'palm';
+        const trunkHeight = (palm ? 5.1 : 3.1) * size;
+        const lowerRadius = (palm ? 1.8 : 2.25) * size;
+        const upperRadius = (palm ? 1.18 : 1.55) * size;
+        const id = feature.properties.id;
+
+        trunks.push({
+            type: 'Feature',
+            properties: { id: `${id}-trunk`, kind: feature.properties.kind, base: 0, height: trunkHeight },
+            geometry: circularFootprint(coordinates, Math.max(0.2, 0.24 * size), 10)
+        });
+        lowerCanopies.push({
+            type: 'Feature',
+            properties: {
+                id: `${id}-lower`,
+                kind: feature.properties.kind,
+                base: trunkHeight * (palm ? 0.88 : 0.7),
+                height: trunkHeight + (palm ? 0.72 : 1.45) * size
+            },
+            geometry: circularFootprint(coordinates, lowerRadius)
+        });
+        upperCanopies.push({
+            type: 'Feature',
+            properties: {
+                id: `${id}-upper`,
+                kind: feature.properties.kind,
+                base: trunkHeight + (palm ? 0.5 : 1.05) * size,
+                height: trunkHeight + (palm ? 1.22 : 2.35) * size
+            },
+            geometry: circularFootprint(coordinates, upperRadius)
+        });
+    });
+    const collection = (features) => ({ type: 'FeatureCollection', features });
+    return { trunks: collection(trunks), lowerCanopies: collection(lowerCanopies), upperCanopies: collection(upperCanopies) };
+}
+
+const campusTreeVolumes = createTreeVolumes();
+
 function isPointInsidePolygon([x, y], ring) {
     let inside = false;
     for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
@@ -259,10 +318,10 @@ function getOverviewCamera(containerWidth = window.innerWidth) {
     // La maqueta vive dentro de una tarjeta lateral; la cámara debe responder
     // al ancho real del mapa y no al ancho completo de la ventana.
     if (containerWidth <= 420) {
-        return { center: [-69.96238, 18.48772], zoom: 16.95, pitch: 43, bearing: -8 };
+        return { center: [-69.96238, 18.48772], zoom: 16.95, pitch: 52, bearing: -11 };
     }
     if (containerWidth <= 700) {
-        return { center: [-69.96225, 18.48772], zoom: 17.12, pitch: 46, bearing: -9 };
+        return { center: [-69.96225, 18.48772], zoom: 17.12, pitch: 54, bearing: -12 };
     }
     const viewportWidth = containerWidth;
     if (viewportWidth >= 1900) {
@@ -285,7 +344,7 @@ function getFocusedCamera(presetId, containerWidth, compact) {
     // demasiado el edificio. Conservamos el volumen 3D y el contexto cercano.
     if (!compact) return preset;
     if (containerWidth <= 420) {
-        return { ...preset, zoom: Math.min(preset.zoom || 17, 18.18), pitch: Math.min(preset.pitch ?? 52, 50) };
+        return { ...preset, zoom: Math.min(preset.zoom || 17, 18.18), pitch: Math.min(Math.max(preset.pitch ?? 55, 54), 58) };
     }
     return { ...preset, zoom: Math.min(preset.zoom || 17, 18.48), pitch: Math.min(preset.pitch ?? 52, 55) };
 }
@@ -320,12 +379,19 @@ export function initCampusMap(containerId, options = {}) {
             glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
             sources: {},
             light: {
-                // Tropical daylight: strong sun from southeast at ~40° elevation
-                // Creates clear directional shadows on building faces
                 anchor: 'map',
-                color: '#FFF8F0',      // warm white (tropical sun has slight amber)
-                intensity: 0.65,       // stronger than before (was 0.4)
-                position: [1.5, 210, 40]  // azimuth 210°=SSW, 40° altitude
+                color: '#FFF6E8',
+                intensity: 0.56,
+                position: [1.35, 205, 52]
+            },
+            sky: {
+                'sky-color': '#DCE9EC',
+                'horizon-color': '#F4F0E5',
+                'fog-color': '#F5F2E9',
+                'fog-ground-blend': 0.58,
+                'horizon-fog-blend': 0.28,
+                'sky-horizon-blend': 0.62,
+                'atmosphere-blend': 0.2
             },
             layers: [
                 {
@@ -339,6 +405,7 @@ export function initCampusMap(containerId, options = {}) {
         zoom: overviewCamera.zoom,
         pitch: overviewCamera.pitch,
         bearing: overviewCamera.bearing,
+        antialias: true,
         interactive: true,
         attributionControl: false,
         dragRotate: !options.compact,
@@ -410,6 +477,29 @@ export function initCampusMap(containerId, options = {}) {
                 context.beginPath(); context.arc(x, y, 1, 0, Math.PI*2); context.fill();
             });
         });
+        const facadePattern = (id, base, glass, frame) => createMapPattern(map, id, (context, width, height) => {
+            context.fillStyle = base;
+            context.fillRect(0, 0, width, height);
+            context.fillStyle = 'rgba(255,255,255,0.16)';
+            context.fillRect(0, 0, width, 3);
+            context.fillStyle = glass;
+            context.fillRect(0, 25, width, 11);
+            context.strokeStyle = frame;
+            context.lineWidth = 1.5;
+            for (let x = 5; x < width; x += 13) {
+                context.beginPath();
+                context.moveTo(x, 25);
+                context.lineTo(x, 36);
+                context.stroke();
+            }
+            context.fillStyle = 'rgba(52,48,43,0.13)';
+            context.fillRect(0, 37, width, 3);
+        }, 64);
+        facadePattern('facade-light', '#E7E9E4', '#6F8F93', 'rgba(225,238,238,0.72)');
+        facadePattern('facade-sand', '#CFB372', '#58787B', 'rgba(226,237,234,0.68)');
+        facadePattern('facade-stone', '#A9A69F', '#536F74', 'rgba(214,226,226,0.65)');
+        facadePattern('facade-warm', '#D6C8B5', '#657F82', 'rgba(228,237,235,0.66)');
+        facadePattern('facade-ochre', '#C99656', '#526D72', 'rgba(223,233,231,0.68)');
 
         // Contexto urbano de baja jerarquía. Son huellas y vías del extracto
         // OSM local; no inferimos alturas, fachadas ni usos de los edificios.
@@ -614,8 +704,8 @@ export function initCampusMap(containerId, options = {}) {
             paint: { 'line-color': '#8CAF72', 'line-width': 1.15 }
         });
 
-        // Copas simplificadas: ayudan a leer la escala y respetan las zonas
-        // verdes verificadas en lugar de repartirse uniformemente por el plano.
+        // La vegetación verificada conserva una sombra de contacto 2D y suma
+        // volúmenes ligeros para que la escala del campus se lea en perspectiva.
         map.addSource('campus-trees', { type: 'geojson', data: campusTrees });
         map.addLayer({
             id: 'campus-tree-shadows',
@@ -644,14 +734,57 @@ export function initCampusMap(containerId, options = {}) {
                     18, ['*', ['get', 'size'], ['match', ['get', 'kind'], 'shade', 7.1, 5.1]],
                     20, ['*', ['get', 'size'], ['match', ['get', 'kind'], 'shade', 11.5, 8.4]]
                 ],
-                'circle-color': [
-                    'match', ['get', 'kind'],
-                    'palm', '#6FA45F',
-                    '#5E9651'
-                ],
-                'circle-stroke-color': '#477A3E',
-                'circle-stroke-width': 0.8,
-                'circle-opacity': 0.96
+                'circle-color': '#355C39',
+                'circle-stroke-width': 0,
+                'circle-blur': 0.28,
+                'circle-translate': [1, 2],
+                'circle-opacity': 0.18
+            }
+        });
+
+        map.addSource('campus-tree-trunks-3d', { type: 'geojson', data: campusTreeVolumes.trunks });
+        map.addLayer({
+            id: 'campus-tree-trunks-3d',
+            type: 'fill-extrusion',
+            source: 'campus-tree-trunks-3d',
+            minzoom: 16.2,
+            layout: { 'fill-extrusion-rounded-corner-distance': 0.14 },
+            paint: {
+                'fill-extrusion-color': ['match', ['get', 'kind'], 'palm', '#8A704C', '#725A3E'],
+                'fill-extrusion-base': ['get', 'base'],
+                'fill-extrusion-height': ['get', 'height'],
+                'fill-extrusion-opacity': 1,
+                'fill-extrusion-vertical-gradient': true
+            }
+        });
+        map.addSource('campus-tree-lower-canopies-3d', { type: 'geojson', data: campusTreeVolumes.lowerCanopies });
+        map.addLayer({
+            id: 'campus-tree-lower-canopies-3d',
+            type: 'fill-extrusion',
+            source: 'campus-tree-lower-canopies-3d',
+            minzoom: 16.2,
+            layout: { 'fill-extrusion-rounded-corner-distance': 0.6 },
+            paint: {
+                'fill-extrusion-color': ['match', ['get', 'kind'], 'palm', '#739C59', '#4F7E48'],
+                'fill-extrusion-base': ['get', 'base'],
+                'fill-extrusion-height': ['get', 'height'],
+                'fill-extrusion-opacity': 0.98,
+                'fill-extrusion-vertical-gradient': true
+            }
+        });
+        map.addSource('campus-tree-upper-canopies-3d', { type: 'geojson', data: campusTreeVolumes.upperCanopies });
+        map.addLayer({
+            id: 'campus-tree-upper-canopies-3d',
+            type: 'fill-extrusion',
+            source: 'campus-tree-upper-canopies-3d',
+            minzoom: 16.2,
+            layout: { 'fill-extrusion-rounded-corner-distance': 0.55 },
+            paint: {
+                'fill-extrusion-color': ['match', ['get', 'kind'], 'palm', '#88B66B', '#649A59'],
+                'fill-extrusion-base': ['get', 'base'],
+                'fill-extrusion-height': ['get', 'height'],
+                'fill-extrusion-opacity': 0.98,
+                'fill-extrusion-vertical-gradient': true
             }
         });
 
@@ -665,7 +798,7 @@ export function initCampusMap(containerId, options = {}) {
             type: 'fill',
             source: 'campus-parking',
             filter: ['!=', ['get', 'parking'], 'underground'],
-            paint: { 'fill-color': '#B8B4AA', 'fill-opacity': 1 }  // darker asphalt tone
+            paint: { 'fill-color': '#8F918D', 'fill-opacity': 1 }
         });
         // Bay lines pattern (white dashes on dark surface)
         map.addLayer({
@@ -1083,7 +1216,7 @@ export function initCampusMap(containerId, options = {}) {
             id: 'campus-gates-label',
             type: 'symbol',
             source: 'campus-gates',
-            minzoom: 16.65,
+            minzoom: 17.35,
             layout: {
                 'text-field': ['get', 'name'],
                 'text-font': ['Open Sans Bold'],
@@ -1111,6 +1244,7 @@ export function initCampusMap(containerId, options = {}) {
             id: 'campus-parking-P',
             type: 'symbol',
             source: 'campus-parking-labels',
+            minzoom: 17.15,
             layout: {
                 'text-field': ['concat', ['get', 'parkingCode'], '\n', ['get', 'parkingName']],
                 'text-font': ['Open Sans Bold'],
@@ -1152,6 +1286,7 @@ export function initCampusMap(containerId, options = {}) {
             id: 'campus-poi-labels',
             type: 'symbol',
             source: 'campus-pois',
+            minzoom: 17.45,
             filter: ['all', ['!=', ['get', 'type'], 'cafeteria'], ['!=', ['get', 'type'], 'plaza']],
             layout: {
                 'text-field': ['get', 'name'],
@@ -1172,6 +1307,7 @@ export function initCampusMap(containerId, options = {}) {
             id: 'campus-key-poi-labels',
             type: 'symbol',
             source: 'campus-pois',
+            minzoom: 17.35,
             // La cafetería tiene una etiqueta superior propia; repetirla aquí
             // superponía dos textos al enfocar FD en tarjetas angostas.
             filter: ['==', ['get', 'type'], 'plaza'],
@@ -1206,6 +1342,7 @@ export function initCampusMap(containerId, options = {}) {
                 id: 'campus-green-names',
                 type: 'symbol',
                 source: 'campus-green-labels',
+                minzoom: 17.25,
                 layout: {
                     'text-field': ['get', 'name'],
                     'text-font': ['Open Sans Regular'],
@@ -1236,10 +1373,9 @@ export function initCampusMap(containerId, options = {}) {
             type: 'fill',
             source: 'campus',
             paint: {
-                // Shadow translate matches light direction (sun from SSW → shadow to NNE)
-                'fill-color': 'rgba(0,0,0,0.18)',
-                'fill-translate': [8, -5],
-                'fill-opacity': 0.7
+                'fill-color': '#26332B',
+                'fill-translate': [3, 4],
+                'fill-opacity': 0.18
             }
         });
 
@@ -1260,8 +1396,20 @@ export function initCampusMap(containerId, options = {}) {
             id: 'buildings-3d',
             type: 'fill-extrusion',
             source: 'campus',
+            layout: { 'fill-extrusion-rounded-corner-distance': 0.22 },
             paint: {
                 'fill-extrusion-color': buildingWallColor(false),
+                'fill-extrusion-pattern': [
+                    'match', ['get', 'code'],
+                    'FD', 'facade-sand',
+                    'GC', 'facade-stone',
+                    'Biblioteca', 'facade-stone',
+                    'EP', 'facade-warm',
+                    'DP', 'facade-ochre',
+                    'AJ', 'facade-ochre',
+                    'LF', 'facade-warm',
+                    'facade-light'
+                ],
                 // 3.5m per floor = realistic Dominican university construction
                 // EP: 5 floors = 17.5m (tallest), EL: 5 floors = 17.5m
                 // GC y FD: 4 floors = 14m, AH: 5 floors = 17.5m
@@ -1283,10 +1431,11 @@ export function initCampusMap(containerId, options = {}) {
             id: 'building-roof-caps',
             type: 'fill-extrusion',
             source: 'campus',
+            layout: { 'fill-extrusion-rounded-corner-distance': 0.22 },
             paint: {
                 'fill-extrusion-color': buildingRoofColor(false),
                 'fill-extrusion-base': ['*', ['coalesce', ['get', 'levels'], 2], CAMPUS_FLOOR_HEIGHT_METERS],
-                'fill-extrusion-height': ['+', ['*', ['coalesce', ['get', 'levels'], 2], CAMPUS_FLOOR_HEIGHT_METERS], 0.3],
+                'fill-extrusion-height': ['+', ['*', ['coalesce', ['get', 'levels'], 2], CAMPUS_FLOOR_HEIGHT_METERS], 0.48],
                 'fill-extrusion-opacity': 1,
                 'fill-extrusion-vertical-gradient': true
             }
@@ -1434,19 +1583,22 @@ export function initCampusMap(containerId, options = {}) {
                 }))
         };
         map.addSource('labels', { type: 'geojson', data: labelSource });
+        map.addSource('active-building-label', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
 
         map.addLayer({
             id: 'building-code-label',
             type: 'symbol',
             source: 'labels',
+            minzoom: 16.55,
             layout: {
                 'text-field': ['get', 'code'],
                 'text-font': ['Open Sans Bold'],
                 'text-size': ['interpolate', ['linear'], ['zoom'], 16, 8, 17.5, 10.5, 18.5, 12, 19.2, 13],
                 'text-offset': [0, -0.3],
                 'text-anchor': 'center',
-                'text-allow-overlap': true,
-                'text-ignore-placement': true
+                'text-allow-overlap': false,
+                'text-ignore-placement': false,
+                'text-padding': 4
             },
             paint: {
                 'text-color': '#1C1C1E',
@@ -1477,12 +1629,33 @@ export function initCampusMap(containerId, options = {}) {
             }
         });
 
+        map.addLayer({
+            id: 'active-building-label',
+            type: 'symbol',
+            source: 'active-building-label',
+            layout: {
+                'text-field': ['get', 'code'],
+                'text-font': ['Open Sans Bold'],
+                'text-size': ['interpolate', ['linear'], ['zoom'], 16.5, 11, 19, 15],
+                'text-offset': [0, -0.35],
+                'text-anchor': 'center',
+                'text-allow-overlap': true,
+                'text-ignore-placement': true
+            },
+            paint: {
+                'text-color': '#FFFFFF',
+                'text-halo-color': '#9F1730',
+                'text-halo-width': 4,
+                'text-halo-blur': 0.5
+            }
+        });
+
         map.addSource('campus-landmark-labels', { type: 'geojson', data: campusLandmarkLabels });
         map.addLayer({
             id: 'campus-landmark-labels',
             type: 'symbol',
             source: 'campus-landmark-labels',
-            minzoom: 17.2,
+            minzoom: 17.65,
             layout: {
                 'text-field': ['get', 'name'],
                 'text-font': ['Open Sans Bold'],
@@ -1508,7 +1681,7 @@ export function initCampusMap(containerId, options = {}) {
             id: 'campus-cafe-label-top',
             type: 'symbol',
             source: 'campus-pois',
-            minzoom: 16.7,
+            minzoom: 17.45,
             filter: ['==', ['get', 'type'], 'cafeteria'],
             layout: {
                 'text-field': ['get', 'name'],
@@ -1626,6 +1799,24 @@ export function initCampusMap(containerId, options = {}) {
                             { active: true }
                         ));
                 }
+                const activeBuilding = code
+                    ? CAMPUS_BUILDINGS.find(feature => feature.properties.code === code && feature.properties.centroid_lng)
+                    : null;
+                const activeLabelSource = map.getSource('active-building-label');
+                activeLabelSource?.setData({
+                    type: 'FeatureCollection',
+                    features: activeBuilding ? [{
+                        type: 'Feature',
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [activeBuilding.properties.centroid_lng, activeBuilding.properties.centroid_lat]
+                        },
+                        properties: {
+                            code: activeBuilding.properties.code,
+                            name: activeBuilding.properties.name
+                        }
+                    }] : []
+                });
                 currentActiveCode = code || null;
             };
             map.isStyleLoaded() ? doHighlight() : map.once('load', doHighlight);
