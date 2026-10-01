@@ -61,6 +61,31 @@ test('bottom navigation stays tactile, above content and clear at the page end',
   expect(clearance).toBeGreaterThanOrEqual(8);
 });
 
+test('day schedule controls read as one compact tactile workspace', async ({ page }) => {
+  await page.setViewportSize({ width: 954, height: 911 });
+  await seed(page);
+  await page.goto('/horario?date=2026-10-01&view=day');
+  const viewSwitch = page.getByRole('group', { name: 'Vista del horario' });
+  const activeView = viewSwitch.getByRole('button', { name: 'Día', exact: true });
+  const dayPicker = page.getByRole('group', { name: 'Seleccionar día' });
+  const selectedDay = dayPicker.getByRole('button', { name: /jueves, 1 de octubre/i });
+
+  expect(await viewSwitch.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
+  expect(await activeView.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
+  expect(await dayPicker.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
+  await expect(selectedDay).toHaveAttribute('aria-pressed', 'true');
+  expect(await selectedDay.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
+  const scheduleCard = page.locator('.day-schedule .class-card').first();
+  expect(await scheduleCard.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
+  await scheduleCard.hover();
+  expect(await scheduleCard.evaluate((element) => getComputedStyle(element).transform)).not.toBe('none');
+
+  await page.goto('/ahora');
+  const nowCard = page.locator('.now-page .class-card').first();
+  expect(await nowCard.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
+  expect(await nowCard.locator('.class-card__top > svg').evaluate((element) => getComputedStyle(element).borderRadius)).toBe('50%');
+});
+
 test('campus model keeps controls out of the map caption and reports the active camera', async ({ page }) => {
   await page.setViewportSize({ width: 954, height: 911 });
   await seed(page);
@@ -78,6 +103,27 @@ test('campus model keeps controls out of the map caption and reports the active 
       * Math.max(0, Math.min(controlsRect.bottom, captionRect.bottom) - Math.max(controlsRect.top, captionRect.top));
   });
   expect(overlap).toBe(0);
+});
+
+test('preference cards stay compact and provide clear control feedback', async ({ page }) => {
+  await page.setViewportSize({ width: 954, height: 911 });
+  await seed(page);
+  await page.goto('/mas');
+  const visibleCard = page.getByRole('group', { name: 'Información visible' });
+  const calendarCard = page.getByRole('group', { name: 'Calendario y recordatorios' });
+  const [visibleBox, calendarBox] = await Promise.all([visibleCard.boundingBox(), calendarCard.boundingBox()]);
+  expect(visibleBox).not.toBeNull();
+  expect(calendarBox).not.toBeNull();
+  expect(visibleBox!.height).toBeLessThan(calendarBox!.height - 60);
+  expect(await visibleCard.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
+
+  const themeAuto = page.getByLabel('Tema visual').getByRole('button', { name: 'Auto', exact: true });
+  await themeAuto.click();
+  await expect(themeAuto).toHaveAttribute('aria-pressed', 'true');
+  expect(await themeAuto.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
+  await page.getByText('Contraste reforzado', { exact: true }).click();
+  await expect(page.getByRole('switch', { name: /Contraste reforzado/ })).toBeChecked();
+  await expect(page.getByRole('status')).toContainText('Cambios guardados');
 });
 
 test('access validation, Enter, repeated submission, privacy, reload and detail keyboard', async ({ page }) => {
