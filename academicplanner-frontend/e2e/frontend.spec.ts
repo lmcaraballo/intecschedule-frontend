@@ -40,6 +40,11 @@ test('bottom navigation stays tactile, above content and clear at the page end',
   await page.goto('/ahora');
   const nav = page.getByRole('navigation', { name: 'Navegación principal' });
   const active = nav.getByRole('link', { name: 'Ahora', exact: true });
+  const header = page.locator('.app-shell--academic .site-header');
+  const themeControls = page.getByRole('group', { name: 'Apariencia' });
+  expect(await header.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
+  expect(await header.locator('.brand__mark').evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
+  expect(await themeControls.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
   await expect(nav).toBeVisible();
   expect(await nav.evaluate((element) => getComputedStyle(element).position)).toBe('fixed');
   expect(await nav.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
