@@ -35,7 +35,8 @@ export function MonthSchedule({ schedule, selected, now, showInstitutionalDates,
       const selectedDay = isSameDay(date, selected);
       const today = isSameDay(date, now);
       const weekend = isoWeekday(date) >= 6;
-      const description = [formatDate(date), `${classes.length} ${classes.length === 1 ? 'clase' : 'clases'}`, institutional?.title].filter(Boolean).join('. ');
+      const classSummary = classes.map((item) => `${formatTime(item.startTime)} ${item.subjectCode}: ${item.subjectName}${item.location ? `, ${item.location}` : ''}`).join('. ');
+      const description = [formatDate(date), `${classes.length} ${classes.length === 1 ? 'clase' : 'clases'}`, classSummary, institutional?.title].filter(Boolean).join('. ');
       return <Button
         variant="plain"
         type="button"
@@ -52,6 +53,14 @@ export function MonthSchedule({ schedule, selected, now, showInstitutionalDates,
           <span className="month-day__count">{classes.length} {classes.length === 1 ? 'clase' : 'clases'}</span>
           <span className="month-day__classes" aria-hidden="true">{classes.slice(0, 3).map((item) => <span key={item.id} data-subject={getSubjectColor(item.subjectCode)} className={getClassModality(item.location) === 'virtual' ? 'is-virtual' : undefined}><strong>{formatTime(item.startTime)}</strong> {item.subjectCode}{getClassModality(item.location) === 'virtual' ? ' · Virtual' : ''}</span>)}{classes.length > 3 && <span>+{classes.length - 3} más</span>}</span>
         </>}
+        <span className="month-day__preview" role="tooltip" aria-hidden="true">
+          <strong className="month-day__preview-date">{formatDate(date, { weekday: 'long', day: 'numeric', month: 'long' })}</strong>
+          {institutional && <span className="month-day__preview-institutional"><span>Fecha INTEC</span><strong>{institutional.title}</strong>{institutional.detail && <small>{institutional.detail}</small>}</span>}
+          {classes.length ? <span className="month-day__preview-list">{classes.slice(0, 4).map((item) => <span key={item.id} data-subject={getSubjectColor(item.subjectCode)}>
+            <strong>{formatTime(item.startTime)} – {formatTime(item.endTime)}</strong><span>{item.subjectName}</span><small>{item.subjectCode} · {item.location || 'Ubicación por confirmar'}</small>
+          </span>)}{classes.length > 4 && <small className="month-day__preview-more">+{classes.length - 4} clases más</small>}</span> : <span className="month-day__preview-empty">Sin clases programadas.</span>}
+          <small className="month-day__preview-action">Haz clic para abrir el día</small>
+        </span>
       </Button>;
     })}</div>
     </div>

@@ -117,8 +117,16 @@ test('monthly schedule and expanded preferences persist and control startup', as
   await expect(page.getByRole('button', { name: 'Mes', exact: true })).toHaveAttribute('aria-pressed', 'true');
   const month = page.getByRole('region', { name: /Horario mensual de septiembre de 2026/i });
   await expect(month).toBeVisible();
-  await expect(month.getByRole('button', { name: /lunes, 14 de septiembre.*clase/i })).toBeVisible();
-  await month.getByRole('button', { name: /lunes, 14 de septiembre.*clase/i }).click();
+  const monthDay = month.getByRole('button', { name: /lunes, 14 de septiembre.*clases.*Cálculo diferencial/i });
+  await expect(monthDay).toBeVisible();
+  await monthDay.hover();
+  await expect(monthDay.locator('.month-day__preview')).toBeVisible();
+  await expect(monthDay.locator('.month-day__preview')).toContainText('Cálculo diferencial');
+  await expect(monthDay.locator('.month-day__preview')).toContainText('AULA AJ-203');
+  await page.mouse.move(0, 0);
+  await monthDay.focus();
+  await expect(monthDay.locator('.month-day__preview')).toBeVisible();
+  await monthDay.click();
   await expect(page).toHaveURL(/view=day/);
   await expect(page.getByRole('heading', { name: /lunes, 14 de septiembre/i })).toBeVisible();
 

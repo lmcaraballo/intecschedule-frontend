@@ -240,7 +240,7 @@ html[data-reduce-motion='true'] *, html[data-reduce-motion='true'] *::before, ht
 .schedule-note svg { margin-top: 2px; }
 .schedule-note span { min-width: 0; overflow-wrap: anywhere; }
 .month-schedule { min-width: 0; }
-.month-calendar { min-width: 0; padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--surface) 88%, var(--surface-soft)); box-shadow: 0 16px 48px rgb(31 39 25 / .045); overflow: hidden; }
+.month-calendar { min-width: 0; padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--surface) 88%, var(--surface-soft)); box-shadow: 0 16px 48px rgb(31 39 25 / .045); overflow: visible; }
 .month-weekdays, .month-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
 .month-weekdays { color: var(--muted); font-size: .6875rem; font-weight: 700; letter-spacing: .08em; text-align: center; text-transform: uppercase; }
 .month-weekdays span { padding: var(--space-2) 0 var(--space-3); }
@@ -263,6 +263,28 @@ button.month-day:hover { z-index: 1; border-color: var(--input-border); backgrou
 .month-day__classes > span { min-width: 0; padding: 3px 5px; border-left: 3px solid var(--subject-accent, var(--heading)); border-radius: 4px; background: var(--subject-tint, var(--surface-soft)); color: var(--text); font-size: .6rem; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .month-day__classes > .is-virtual { border-left-style: dashed; }
 .month-day__classes strong { font-weight: 600; }
+.month-day__preview { position: absolute; z-index: 40; top: calc(100% - 6px); left: 8px; display: none; width: min(290px, calc(100vw - 48px)); max-height: 310px; padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text); box-shadow: 0 20px 48px rgb(21 35 25 / .2); text-align: left; pointer-events: none; overflow: hidden; }
+.month-day__preview-date, .month-day__preview-institutional, .month-day__preview-list, .month-day__preview-list > span { display: grid; min-width: 0; }
+.month-day__preview-date { padding-bottom: var(--space-2); border-bottom: 1px solid var(--border); color: var(--heading); font-size: .8125rem; text-transform: capitalize; }
+.month-day__preview-institutional { gap: 2px; margin-top: var(--space-3); padding: var(--space-2); border-radius: var(--radius-sm); background: var(--warning-bg); color: var(--warning-text); }
+.month-day__preview-institutional > span { font-size: .5625rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.month-day__preview-institutional strong { font-size: .6875rem; line-height: 1.35; }
+.month-day__preview-institutional small { font-size: .625rem; line-height: 1.35; }
+.month-day__preview-list { gap: var(--space-2); margin-top: var(--space-3); }
+.month-day__preview-list > span { gap: 1px; padding-left: var(--space-2); border-left: 3px solid var(--subject-accent, var(--heading)); }
+.month-day__preview-list > span > strong { color: var(--subject-accent, var(--heading)); font-size: .625rem; }
+.month-day__preview-list > span > span { color: var(--heading); font-size: .6875rem; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+.month-day__preview-list > span > small, .month-day__preview-more, .month-day__preview-empty, .month-day__preview-action { color: var(--muted); font-size: .6rem; line-height: 1.35; }
+.month-day__preview-more, .month-day__preview-empty { display: block; margin-top: var(--space-3); }
+.month-day__preview-action { display: block; margin-top: var(--space-3); padding-top: var(--space-2); border-top: 1px solid var(--border); }
+.month-grid > button:nth-child(7n + 5) .month-day__preview, .month-grid > button:nth-child(7n + 6) .month-day__preview, .month-grid > button:nth-child(7n + 7) .month-day__preview { right: 8px; left: auto; }
+.month-grid > button:nth-child(n + 22) .month-day__preview { top: auto; bottom: calc(100% - 6px); }
+button.month-day:focus-visible { z-index: 30; overflow: visible; }
+button.month-day:focus-visible .month-day__preview { display: block; }
+@media (hover: hover) and (pointer: fine) {
+  button.month-day:hover { z-index: 30; overflow: visible; }
+  button.month-day:hover .month-day__preview { display: block; }
+}
 .month-schedule__footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-3); }
 .month-schedule__hint { color: var(--muted); font-size: .6875rem; }
 .month-legend { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3); color: var(--muted); font-size: .625rem; }
