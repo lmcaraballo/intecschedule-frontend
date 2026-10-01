@@ -160,6 +160,7 @@ describe('access → saved schedule → Ahora', () => {
     scheduleStorage.savePreferences({ theme: 'night' });
     localStorage.setItem('other-app', 'untouched');
     const user = mount('/mas');
+    await user.click(screen.getByRole('tab', { name: /Privacidad/ }));
     await user.click(screen.getByRole('button', { name: 'Limpiar datos locales' }));
     await user.click(screen.getByRole('button', { name: 'Cancelar' }));
     expect(scheduleStorage.get()?.session).not.toBeNull();
@@ -178,6 +179,7 @@ describe('access → saved schedule → Ahora', () => {
     const original = savePrevious();
     vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => { throw new Error('blocked'); });
     const user = mount('/mas');
+    await user.click(screen.getByRole('tab', { name: /Privacidad/ }));
     await user.click(screen.getByRole('button', { name: 'Limpiar datos locales' }));
     await user.click(screen.getByRole('button', { name: 'Borrar mis datos locales' }));
     expect(within(screen.getByRole('dialog')).getByRole('alert')).toHaveTextContent('No pudimos borrar los datos.');

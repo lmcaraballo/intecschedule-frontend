@@ -109,6 +109,19 @@ function buildingRoofColor(isNight = false) {
     ];
 }
 
+function buildingGlassColor(isNight = false) {
+    return [
+        'match', ['get', 'code'],
+        'FD', isNight ? '#42666B' : '#5B7F83',
+        'GC', isNight ? '#3E5F66' : '#56747A',
+        'Biblioteca', isNight ? '#355B65' : '#4E737B',
+        'EP', isNight ? '#46666B' : '#628086',
+        'DP', isNight ? '#3F6268' : '#58777D',
+        'AJ', isNight ? '#3D6068' : '#55747C',
+        isNight ? '#4B6B70' : '#68878B'
+    ];
+}
+
 // El extracto OSM local también contiene calles y senderos del vecindario.
 // Conservamos únicamente los recorridos que cruzan el perímetro del campus.
 const INTERNAL_PATH_IDS = new Set([
@@ -535,30 +548,6 @@ export function initCampusMap(containerId, options = {}) {
                 context.beginPath(); context.arc(x, y, 1, 0, Math.PI*2); context.fill();
             });
         });
-        const facadePattern = (id, base, glass, frame) => createMapPattern(map, id, (context, width, height) => {
-            context.fillStyle = base;
-            context.fillRect(0, 0, width, height);
-            context.fillStyle = 'rgba(255,255,255,0.16)';
-            context.fillRect(0, 0, width, 3);
-            context.fillStyle = glass;
-            context.fillRect(0, 25, width, 11);
-            context.strokeStyle = frame;
-            context.lineWidth = 1.5;
-            for (let x = 5; x < width; x += 13) {
-                context.beginPath();
-                context.moveTo(x, 25);
-                context.lineTo(x, 36);
-                context.stroke();
-            }
-            context.fillStyle = 'rgba(52,48,43,0.13)';
-            context.fillRect(0, 37, width, 3);
-        }, 64);
-        facadePattern('facade-light', '#E7E9E4', '#6F8F93', 'rgba(225,238,238,0.72)');
-        facadePattern('facade-sand', '#CFB372', '#58787B', 'rgba(226,237,234,0.68)');
-        facadePattern('facade-stone', '#A9A69F', '#536F74', 'rgba(214,226,226,0.65)');
-        facadePattern('facade-warm', '#D6C8B5', '#657F82', 'rgba(228,237,235,0.66)');
-        facadePattern('facade-ochre', '#C99656', '#526D72', 'rgba(223,233,231,0.68)');
-
         // Contexto urbano de baja jerarquía. Son huellas y vías del extracto
         // OSM local; no inferimos alturas, fachadas ni usos de los edificios.
         map.addSource('campus-context-greenery', { type: 'geojson', data: campusFeatures.greenery });
@@ -1516,7 +1505,8 @@ export function initCampusMap(containerId, options = {}) {
         });
 
         // Extrusión 3D: familias de material observadas en las fotos oficiales.
-        // La selección usa contorno/halo y no sustituye el color del edificio.
+        // Las ventanas se construyen después como bandas vectoriales en metros;
+        // así no cambian de forma por el remuestreo de una textura al hacer zoom.
         map.addLayer({
             id: 'buildings-3d',
             type: 'fill-extrusion',
@@ -1524,17 +1514,6 @@ export function initCampusMap(containerId, options = {}) {
             layout: { 'fill-extrusion-rounded-corner-distance': 0.22 },
             paint: {
                 'fill-extrusion-color': buildingWallColor(false),
-                'fill-extrusion-pattern': [
-                    'match', ['get', 'code'],
-                    'FD', 'facade-sand',
-                    'GC', 'facade-stone',
-                    'Biblioteca', 'facade-stone',
-                    'EP', 'facade-warm',
-                    'DP', 'facade-ochre',
-                    'AJ', 'facade-ochre',
-                    'LF', 'facade-warm',
-                    'facade-light'
-                ],
                 // 3.5m per floor = realistic Dominican university construction
                 // EP: 5 floors = 17.5m (tallest), EL: 5 floors = 17.5m
                 // GC y FD: 4 floors = 14m, AH: 5 floors = 17.5m
@@ -1550,6 +1529,24 @@ export function initCampusMap(containerId, options = {}) {
                 'fill-extrusion-color-transition': { duration: 400 }
             }
         });
+
+        for (let floor = 1; floor <= 5; floor += 1) {
+            const floorBase = ((floor - 1) * CAMPUS_FLOOR_HEIGHT_METERS) + 1.35;
+            map.addLayer({
+                id: `building-window-band-${floor}`,
+                type: 'fill-extrusion',
+                source: 'campus',
+                filter: ['>=', ['coalesce', ['get', 'levels'], 2], floor],
+                layout: { 'fill-extrusion-rounded-corner-distance': 0.22 },
+                paint: {
+                    'fill-extrusion-color': buildingGlassColor(false),
+                    'fill-extrusion-base': floorBase,
+                    'fill-extrusion-height': floorBase + 1.28,
+                    'fill-extrusion-opacity': 0.94,
+                    'fill-extrusion-vertical-gradient': false
+                }
+            });
+        }
 
         // El volumen activo se vuelve rojo por completo para que la selección
         // sea inequívoca incluso entre edificios con fachadas similares.
@@ -2086,6 +2083,9 @@ export function initCampusMap(containerId, options = {}) {
             map.setPaintProperty('buildings-base', 'fill-color', buildingWallColor(isNight));
             map.setPaintProperty('buildings-3d', 'fill-extrusion-color', buildingWallColor(isNight));
             map.setPaintProperty('building-roof-caps', 'fill-extrusion-color', buildingRoofColor(isNight));
+            for (let floor = 1; floor <= 5; floor += 1) {
+                map.setPaintProperty(`building-window-band-${floor}`, 'fill-extrusion-color', buildingGlassColor(isNight));
+            }
             map.setPaintProperty('campus-exterior-mask', 'fill-opacity', isNight ? 0.42 : 0.34);
         },
 

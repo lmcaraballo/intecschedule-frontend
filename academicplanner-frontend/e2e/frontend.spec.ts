@@ -150,18 +150,17 @@ test('campus model keeps controls out of the map caption and reports the active 
   expect(overlap).toBe(0);
 });
 
-test('preference cards stay compact and provide clear control feedback', async ({ page }) => {
+test('More keeps settings compact and provides clear control feedback', async ({ page }) => {
   await page.setViewportSize({ width: 954, height: 911 });
   await seed(page);
   await page.goto('/mas');
-  const visibleCard = page.getByRole('group', { name: 'Información visible' });
-  const calendarCard = page.getByRole('group', { name: 'Calendario y recordatorios' });
-  const [visibleBox, calendarBox] = await Promise.all([visibleCard.boundingBox(), calendarCard.boundingBox()]);
-  expect(visibleBox).not.toBeNull();
-  expect(calendarBox).not.toBeNull();
-  expect(visibleBox!.height).toBeLessThan(calendarBox!.height - 60);
-  expect(await visibleCard.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
+  const tabs = page.getByRole('tablist', { name: 'Secciones de Más' });
+  await expect(tabs.getByRole('tab', { name: /Preferencias/ })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('button', { name: /Inicio y horario/ })).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.getByRole('button', { name: /Apariencia y accesibilidad/ })).toHaveAttribute('aria-expanded', 'false');
+  expect(await page.locator('body').evaluate((element) => element.scrollHeight)).toBeLessThan(1250);
 
+  await page.getByRole('button', { name: /Apariencia y accesibilidad/ }).click();
   const themeAuto = page.getByLabel('Tema visual').getByRole('button', { name: 'Auto', exact: true });
   await themeAuto.click();
   await expect(themeAuto).toHaveAttribute('aria-pressed', 'true');
@@ -169,6 +168,12 @@ test('preference cards stay compact and provide clear control feedback', async (
   await page.getByText('Contraste reforzado', { exact: true }).click();
   await expect(page.getByRole('switch', { name: /Contraste reforzado/ })).toBeChecked();
   await expect(page.getByRole('status')).toContainText('Cambios guardados');
+
+  await tabs.getByRole('tab', { name: /Calendario INTEC/ }).click();
+  await expect(page.getByRole('heading', { name: 'Año académico 2026–2027' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Tus datos, bajo tu control' })).toHaveCount(0);
+  await tabs.getByRole('tab', { name: /Privacidad/ }).click();
+  await expect(page.getByRole('heading', { name: 'Tus datos, bajo tu control' })).toBeVisible();
 });
 
 test('access validation, Enter, repeated submission, privacy, reload and detail keyboard', async ({ page }) => {
@@ -269,6 +274,7 @@ test('monthly schedule and expanded preferences persist and control startup', as
   await page.getByLabel(/Pantalla al iniciar/).selectOption('schedule');
   await page.getByLabel(/Vista predeterminada del horario/).selectOption('month');
   await page.getByLabel(/Densidad del horario/).selectOption('compact');
+  await page.getByRole('button', { name: /Apariencia y accesibilidad/ }).click();
   await page.getByLabel(/Tamaño del texto/).selectOption('large');
   await page.getByText('Contraste reforzado', { exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-text-size', 'large');

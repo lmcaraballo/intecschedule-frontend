@@ -49,6 +49,27 @@ El calendario de Google es la fuente persistente de los eventos personales; no s
 5. El calendario institucional es de una vía: INTEC → AcademicPlanner → eventos de solo lectura en el calendario AcademicPlanner. No debe sobrescribirse desde Google ni mezclarse con los eventos personales.
 6. Nunca registrar cuerpos OAuth, códigos de autorización, encabezados `Authorization`, `refresh_token` ni contraseñas. Si se decide usar un backend para OAuth, debe usar PKCE y no persistir tokens; con esa restricción el usuario reconecta Google cuando expira la sesión.
 
+## Configuración de Google Calendar en este proyecto
+
+1. En Google Cloud, habilitar **Google Calendar API** para el proyecto elegido.
+2. En **Google Auth Platform**, completar Branding, Audience y Data Access. Mientras la aplicación esté en modo Testing, añadir como usuarios de prueba las cuentas que conectarán su calendario.
+3. Crear un cliente OAuth 2.0 de tipo **Web application**. En Authorized JavaScript origins registrar por separado los orígenes que realmente se usarán, porque Google distingue host y puerto:
+   - `http://localhost:4294`
+   - `http://127.0.0.1:4294`
+   - `http://localhost.localdomain:4294`, solo si se abre la app con ese host
+   - el origen HTTPS de producción, cuando esté disponible
+4. Crear un archivo `.env` al lado de `compose.academicplanner.yml` con el client ID público, no con el client secret:
+
+   ```dotenv
+   GOOGLE_OAUTH_CLIENT_ID=000000000000-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com
+   ACADEMIC_TERM=2230
+   ```
+
+5. Reconstruir los servicios con `docker compose -f compose.academicplanner.yml up -d --build` desde la carpeta que contiene el compose.
+6. Comprobar que `http://127.0.0.1:4294/api/calendar/config` responde con `available: true` y el client ID esperado. Después, abrir **Eventos → Conectar Google Calendar**.
+
+El frontend usa Google Identity Services con un token temporal conservado solo en memoria. No necesita ni debe recibir el client secret. Si aparece `origin_mismatch`, falta registrar exactamente el origen mostrado en la barra del navegador. En modo Testing, Google puede exigir reconexión periódica y solo permite las cuentas incluidas como usuarios de prueba.
+
 ## Lo que corresponde al backend de Caraballo
 
 El backend no es un almacén de eventos. Ahora traduce el contrato hacia Google Calendar y publica los datos institucionales que el frontend necesita:
@@ -71,6 +92,6 @@ La dependencia SQLite que existía en `develop` fue retirada en la rama `feat/ac
 
 ## Límite conocido
 
-Se recibió un cliente OAuth web, pero su configuración descargada todavía no contiene orígenes JavaScript ni URI de redirección autorizados. El secreto no se copió al frontend ni a la documentación. Para la prueba local aún debe registrarse `http://localhost:5173`; el frontend no simula una sincronización que todavía no puede autorizarse correctamente.
+Google Calendar queda desactivado cuando `GOOGLE_OAUTH_CLIENT_ID` está vacío o cuando el origen actual no está autorizado en Google Cloud. El frontend no simula una sincronización que Google todavía no puede autorizar correctamente.
 
 El paquete del mapa 3D continúa siendo el fragmento más grande del build. Está cargado de forma diferida y funciona correctamente, pero su reducción queda como optimización de rendimiento posterior, no como fallo funcional del 50 %.
