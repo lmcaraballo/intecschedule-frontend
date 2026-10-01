@@ -1,6 +1,6 @@
 # AcademicPlanner
 
-PWA de organización académica para estudiantes. **Estado: frontend 25%**, con acceso institucional simulado, Ahora dinámico, Horario Día/Semana, detalle de solo lectura, último horario válido y navegación offline con datos locales.
+PWA de organización académica para estudiantes. **Estado: frontend preparado para el incremento 50%**, con acceso institucional simulado, Ahora dinámico, Horario Día/Semana, mapa 3D del campus, calendario académico acotado al trimestre, preferencias y último horario válido local.
 
 React, TypeScript estricto, Vite, React Router, Zod, CSS con tokens, vite-plugin-pwa, Vitest y Testing Library. Requiere Node.js 22.12 o superior.
 
@@ -22,13 +22,15 @@ npm run preview
 
 El mock es el modo predeterminado. El adaptador HTTP está preparado, pero aún no se ha conectado a un backend institucional. `.env.example` documenta el selector público `VITE_ACADEMIC_API_MODE`; nunca debe contener credenciales.
 
-Se conserva únicamente perfil básico, horario, fecha de actualización y tema bajo `academicplanner:data:v1`. Más permite limpiar esos datos. No se guardan contraseñas ni sesiones del portal.
+Se conserva únicamente perfil básico, horario, fecha de actualización, preferencias y marcas locales de una clase terminada antes bajo `academicplanner:data:v1`. Más permite limpiar esos datos. No se guardan contraseñas, sesiones del portal ni tokens de Google.
 
 - [Handoff frontend/backend: modelos, contrato, seguridad e integración](docs/FRONTEND_25_HANDOFF.md)
 - [Verificación final y estado de entrega](docs/FINAL_REVIEW.md)
 - [Alcance del incremento](docs/INCREMENTO_25.md)
+- [Calendario académico, preferencias y contrato de Google](docs/FRONTEND_50_CALENDARIO_Y_PREFERENCIAS.md)
+- [Mapa 3D del campus y contrato de ubicación](docs/FRONTEND_50_CAMPUS.md)
 
-Pendientes: conexión institucional real, eventos personales, conflictos, Google Calendar, Campus, experiencia Pino completa y vista Mes. No hay backend ni base de datos incluidos. Servir `dist/` por HTTPS con fallback SPA y reservar `/api/*` para el backend futuro.
+Pendientes externos: Client ID OAuth para activar Google Calendar real, fuente oficial del siguiente calendario trimestral y prueba final con cuentas autorizadas. También quedan para incrementos posteriores la experiencia Pino completa y la vista Mes. No hay base de datos propia en el alcance. Servir `dist/` por HTTPS con fallback SPA y reservar `/api/*` para la integración institucional.
 
 ## Integración y despliegue
 

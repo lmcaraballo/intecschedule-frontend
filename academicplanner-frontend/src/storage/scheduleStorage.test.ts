@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { scheduleStorage, ScheduleStorageError, clearAcademicPlannerData } from './scheduleStorage';
 import { createMockSession } from '../mocks/academicSession';
+import { defaultPreferences } from '../features/preferences/preferences';
 
 const key = 'academicplanner:data:v1';
 
@@ -14,7 +15,7 @@ describe('scheduleStorage', () => {
   it('persists the last valid schedule, timestamp and basic profile', () => {
     const session = createMockSession('1101234');
     scheduleStorage.save(session);
-    expect(scheduleStorage.get()).toEqual({ version: 1, session, preferences: { theme: 'auto' } });
+    expect(scheduleStorage.get()).toEqual({ version: 1, session, preferences: defaultPreferences, classOverrides: {} });
   });
 
   it('persists preferences before login and retains them on refresh', () => {
@@ -25,6 +26,15 @@ describe('scheduleStorage', () => {
     expect(scheduleStorage.get()?.preferences.theme).toBe('night');
     scheduleStorage.savePreferences({ theme: 'day' });
     expect(scheduleStorage.get()?.session).toEqual(session);
+  });
+
+  it('upgrades older preference records with safe defaults', () => {
+    const session = createMockSession('1101234');
+    localStorage.setItem(key, JSON.stringify({ version: 1, session, preferences: { theme: 'day' }, classOverrides: {} }));
+    expect(scheduleStorage.get()?.preferences).toMatchObject({
+      theme: 'day', startPage: 'now', defaultScheduleView: 'day', scheduleDensity: 'comfortable',
+      showCampusPreview: true, showUnscheduledSubjects: true, textSize: 'normal', highContrast: false,
+    });
   });
 
   it('strips passwords, portal sessions and tokens at all object levels', () => {
@@ -125,6 +135,15 @@ describe('scheduleStorage', () => {
     session.schedule.classes = [];
     scheduleStorage.save(session);
     expect(scheduleStorage.get()?.session).toEqual(session);
+  });
+
+  it('marks an early finish for only that class and calendar day', () => {
+    const session = createMockSession('1101234');
+    scheduleStorage.save(session);
+    scheduleStorage.finishClassEarly('mat-01-mon', '2026-09-14', new Date('2026-09-14T09:15:00-04:00'));
+    expect(scheduleStorage.get()?.classOverrides['2026-09-14:mat-01-mon']).toMatchObject({ classId: 'mat-01-mon', date: '2026-09-14', kind: 'finished_early' });
+    scheduleStorage.undoClassOverride('mat-01-mon', '2026-09-14');
+    expect(scheduleStorage.get()?.classOverrides).toEqual({});
   });
 });
 

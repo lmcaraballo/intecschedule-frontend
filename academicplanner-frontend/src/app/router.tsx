@@ -4,7 +4,7 @@ import { AccessPage } from '../features/auth/AccessPage';
 import { AcademicLayout } from './AcademicLayout';
 import { NowPage } from '../features/now/NowPage';
 import { SchedulePage } from '../features/schedule/SchedulePage';
-import { ComingSoonPage } from './ComingSoonPage';
+import { EventsPage } from '../features/events/EventsPage';
 import { MorePage } from '../features/preferences/MorePage';
 import { AppErrorPage } from './AppErrorPage';
 
@@ -18,7 +18,7 @@ export const appRoutes: RouteObject[] = [
       { element: <AcademicLayout />, children: [
         { path: '/ahora', element: <NowPage /> },
         { path: '/horario', element: <SchedulePage /> },
-        { path: '/eventos', element: <ComingSoonPage title="Eventos" /> },
+        { path: '/eventos', element: <EventsPage /> },
         { path: '/mas', element: <MorePage /> },
       ] },
       { path: '*', element: <Navigate to="/" replace /> },

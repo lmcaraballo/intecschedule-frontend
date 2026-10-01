@@ -10,6 +10,7 @@ import { OfflineState } from './OfflineState';
 import { LastValidSchedule } from './LastValidSchedule';
 import { useNetworkStatus } from '../utils/useNetworkStatus';
 import { useLocalData } from '../app/LocalDataProvider';
+import { defaultPreferences, getStartPath } from '../features/preferences/preferences';
 
 export function AppShell() {
   const { theme, preference, setPreference, storageWarning } = useTheme();
@@ -18,11 +19,12 @@ export function AppShell() {
   const { data, usingLastValid } = useLocalData();
   const session = data?.session;
   const academic = ['/ahora', '/horario', '/eventos', '/mas'].includes(pathname);
+  const startPath = getStartPath(data?.preferences ?? defaultPreferences);
   return (
     <div className={`app-shell${academic ? ' app-shell--academic' : ''}`}>
       <a className="skip-link" href="#main-content">Saltar al contenido</a>
       <header className="site-header">
-        <Link to={academic ? '/ahora' : '/'} className="brand-link" aria-label={`${appConfig.name}, inicio`}><Brand /></Link>
+        <Link to={academic ? startPath : '/'} className="brand-link" aria-label={`${appConfig.name}, inicio`}><Brand /></Link>
         {academic && <PrimaryNavigation />}
         <div className="theme-controls" role="group" aria-label="Apariencia">
           <Button variant="plain" className="theme-auto" aria-pressed={preference === 'auto'} onClick={() => setPreference('auto')}>Auto</Button>

@@ -8,6 +8,12 @@ const storedDataSchema = z.object({
   version: z.literal(1),
   session: academicSessionSchema.nullable(),
   preferences: preferencesSchema,
+  classOverrides: z.record(z.string(), z.object({
+    classId: z.string().trim().min(1),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    kind: z.literal('finished_early'),
+    endedAt: z.iso.datetime({ offset: true }),
+  })).default({}),
 });
 
 export type StoredData = z.infer<typeof storedDataSchema>;
@@ -105,14 +111,41 @@ function save(session: AcademicSession): StoredData {
     version: 1,
     session: valid,
     preferences: previous?.preferences ?? defaultPreferences,
+    classOverrides: previous?.classOverrides ?? {},
   });
 }
 
-function savePreferences(preferences: Preferences): StoredData {
+function savePreferences(preferences: Partial<Preferences>): StoredData {
   const previous = read();
   // A theme change must not overwrite unreadable or temporarily inaccessible data.
   if (previous.status === 'corrupt' || previous.status === 'unavailable') throw new ScheduleStorageError();
-  return write({ version: 1, session: previous.data?.session ?? null, preferences });
+  const normalized = preferencesSchema.parse({
+    ...defaultPreferences,
+    ...previous.data?.preferences,
+    ...preferences,
+  });
+  return write({ version: 1, session: previous.data?.session ?? null, preferences: normalized, classOverrides: previous.data?.classOverrides ?? {} });
+}
+
+function finishClassEarly(classId: string, date: string, endedAt: Date): StoredData {
+  const previous = read();
+  if (previous.status !== 'ready' || !previous.data?.session) throw new ScheduleStorageError();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new ScheduleStorageError();
+  return write({
+    ...previous.data,
+    classOverrides: {
+      ...previous.data.classOverrides,
+      [`${date}:${classId}`]: { classId, date, kind: 'finished_early', endedAt: endedAt.toISOString() },
+    },
+  });
+}
+
+function undoClassOverride(classId: string, date: string): StoredData {
+  const previous = read();
+  if (previous.status !== 'ready' || !previous.data?.session) throw new ScheduleStorageError();
+  const classOverrides = { ...previous.data.classOverrides };
+  delete classOverrides[`${date}:${classId}`];
+  return write({ ...previous.data, classOverrides });
 }
 
 function clear(): void {
@@ -127,4 +160,4 @@ function clear(): void {
 // Only our versioned app key is removed. Other apps and static PWA caches remain.
 export function clearAcademicPlannerData(): void { clear(); }
 
-export const scheduleStorage = { save, get, read, clear, savePreferences, subscribe };
+export const scheduleStorage = { save, get, read, clear, savePreferences, finishClassEarly, undoClassOverride, subscribe };

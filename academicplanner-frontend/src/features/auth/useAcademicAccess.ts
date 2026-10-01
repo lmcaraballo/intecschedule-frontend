@@ -5,6 +5,7 @@ import { consultSchedule } from '../../services/consultSchedule';
 import { useLocalData } from '../../app/LocalDataProvider';
 import { scheduleStorage, ScheduleStorageError } from '../../storage/scheduleStorage';
 import type { Credentials } from './authSchema';
+import { defaultPreferences, getStartPath } from '../preferences/preferences';
 
 export function useAcademicAccess() {
   const navigate = useNavigate();
@@ -36,7 +37,7 @@ export function useAcademicAccess() {
       });
       if (controller.signal.aborted) return;
       setUsingLastValid(false);
-      navigate('/ahora', { replace: true });
+      navigate(getStartPath(scheduleStorage.get()?.preferences ?? defaultPreferences), { replace: true });
     } catch (cause) {
       if (controller.signal.aborted) return;
       setError(cause instanceof AcademicApiError || cause instanceof ScheduleStorageError

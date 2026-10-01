@@ -25,7 +25,7 @@ export function parsePortalSchedule(value: unknown, studentId: string) {
 
 async function readResponse(response: Response): Promise<unknown> {
   if (!response.headers.get('content-type')?.toLowerCase().includes('application/json')) {
-    throw new AcademicApiError(response.ok ? 'INVALID_RESPONSE' : 'PORTAL_UNAVAILABLE');
+    throw new AcademicApiError(response.ok ? 'INVALID_RESPONSE' : 'BACKEND_UNAVAILABLE');
   }
   let body: unknown;
   try { body = await response.json(); }
@@ -84,7 +84,7 @@ export async function fetchAcademicSession(credentials: Credentials, options: Fe
     ensureOnline();
     if (controller.signal.aborted) throw new AcademicApiError('PORTAL_UNAVAILABLE');
     if (error instanceof AcademicApiError) throw error;
-    throw new AcademicApiError('PORTAL_UNAVAILABLE');
+    throw new AcademicApiError('BACKEND_UNAVAILABLE');
   } finally {
     accessToken = '';
     request.data.password = '';

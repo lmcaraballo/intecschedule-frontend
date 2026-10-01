@@ -38,9 +38,10 @@ test('access validation, Enter, repeated submission, privacy, reload and detail 
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(page.getByRole('button', { name: /Editar clase|Eliminar clase/ })).toHaveCount(0);
   await page.keyboard.press('Tab');
-  await expect(page.getByRole('button', { name: 'Cerrar detalle de clase' })).toBeFocused();
+  expect(await page.getByRole('dialog').evaluate(dialog => dialog.contains(document.activeElement))).toBe(true);
+  await page.getByRole('button', { name: 'Cerrar detalle de clase' }).focus();
   await page.keyboard.press('Shift+Tab');
-  await expect(page.getByRole('button', { name: 'Cerrar detalle de clase' })).toBeFocused();
+  expect(await page.getByRole('dialog').evaluate(dialog => dialog.contains(document.activeElement))).toBe(true);
   await page.keyboard.press('Escape');
   await expect(opener).toBeFocused();
   await opener.click();await page.goBack();await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -70,7 +71,7 @@ for (const width of [320,375,390,430,768,1024,1280,1440]) {
     data.session.schedule.classes[0]!.professor = '';
     data.session.schedule.classes[0]!.location = '';
     await seed(page, data);
-    for (const path of ['/', '/ahora', '/horario?date=2026-09-14', '/horario?date=2026-09-14&view=week', '/mas', '/eventos']) {
+    for (const path of ['/', '/ahora', '/horario?date=2026-09-14', '/horario?date=2026-09-14&view=week', '/horario?date=2026-09-14&view=month', '/mas', '/eventos']) {
       await page.goto(path);await expect(page.locator('main')).toBeVisible();await noOverflow(page);
     }
     await page.goto('/horario?date=2026-09-14');
@@ -87,7 +88,7 @@ test('accessible screens, both themes, keyboard focus and reduced motion', async
   await seed(page);
   for (const theme of ['day', 'night']) {
     await page.evaluate(({key,theme}) => { const data=JSON.parse(localStorage.getItem(key)!);data.preferences.theme=theme;localStorage.setItem(key,JSON.stringify(data)); },{key,theme});
-    for (const path of ['/', '/ahora', '/horario?date=2026-09-14', '/horario?date=2026-09-14&view=week', '/mas', '/eventos']) {
+    for (const path of ['/', '/ahora', '/horario?date=2026-09-14', '/horario?date=2026-09-14&view=week', '/horario?date=2026-09-14&view=month', '/mas', '/eventos']) {
       await page.goto(path);await expect(page.locator('main')).toBeVisible();
       expect((await new AxeBuilder({ page }).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()).violations).toEqual([]);
     }
@@ -99,6 +100,34 @@ test('accessible screens, both themes, keyboard focus and reduced motion', async
   await page.goto('/');await page.keyboard.press('Tab');
   await expect(page.getByRole('link',{name:'Saltar al contenido'})).toBeFocused();
   expect(await page.getByRole('link',{name:'Saltar al contenido'}).evaluate(e=>getComputedStyle(e).outlineStyle)).not.toBe('none');
+});
+
+test('monthly schedule and expanded preferences persist and control startup', async ({ page }) => {
+  await seed(page);
+  await page.goto('/mas');
+  await page.getByLabel(/Pantalla al iniciar/).selectOption('schedule');
+  await page.getByLabel(/Vista predeterminada del horario/).selectOption('month');
+  await page.getByLabel(/Densidad del horario/).selectOption('compact');
+  await page.getByLabel(/Tamaño del texto/).selectOption('large');
+  await page.getByText('Contraste reforzado', { exact: true }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-text-size', 'large');
+  await expect(page.locator('html')).toHaveAttribute('data-high-contrast', 'true');
+
+  await page.goto('/horario?date=2026-09-14');
+  await expect(page.getByRole('button', { name: 'Mes', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  const month = page.getByRole('region', { name: /Horario mensual de septiembre de 2026/i });
+  await expect(month).toBeVisible();
+  await expect(month.getByRole('button', { name: /lunes, 14 de septiembre.*clase/i })).toBeVisible();
+  await month.getByRole('button', { name: /lunes, 14 de septiembre.*clase/i }).click();
+  await expect(page).toHaveURL(/view=day/);
+  await expect(page.getByRole('heading', { name: /lunes, 14 de septiembre/i })).toBeVisible();
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Continuar con horario guardado' }).click();
+  await expect(page).toHaveURL(/\/horario$/);
+  await expect(page.getByRole('button', { name: 'Mes', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  const saved = await page.evaluate(k => JSON.parse(localStorage.getItem(k)!).preferences, key);
+  expect(saved).toMatchObject({ startPage: 'schedule', defaultScheduleView: 'month', scheduleDensity: 'compact', textSize: 'large', highContrast: true });
 });
 
 test('corrupt storage, unsupported version, null classes and changes in another tab', async ({ page, context }) => {
@@ -145,7 +174,7 @@ test('service worker does not intercept API navigation',async({page})=>{
 for (const width of [320,390,640,768,1440]) {
   test(`200% font reflow, touch targets and short viewport at ${width}px`,async({page})=>{
     await page.setViewportSize({width,height:450});await seed(page);
-    for (const route of ['/','/ahora','/horario?date=2026-09-14','/horario?date=2026-09-14&view=week','/mas']) {
+    for (const route of ['/','/ahora','/horario?date=2026-09-14','/horario?date=2026-09-14&view=week','/horario?date=2026-09-14&view=month','/mas']) {
       await page.goto(route);await page.locator('main').waitFor();
       await page.evaluate(()=>document.documentElement.style.fontSize='200%');
       await noOverflow(page);

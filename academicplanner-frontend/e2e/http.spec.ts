@@ -46,7 +46,7 @@ test('malformed HTTP success and network failure are controlled on first use',as
   await login(page);await expect(page.getByRole('alert')).toBeVisible();
   expect(await page.evaluate(k=>localStorage.getItem(k),key)).toBeNull();
   await page.unroute('**/api/schedule');await page.route('**/api/schedule',route=>route.abort('connectionfailed'));
-  await login(page);await expect(page.getByRole('alert')).toContainText('portal');
+  await login(page);await expect(page.getByRole('alert')).toContainText('AcademicPlanner');
 });
 
 test('two tabs: delayed older response never replaces the newer saved schedule',async({page,context})=>{
@@ -103,10 +103,16 @@ test('twelve-class portal response renders days, week, blank professor and virtu
     await page.goto(`/horario?date=${date}`);
     await expect(page.getByRole('button',{name:/Ver detalle:/})).toHaveCount(count);
   }
+  await page.goto('/horario?date=2026-09-15');
+  await expect(page.getByRole('button',{name:/Ver detalle: ALGORITMOS MALICIOSOS/})).not.toContainText('Virtual');
   await page.goto('/horario?date=2026-09-17');
-  await page.getByRole('button',{name:/Ver detalle:.*ALGORITMOS MALICIOSOS/}).click();
+  const virtualMeeting=page.getByRole('button',{name:/Ver detalle:.*ALGORITMOS MALICIOSOS.*encuentro virtual/});
+  await expect(virtualMeeting).toContainText('Virtual');
+  await virtualMeeting.click();
   await expect(page.getByRole('dialog')).toContainText('ProfesorPor confirmar');
+  await expect(page.getByRole('dialog')).toContainText('ModalidadVirtual');
   await expect(page.getByRole('dialog')).toContainText('VIRTUAL');
+  await expect(page.getByRole('dialog')).toContainText('No necesitas dirigirte a un edificio del campus');
   await page.keyboard.press('Escape');
   await page.goto('/horario?date=2026-09-14&view=week');
   await expect(page.getByRole('button',{name:/Ver detalle:/})).toHaveCount(12);
@@ -137,7 +143,9 @@ test('institutional email sends only the normalized student ID to login',async({
 });
 
 test('unsupported email is rejected before any backend request',async({page})=>{
-  let calls=0;await page.route('**/api/**',route=>{calls++;return route.abort()});
+  let calls=0;
+  await page.route('**/api/user/login',route=>{calls++;return route.abort()});
+  await page.route('**/api/schedule',route=>{calls++;return route.abort()});
   await page.goto('/');await page.getByLabel('Identificación o matrícula').fill('1127998@example.com');
   await page.getByLabel('Contraseña institucional',{exact:true}).fill(demoPassword);
   await page.getByRole('button',{name:'Continuar',exact:true}).click();

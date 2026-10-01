@@ -49,7 +49,7 @@ describe('HTTP academic contract', () => {
 
   it.each([
     { label: 'unknown code', response: () => json({ error: { code: 'NEW_ERROR', message: 'private' } }, 500), code: 'UNKNOWN_ERROR' },
-    { label: 'HTML from failed upstream', response: () => new Response('<html>private</html>', { status: 502 }), code: 'PORTAL_UNAVAILABLE' },
+    { label: 'HTML from failed upstream', response: () => new Response('<html>private</html>', { status: 502 }), code: 'BACKEND_UNAVAILABLE' },
     { label: 'HTML success', response: () => new Response('<html>private</html>'), code: 'INVALID_RESPONSE' },
     { label: 'malformed JSON', response: () => new Response('{', { headers: { 'Content-Type': 'application/json' } }), code: 'INVALID_RESPONSE' },
     { label: 'incomplete success', response: () => json({ schedule: {} }), code: 'INVALID_RESPONSE' },
@@ -70,7 +70,7 @@ describe('HTTP academic contract', () => {
 
   it('maps transport failures safely', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('private network detail')));
-    await expect(fetchAcademicSession(credentials)).rejects.toMatchObject({ code: 'PORTAL_UNAVAILABLE' });
+    await expect(fetchAcademicSession(credentials)).rejects.toMatchObject({ code: 'BACKEND_UNAVAILABLE' });
   });
 
   it('accepts a confirmed empty schedule', async () => {

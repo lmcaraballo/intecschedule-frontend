@@ -78,8 +78,22 @@ describe('academic day domain', () => {
     const sunday = new Date(2026, 8, 20, 23, 59, 59);
     expect(getNextClass(schedule, sunday)?.startsAt).toEqual(new Date(2026, 8, 21, 8));
     const yearEnd = new Date(2026, 11, 31, 23, 59);
-    expect(getNextClass(schedule, yearEnd)?.startsAt).toEqual(new Date(2027, 0, 1, 9));
-    expect(getTodayClasses(schedule, new Date(2027, 0, 1, 0))).toHaveLength(1);
+    expect(getNextClass(schedule, yearEnd)).toBeNull();
+    expect(getTodayClasses(schedule, new Date(2027, 0, 1, 0))).toEqual([]);
+  });
+
+  it('does not invent classes on an institutional holiday or after the term', () => {
+    expect(getTodayClasses(schedule, new Date(2026, 8, 24, 9))).toEqual([]);
+    expect(getCurrentClass(schedule, new Date(2026, 8, 24, 9))).toBeNull();
+    expect(getNextClass(schedule, new Date(2026, 9, 19, 9))).toBeNull();
+  });
+
+  it('removes an early-finished class from the current state without changing the agenda', () => {
+    const now = monday(9);
+    const overrides = { '2026-09-14:mat-01-mon': { classId: 'mat-01-mon', date: '2026-09-14', kind: 'finished_early' as const, endedAt: '2026-09-14T09:00:00-04:00' } };
+    expect(getTodayClasses(schedule, now)).toHaveLength(2);
+    expect(getCurrentClass(schedule, now, overrides)).toBeNull();
+    expect(getDayStatus(schedule, now, overrides).kind).toBe('between');
   });
 
   it('handles a weekday without classes and still finds the next activity', () => {

@@ -19,6 +19,7 @@
   "dependencies": {
     "@fontsource/dm-sans": "^5.2.0",
     "@fontsource/lora": "^5.2.0",
+    "maplibre-gl": "^6.5.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router": "^7.9.0",

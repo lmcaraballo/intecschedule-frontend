@@ -9,6 +9,7 @@ import { useAcademicAccess } from './useAcademicAccess';
 import { AccessForm } from './AccessForm';
 import { DemoSettings } from './DemoSettings';
 import './access.css';
+import { defaultPreferences, getStartPath } from '../preferences/preferences';
 
 export function AccessPage() {
   const [scenario, setScenario] = useState<MockScenario>('success');
@@ -19,7 +20,7 @@ export function AccessPage() {
 
   function continueWithSaved() {
     setUsingLastValid(true);
-    navigate('/ahora');
+    navigate(getStartPath(data?.preferences ?? defaultPreferences));
   }
 
   return (

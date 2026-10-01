@@ -13,15 +13,16 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [preference, setThemePreference] = useState(() => scheduleStorage.get()?.preferences.theme ?? defaultPreferences.theme);
+  const [preferences, setPreferences] = useState<Preferences>(() => scheduleStorage.get()?.preferences ?? defaultPreferences);
   const [context, setContext] = useState(getContextualTheme);
   const [storageWarning, setStorageWarning] = useState(false);
+  const preference = preferences.theme;
   const theme = getVisualTheme(preference, context);
 
   useEffect(() => scheduleStorage.subscribe((change) => {
     const stored = scheduleStorage.read();
     if (change === 'cleared' || stored.status === 'ready') {
-      setThemePreference(stored.data?.preferences.theme ?? defaultPreferences.theme);
+      setPreferences(stored.data?.preferences ?? defaultPreferences);
       setStorageWarning(false);
     }
   }), []);
@@ -41,8 +42,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (color) document.querySelector('meta[name="theme-color"]')?.setAttribute('content', color);
   }, [theme, context]);
 
+  useEffect(() => {
+    document.documentElement.dataset.reduceMotion = String(preferences.reducedMotion);
+    document.documentElement.dataset.textSize = preferences.textSize;
+    document.documentElement.dataset.highContrast = String(preferences.highContrast);
+  }, [preferences.highContrast, preferences.reducedMotion, preferences.textSize]);
+
   function setPreference(value: Preferences['theme']) {
-    setThemePreference(value);
+    setPreferences((current) => ({ ...current, theme: value }));
     try {
       scheduleStorage.savePreferences({ theme: value });
       setStorageWarning(false);

@@ -5,10 +5,11 @@ export const backendErrorCodeSchema = z.enum([
   'PORTAL_STRUCTURE_CHANGED', 'INVALID_RESPONSE', 'UNKNOWN_ERROR', 'AUTHENTICATION_REQUIRED', 'RATE_LIMITED', 'INVALID_REQUEST', 'SERVICE_NOT_CONFIGURED',
 ]);
 export type BackendErrorCode = z.infer<typeof backendErrorCodeSchema>;
-export type AcademicApiErrorCode = BackendErrorCode | 'OFFLINE';
+export type AcademicApiErrorCode = BackendErrorCode | 'OFFLINE' | 'BACKEND_UNAVAILABLE';
 export const backendErrorSchema = z.object({ error: z.object({ code: backendErrorCodeSchema }) });
 
 const messages: Record<AcademicApiErrorCode, string> = {
+  BACKEND_UNAVAILABLE: 'No pudimos conectar con el servicio de AcademicPlanner. Verifica que el backend esté iniciado e inténtalo de nuevo.',
   SERVICE_NOT_CONFIGURED: 'La consulta de este período aún no está configurada.',
   RATE_LIMITED: 'Has hecho varias consultas seguidas. Espera un minuto e inténtalo de nuevo.',
   INVALID_REQUEST: 'Revisa tu matrícula y contraseña antes de continuar.',
