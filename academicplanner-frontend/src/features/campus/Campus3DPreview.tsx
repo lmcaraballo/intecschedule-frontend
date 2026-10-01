@@ -36,10 +36,11 @@ export function Campus3DPreview({ academicClass, timing }: { academicClass: Acad
     void import('./threeD/campusMap.js')
       .then(({ initCampusMap }) => {
         if (cancelled || !mapElement.current) return;
-        controller = initCampusMap(mapElement.current, { compact: timing !== 'detail' });
-        mapController.current = controller;
-        controller.highlightBuilding(building.code);
-        controller.focusCamera(building.code);
+        const nextController = initCampusMap(mapElement.current, { compact: timing !== 'detail' });
+        controller = nextController;
+        mapController.current = nextController;
+        nextController.highlightBuilding(building.code);
+        nextController.focusCamera(building.code);
       })
       .catch(() => {
         if (!cancelled) setUnavailable(true);
