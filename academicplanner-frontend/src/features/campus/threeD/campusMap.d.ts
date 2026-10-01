@@ -7,5 +7,8 @@ export interface CampusMapController {
 
 export function initCampusMap(
   container: HTMLElement,
-  options?: { compact?: boolean },
+  options?: {
+    compact?: boolean;
+    onBuildingSelect?: (selection: { code: string; name: string }) => void;
+  },
 ): CampusMapController;

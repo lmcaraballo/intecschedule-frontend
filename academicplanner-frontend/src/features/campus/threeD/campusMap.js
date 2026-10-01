@@ -128,7 +128,11 @@ const campusInternalPaths = {
             ...feature,
             properties: {
                 ...feature.properties,
-                pathClass: feature.properties.highway === 'service' ? 'service' : 'pedestrian'
+                pathClass: feature.properties.highway === 'service'
+                    ? 'service'
+                    : feature.properties.covered === 'yes'
+                        ? 'covered'
+                        : 'pedestrian'
             }
         }))
 };
@@ -302,6 +306,38 @@ function createTreeVolumes() {
 
 const campusTreeVolumes = createTreeVolumes();
 
+function parkingRow(idPrefix, start, end, depth, spaces) {
+    return Array.from({ length: spaces + 1 }, (_, index) => {
+        const progress = index / spaces;
+        const origin = [
+            start[0] + (end[0] - start[0]) * progress,
+            start[1] + (end[1] - start[1]) * progress
+        ];
+        return {
+            type: 'Feature',
+            properties: { id: `${idPrefix}-${index + 1}`, kind: 'stall-divider' },
+            geometry: {
+                type: 'LineString',
+                coordinates: [origin, [origin[0] + depth[0], origin[1] + depth[1]]]
+            }
+        };
+    });
+}
+
+// Divisiones trazadas dentro de las tres huellas OSM verificadas. Las filas
+// dejan un pasillo central libre, en vez de cubrir el parqueo con una trama.
+const campusParkingMarkings = {
+    type: 'FeatureCollection',
+    features: [
+        ...parkingRow('p1-south', [-69.96147, 18.487645], [-69.96115, 18.487645], [0, 0.000066], 9),
+        ...parkingRow('p1-north', [-69.96147, 18.488078], [-69.96115, 18.488078], [0, -0.000066], 9),
+        ...parkingRow('p3-west', [-69.963292, 18.487570], [-69.963302, 18.487910], [0.000080, 0], 10),
+        ...parkingRow('p3-east', [-69.963040, 18.487570], [-69.963050, 18.487910], [-0.000080, 0], 10),
+        ...parkingRow('p2-south', [-69.960665, 18.487628], [-69.959955, 18.487635], [0, 0.000072], 18),
+        ...parkingRow('p2-north', [-69.960665, 18.488018], [-69.960060, 18.488018], [0, -0.000070], 16)
+    ]
+};
+
 function isPointInsidePolygon([x, y], ring) {
     let inside = false;
     for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
@@ -367,6 +403,10 @@ function moveCamera(map, camera, compact) {
     prefersReducedMotion ? map.jumpTo(options) : map.flyTo(options);
 }
 
+/**
+ * @param {string | HTMLElement} containerId
+ * @param {{ compact?: boolean, onBuildingSelect?: (selection: { code: string, name: string }) => void }} options
+ */
 export function initCampusMap(containerId, options = {}) {
     const container = typeof containerId === 'string'
         ? document.getElementById(containerId)
@@ -422,17 +462,25 @@ export function initCampusMap(containerId, options = {}) {
 
     map.on('load', () => {
 
-        createMapPattern(map, 'parking-bays-pattern', (context, width, height) => {
-            // Diagonal bay stripes — light lines on dark asphalt
-            context.clearRect(0, 0, width, height);
-            context.strokeStyle = 'rgba(255,255,255,0.65)';
-            context.lineWidth = 1.8;
-            for (let x = -height; x < width + height; x += 10) {
+        createMapPattern(map, 'parking-asphalt-pattern', (context, width, height) => {
+            context.fillStyle = '#777C7A';
+            context.fillRect(0, 0, width, height);
+            context.fillStyle = 'rgba(242,243,238,0.16)';
+            [[6,7],[17,4],[26,13],[9,23],[22,28],[29,20]].forEach(([x, y]) => {
                 context.beginPath();
-                context.moveTo(x, 0);
-                context.lineTo(x + height, height);
-                context.stroke();
-            }
+                context.arc(x, y, 0.8, 0, Math.PI * 2);
+                context.fill();
+            });
+        });
+        createMapPattern(map, 'parking-deck-pattern', (context, width, height) => {
+            context.fillStyle = '#AAA9A3';
+            context.fillRect(0, 0, width, height);
+            context.strokeStyle = 'rgba(78,80,78,0.14)';
+            context.lineWidth = 1;
+            context.beginPath();
+            context.moveTo(0, height - 1);
+            context.lineTo(width, height - 1);
+            context.stroke();
         });
         createMapPattern(map, 'plaza-concrete-pattern', (context, width, height) => {
             // Gray concrete slab grid — realistic plazoleta appearance
@@ -628,53 +676,105 @@ export function initCampusMap(containerId, options = {}) {
         // CAPA 1: CAMINOS INTERNOS (antes de edificios)
         // ════════════════════════════════════════
         map.addSource('campus-paths', { type: 'geojson', data: campusInternalPaths });
-        // Outer glow (shadow) for visual depth
+        // Vías de servicio y pasillos de parqueo: borde, asfalto y eje sutil.
         map.addLayer({
-            id: 'campus-paths-glow',
+            id: 'campus-service-road-shadow',
             type: 'line',
             source: 'campus-paths',
+            filter: ['==', ['get', 'pathClass'], 'service'],
+            layout: { 'line-cap': 'round', 'line-join': 'round' },
             paint: {
-                'line-color': '#B8A898',
+                'line-color': 'rgba(46,49,47,0.22)',
                 'line-width': [
                     'interpolate', ['linear'], ['zoom'],
-                    16, ['case', ['==', ['get', 'pathClass'], 'service'], 5, 3],
-                    18, ['case', ['==', ['get', 'pathClass'], 'service'], 10, 6],
-                    20, ['case', ['==', ['get', 'pathClass'], 'service'], 17, 11]
+                    16, 5.8,
+                    18, 11,
+                    20, 18
                 ],
-                'line-opacity': 0.35,
-                'line-blur': 3
+                'line-translate': [1.5, 2.5],
+                'line-blur': 1.4
             }
         });
-        // Asphalt/concrete surface (darker for contrast)
         map.addLayer({
-            id: 'campus-paths-bg',
+            id: 'campus-service-road-edge',
             type: 'line',
             source: 'campus-paths',
+            filter: ['==', ['get', 'pathClass'], 'service'],
+            layout: { 'line-cap': 'round', 'line-join': 'round' },
             paint: {
-                'line-color': '#A89E92',
+                'line-color': '#5F6663',
                 'line-width': [
                     'interpolate', ['linear'], ['zoom'],
-                    16, ['case', ['==', ['get', 'pathClass'], 'service'], 4, 2.4],
-                    18, ['case', ['==', ['get', 'pathClass'], 'service'], 9, 5.2],
-                    20, ['case', ['==', ['get', 'pathClass'], 'service'], 16, 10]
-                ],
-                'line-opacity': 1
+                    16, 4.8,
+                    18, 9.6,
+                    20, 16.5
+                ]
             }
         });
-        // Center highlight (brighter for contrast)
         map.addLayer({
-            id: 'campus-paths-fg',
+            id: 'campus-service-road-surface',
             type: 'line',
             source: 'campus-paths',
+            filter: ['==', ['get', 'pathClass'], 'service'],
+            layout: { 'line-cap': 'round', 'line-join': 'round' },
             paint: {
-                'line-color': '#F4F0EB',
+                'line-color': '#858A87',
                 'line-width': [
                     'interpolate', ['linear'], ['zoom'],
-                    16, ['case', ['==', ['get', 'pathClass'], 'service'], 2, 1.2],
-                    18, ['case', ['==', ['get', 'pathClass'], 'service'], 5, 2.8],
-                    20, ['case', ['==', ['get', 'pathClass'], 'service'], 10, 6]
-                ],
-                'line-opacity': 0.95
+                    16, 3.7,
+                    18, 8,
+                    20, 14.2
+                ]
+            }
+        });
+
+        // Senderos peatonales: junta oscura, losa cálida y modulación discreta.
+        map.addLayer({
+            id: 'campus-footway-shadow',
+            type: 'line',
+            source: 'campus-paths',
+            filter: ['!=', ['get', 'pathClass'], 'service'],
+            layout: { 'line-cap': 'round', 'line-join': 'round' },
+            paint: {
+                'line-color': 'rgba(70,61,51,0.18)',
+                'line-width': ['interpolate', ['linear'], ['zoom'], 16, 3.2, 18, 6.4, 20, 11.4],
+                'line-translate': [1, 2],
+                'line-blur': 1.2
+            }
+        });
+        map.addLayer({
+            id: 'campus-footway-edge',
+            type: 'line',
+            source: 'campus-paths',
+            filter: ['!=', ['get', 'pathClass'], 'service'],
+            layout: { 'line-cap': 'round', 'line-join': 'round' },
+            paint: {
+                'line-color': '#B8AEA2',
+                'line-width': ['interpolate', ['linear'], ['zoom'], 16, 2.7, 18, 5.6, 20, 10.2]
+            }
+        });
+        map.addLayer({
+            id: 'campus-footway-surface',
+            type: 'line',
+            source: 'campus-paths',
+            filter: ['!=', ['get', 'pathClass'], 'service'],
+            layout: { 'line-cap': 'round', 'line-join': 'round' },
+            paint: {
+                'line-color': ['match', ['get', 'pathClass'], 'covered', '#D3D0C9', '#E7E0D5'],
+                'line-width': ['interpolate', ['linear'], ['zoom'], 16, 2.1, 18, 4.5, 20, 8.5]
+            }
+        });
+        map.addLayer({
+            id: 'campus-footway-joints',
+            type: 'line',
+            source: 'campus-paths',
+            minzoom: 18,
+            filter: ['==', ['get', 'pathClass'], 'pedestrian'],
+            layout: { 'line-cap': 'butt', 'line-join': 'round' },
+            paint: {
+                'line-color': 'rgba(128,117,104,0.45)',
+                'line-width': ['interpolate', ['linear'], ['zoom'], 18, 0.65, 20, 1.1],
+                'line-dasharray': [0.35, 3.2]
             }
         });
 
@@ -798,28 +898,49 @@ export function initCampusMap(containerId, options = {}) {
             type: 'fill',
             source: 'campus-parking',
             filter: ['!=', ['get', 'parking'], 'underground'],
-            paint: { 'fill-color': '#8F918D', 'fill-opacity': 1 }
-        });
-        // Bay lines pattern (white dashes on dark surface)
-        map.addLayer({
-            id: 'campus-parking-lines',
-            type: 'fill',
-            source: 'campus-parking',
-            filter: ['!=', ['get', 'parking'], 'underground'],
             paint: {
-                'fill-pattern': 'parking-bays-pattern',
-                'fill-opacity': ['interpolate', ['linear'], ['zoom'], 16, 0.5, 19, 1.0]
+                'fill-pattern': 'parking-asphalt-pattern',
+                'fill-opacity': 1
             }
         });
-        // Bold outline
         map.addLayer({
             id: 'campus-parking-outline',
             type: 'line',
             source: 'campus-parking',
             filter: ['!=', ['get', 'parking'], 'underground'],
+            layout: { 'line-cap': 'round', 'line-join': 'round' },
             paint: {
-                'line-color': '#888078',
-                'line-width': 1.8
+                'line-color': '#5E625F',
+                'line-width': ['interpolate', ['linear'], ['zoom'], 16, 1, 19, 2]
+            }
+        });
+
+        // Plazas individuales: OSM recomienda mantenerlas dentro de la huella
+        // general del parqueo. Aquí se dibujan como divisores, dejando libre el
+        // pasillo vehicular central en P1, P2 y P3.
+        map.addSource('campus-parking-markings', { type: 'geojson', data: campusParkingMarkings });
+        map.addLayer({
+            id: 'campus-parking-marking-shadow',
+            type: 'line',
+            source: 'campus-parking-markings',
+            minzoom: 16.6,
+            layout: { 'line-cap': 'square', 'line-join': 'round' },
+            paint: {
+                'line-color': 'rgba(34,37,35,0.25)',
+                'line-width': ['interpolate', ['linear'], ['zoom'], 16.6, 1.1, 19, 2.1],
+                'line-translate': [0.7, 0.8]
+            }
+        });
+        map.addLayer({
+            id: 'campus-parking-markings',
+            type: 'line',
+            source: 'campus-parking-markings',
+            minzoom: 16.6,
+            layout: { 'line-cap': 'square', 'line-join': 'round' },
+            paint: {
+                'line-color': 'rgba(244,244,237,0.86)',
+                'line-width': ['interpolate', ['linear'], ['zoom'], 16.6, 0.7, 19, 1.45],
+                'line-opacity': ['interpolate', ['linear'], ['zoom'], 16.6, 0.56, 18, 0.94]
             }
         });
 
@@ -856,16 +977,9 @@ export function initCampusMap(containerId, options = {}) {
             type: 'fill',
             source: 'campus-parking',
             filter: ['==', ['get', 'parking'], 'underground'],
-            paint: { 'fill-color': '#C4C0B7', 'fill-opacity': 0.72 }
-        });
-        map.addLayer({
-            id: 'campus-parking-underground-deck-lines',
-            type: 'fill',
-            source: 'campus-parking',
-            filter: ['==', ['get', 'parking'], 'underground'],
             paint: {
-                'fill-pattern': 'parking-bays-pattern',
-                'fill-opacity': ['interpolate', ['linear'], ['zoom'], 16, 0.28, 19, 0.62]
+                'fill-pattern': 'parking-deck-pattern',
+                'fill-opacity': 0.92
             }
         });
         map.addLayer({
@@ -876,10 +990,11 @@ export function initCampusMap(containerId, options = {}) {
             paint: {
                 'line-color': '#A69D90',
                 'line-width': 1.2,
-                'line-dasharray': [3, 2],
-                'line-opacity': 0.72
+                'line-opacity': 0.78
             }
         });
+        map.moveLayer('campus-parking-marking-shadow');
+        map.moveLayer('campus-parking-markings');
 
         // ════════════════════════════════════════
         // CAPA 4: PLAZOLETA (gray concrete)
@@ -1426,6 +1541,28 @@ export function initCampusMap(containerId, options = {}) {
             }
         });
 
+        // Una veladura cálida ilumina el volumen activo sin sustituir su
+        // material, ventanas ni rasgos de fachada.
+        map.addLayer({
+            id: 'building-selection-tint',
+            type: 'fill-extrusion',
+            source: 'campus',
+            filter: ['==', ['get', 'code'], ''],
+            layout: { 'fill-extrusion-rounded-corner-distance': 0.22 },
+            paint: {
+                'fill-extrusion-color': '#FFF0D2',
+                'fill-extrusion-height': [
+                    '*',
+                    ['coalesce', ['get', 'levels'], 2],
+                    CAMPUS_FLOOR_HEIGHT_METERS
+                ],
+                'fill-extrusion-base': 0,
+                'fill-extrusion-opacity': 0.1,
+                'fill-extrusion-vertical-gradient': true,
+                'fill-extrusion-opacity-transition': { duration: 320 }
+            }
+        });
+
         // Tapas de techo — coherentes con los colores de las paredes
         map.addLayer({
             id: 'building-roof-caps',
@@ -1547,7 +1684,9 @@ export function initCampusMap(containerId, options = {}) {
                 'line-blur': 5,
                 'line-opacity': [
                     'case', ['boolean', ['feature-state', 'active'], false], 0.42, 0
-                ]
+                ],
+                'line-width-transition': { duration: 0 },
+                'line-opacity-transition': { duration: 0 }
             }
         });
 
@@ -1650,6 +1789,29 @@ export function initCampusMap(containerId, options = {}) {
             }
         });
 
+        map.addLayer({
+            id: 'active-building-name',
+            type: 'symbol',
+            source: 'active-building-label',
+            minzoom: 17.75,
+            layout: {
+                'text-field': ['get', 'name'],
+                'text-font': ['Open Sans Regular'],
+                'text-size': ['interpolate', ['linear'], ['zoom'], 17.75, 8.5, 19, 11],
+                'text-offset': [0, 1.15],
+                'text-anchor': 'top',
+                'text-max-width': 12,
+                'text-allow-overlap': true,
+                'text-ignore-placement': true
+            },
+            paint: {
+                'text-color': '#4B332D',
+                'text-halo-color': 'rgba(255,250,242,0.98)',
+                'text-halo-width': 2.2,
+                'text-halo-blur': 0.35
+            }
+        });
+
         map.addSource('campus-landmark-labels', { type: 'geojson', data: campusLandmarkLabels });
         map.addLayer({
             id: 'campus-landmark-labels',
@@ -1731,7 +1893,11 @@ export function initCampusMap(containerId, options = {}) {
             const props = e.features[0].properties;
             const code = props.code;
 
-            if (code && window.enterFocusMode) window.enterFocusMode(code);
+            if (code) {
+                controller.highlightBuilding(code);
+                controller.focusCamera(code);
+                options.onBuildingSelect?.({ code, name: props.name || props.shortName || code });
+            }
 
             // Build facilities list from JSON string
             let facilitiesList = '';
@@ -1763,7 +1929,6 @@ export function initCampusMap(containerId, options = {}) {
             const features = map.queryRenderedFeatures(e.point, { layers: ['buildings-3d'] });
             if (features.length === 0) {
                 popup.remove();
-                if (window.exitFocusMode) window.exitFocusMode();
             }
         });
 
@@ -1779,6 +1944,47 @@ export function initCampusMap(containerId, options = {}) {
     resizeObserver?.observe(container);
 
     let currentActiveCode = null;
+    let selectionAnimationFrame = null;
+    let lastSelectionPulse = 0;
+
+    const selectionMotionIsReduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        || document.documentElement.dataset.reduceMotion === 'true';
+
+    const setSelectionPulse = (progress = 0.5) => {
+        if (!map.getLayer('building-selection-halo')) return;
+        const width = 5.2 + progress * 3.2;
+        const opacity = 0.24 + progress * 0.22;
+        map.setPaintProperty('building-selection-halo', 'line-width', width);
+        map.setPaintProperty('building-selection-halo', 'line-opacity', [
+            'case', ['boolean', ['feature-state', 'active'], false], opacity, 0
+        ]);
+    };
+
+    const animateSelection = (timestamp) => {
+        if (!currentActiveCode || document.hidden || selectionMotionIsReduced()) {
+            selectionAnimationFrame = null;
+            setSelectionPulse(0.5);
+            return;
+        }
+        if (timestamp - lastSelectionPulse >= 42) {
+            const progress = (Math.sin(timestamp / 360) + 1) / 2;
+            setSelectionPulse(progress);
+            lastSelectionPulse = timestamp;
+        }
+        selectionAnimationFrame = window.requestAnimationFrame(animateSelection);
+    };
+
+    const syncSelectionAnimation = () => {
+        if (selectionAnimationFrame) window.cancelAnimationFrame(selectionAnimationFrame);
+        selectionAnimationFrame = null;
+        setSelectionPulse(0.5);
+        if (currentActiveCode && !document.hidden && !selectionMotionIsReduced()) {
+            selectionAnimationFrame = window.requestAnimationFrame(animateSelection);
+        }
+    };
+
+    const handleVisibilityChange = () => syncSelectionAnimation();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     const controller = {
         highlightBuilding: (code) => {
@@ -1802,6 +2008,9 @@ export function initCampusMap(containerId, options = {}) {
                 const activeBuilding = code
                     ? CAMPUS_BUILDINGS.find(feature => feature.properties.code === code && feature.properties.centroid_lng)
                     : null;
+                if (map.getLayer('building-selection-tint')) {
+                    map.setFilter('building-selection-tint', ['==', ['get', 'code'], activeBuilding?.properties.code || '']);
+                }
                 const activeLabelSource = map.getSource('active-building-label');
                 activeLabelSource?.setData({
                     type: 'FeatureCollection',
@@ -1818,6 +2027,7 @@ export function initCampusMap(containerId, options = {}) {
                     }] : []
                 });
                 currentActiveCode = code || null;
+                syncSelectionAnimation();
             };
             map.isStyleLoaded() ? doHighlight() : map.once('load', doHighlight);
         },
@@ -1852,6 +2062,8 @@ export function initCampusMap(containerId, options = {}) {
         },
 
         destroy: () => {
+            if (selectionAnimationFrame) window.cancelAnimationFrame(selectionAnimationFrame);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
             resizeObserver?.disconnect();
             map.remove();
         }

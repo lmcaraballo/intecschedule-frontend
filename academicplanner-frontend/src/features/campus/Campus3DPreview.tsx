@@ -15,6 +15,9 @@ export function Campus3DPreview({ academicClass, timing }: { academicClass: Acad
   const [unavailable, setUnavailable] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
   const [cameraView, setCameraView] = useState<'building' | 'campus'>('building');
+  const [mapSelection, setMapSelection] = useState<{ code: string; name: string } | undefined>(
+    building ? { code: building.code, name: building.name } : undefined,
+  );
   const [loadAttempt, setLoadAttempt] = useState(0);
   const titleId = useId();
   const instructionsId = useId();
@@ -30,6 +33,7 @@ export function Campus3DPreview({ academicClass, timing }: { academicClass: Acad
     setUnavailable(false);
     setIsMapReady(false);
     setCameraView('building');
+    setMapSelection({ code: building.code, name: building.name });
     let controller: { highlightBuilding(code?: string): void; focusCamera(code: string): void; zoomBy(amount: number): void; destroy(): void } | undefined;
 
     const handleMapReady = () => setIsMapReady(true);
@@ -38,7 +42,13 @@ export function Campus3DPreview({ academicClass, timing }: { academicClass: Acad
     void import('./threeD/campusMap.js')
       .then(({ initCampusMap }) => {
         if (cancelled || !mapElement.current) return;
-        const nextController = initCampusMap(mapElement.current, { compact: timing !== 'detail' });
+        const nextController = initCampusMap(mapElement.current, {
+          compact: timing !== 'detail',
+          onBuildingSelect: (selection: { code: string; name: string }) => {
+            setMapSelection(selection);
+            setCameraView('building');
+          },
+        });
         controller = nextController;
         mapController.current = nextController;
         nextController.highlightBuilding(building.code);
@@ -76,11 +86,11 @@ export function Campus3DPreview({ academicClass, timing }: { academicClass: Acad
   return <section className={`campus-preview campus-preview--3d campus-preview--${timing}`} aria-labelledby={titleId}>
     <div className="campus-preview__heading"><div><p className="section-label">Campus INTEC</p><h2 id={titleId}>{title}</h2></div><span>{building.code}</span></div>
     <div className="campus-3d-map-shell">
-      <div className="campus-3d-map" ref={mapElement} role="region" aria-label={`Maqueta 3D del campus INTEC con ${building.name} resaltado`} aria-describedby={instructionsId} />
+      <div className="campus-3d-map" ref={mapElement} role="region" aria-label={`Maqueta 3D del campus INTEC con ${mapSelection?.name || building.name} resaltado`} aria-describedby={instructionsId} />
       <div className="campus-map-controls" role="group" aria-label="Controles de la maqueta 3D">
         <button type="button" onClick={() => mapController.current?.zoomBy(0.65)} disabled={!isMapReady} aria-label="Acercar mapa" title="Acercar">+</button>
         <button type="button" onClick={() => mapController.current?.zoomBy(-0.65)} disabled={!isMapReady} aria-label="Alejar mapa" title="Alejar">−</button>
-        <button type="button" onClick={() => { mapController.current?.focusCamera(building.code); setCameraView('building'); }} disabled={!isMapReady} aria-pressed={cameraView === 'building'} aria-label={`Enfocar ${building.name}`}>Edificio</button>
+        <button type="button" onClick={() => { mapController.current?.highlightBuilding(building.code); mapController.current?.focusCamera(building.code); setMapSelection({ code: building.code, name: building.name }); setCameraView('building'); }} disabled={!isMapReady} aria-pressed={cameraView === 'building'} aria-label={`Enfocar ${building.name}`}>Edificio</button>
         <button type="button" onClick={() => { mapController.current?.focusCamera('campus'); setCameraView('campus'); }} disabled={!isMapReady} aria-pressed={cameraView === 'campus'} aria-label="Ver campus completo">Campus</button>
       </div>
       <p id={instructionsId} className="campus-map-instructions">Arrastra para explorar. Usa los controles para ajustar la vista.</p>
