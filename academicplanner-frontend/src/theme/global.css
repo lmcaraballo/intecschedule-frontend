@@ -15,7 +15,48 @@ svg { flex-shrink: 0; vertical-align: middle; }
 ::selection { background: var(--color-sage); color: var(--color-pine); }
 h1, h2, p { margin: 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
-.app-shell { max-width: 1440px; min-height: 100svh; margin-inline: auto; display: flex; flex-direction: column; }
+.app-shell { position: relative; isolation: isolate; max-width: 1440px; min-height: 100svh; margin-inline: auto; display: flex; flex-direction: column; }
+.site-header, .shell-warning, .access-layout, .academic-page, .recovery-page, .site-footer { position: relative; z-index: 1; }
+.breeze-background { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; user-select: none; contain: strict; }
+.breeze-current { position: absolute; left: -35vw; width: 70vw; height: 190px; border-top: 1px solid color-mix(in srgb, var(--color-moss) 18%, transparent); border-radius: 50%; opacity: .7; animation: breeze-current 22s linear infinite; }
+.breeze-current--one { top: 24%; transform: rotate(-5deg); }
+.breeze-current--two { top: 68%; animation-delay: -11s; animation-duration: 27s; transform: rotate(6deg) scale(.8); }
+.breeze-leaf { position: absolute; top: var(--leaf-top); left: -8vw; width: var(--leaf-size); height: var(--leaf-size); color: color-mix(in srgb, var(--color-moss) 62%, transparent); opacity: 0; animation: breeze-drift-a var(--leaf-duration) linear infinite; animation-delay: var(--leaf-delay); will-change: transform, opacity; }
+.breeze-leaf--2, .breeze-leaf--4, .breeze-leaf--6, .breeze-leaf--8 { animation-name: breeze-drift-b; }
+.breeze-leaf--3, .breeze-leaf--7 { color: color-mix(in srgb, var(--color-honey) 60%, transparent); }
+.breeze-leaf svg { display: block; width: 100%; height: 100%; stroke-width: 1.5; animation: breeze-flutter 2.8s ease-in-out infinite alternate; }
+.breeze-leaf--1 { --leaf-top: 12%; --leaf-size: 18px; --leaf-duration: 24s; --leaf-delay: -7s; }
+.breeze-leaf--2 { --leaf-top: 25%; --leaf-size: 13px; --leaf-duration: 29s; --leaf-delay: -19s; }
+.breeze-leaf--3 { --leaf-top: 39%; --leaf-size: 21px; --leaf-duration: 32s; --leaf-delay: -3s; }
+.breeze-leaf--4 { --leaf-top: 54%; --leaf-size: 15px; --leaf-duration: 26s; --leaf-delay: -14s; }
+.breeze-leaf--5 { --leaf-top: 72%; --leaf-size: 19px; --leaf-duration: 31s; --leaf-delay: -23s; }
+.breeze-leaf--6 { --leaf-top: 84%; --leaf-size: 12px; --leaf-duration: 23s; --leaf-delay: -9s; }
+.breeze-leaf--7 { --leaf-top: 18%; --leaf-size: 11px; --leaf-duration: 35s; --leaf-delay: -27s; }
+.breeze-leaf--8 { --leaf-top: 63%; --leaf-size: 16px; --leaf-duration: 28s; --leaf-delay: -5s; }
+.breeze-leaf--9 { --leaf-top: 92%; --leaf-size: 14px; --leaf-duration: 33s; --leaf-delay: -17s; }
+[data-theme='night'] .breeze-current { border-color: color-mix(in srgb, var(--color-sage) 16%, transparent); }
+[data-theme='night'] .breeze-leaf { color: color-mix(in srgb, var(--color-sage) 52%, transparent); }
+[data-theme='night'] .breeze-leaf--3, [data-theme='night'] .breeze-leaf--7 { color: color-mix(in srgb, var(--color-honey) 56%, transparent); }
+@keyframes breeze-current {
+  0% { translate: -20vw 0; opacity: 0; }
+  12%, 78% { opacity: .7; }
+  100% { translate: 170vw -22px; opacity: 0; }
+}
+@keyframes breeze-drift-a {
+  0% { transform: translate3d(-10vw, 0, 0) rotate(-25deg); opacity: 0; }
+  10% { opacity: .68; }
+  35% { transform: translate3d(38vw, -24px, 0) rotate(105deg); }
+  67% { transform: translate3d(78vw, 18px, 0) rotate(235deg); opacity: .54; }
+  100% { transform: translate3d(120vw, -12px, 0) rotate(390deg); opacity: 0; }
+}
+@keyframes breeze-drift-b {
+  0% { transform: translate3d(-12vw, 0, 0) rotate(20deg); opacity: 0; }
+  12% { opacity: .6; }
+  42% { transform: translate3d(45vw, 20px, 0) rotate(-120deg); }
+  72% { transform: translate3d(84vw, -26px, 0) rotate(-250deg); opacity: .48; }
+  100% { transform: translate3d(122vw, 10px, 0) rotate(-380deg); opacity: 0; }
+}
+@keyframes breeze-flutter { from { scale: .82 1; } to { scale: 1 .76; } }
 .site-header { min-height: 88px; padding: var(--space-5) var(--space-6); display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
 .brand-link { display: inline-flex; align-items: center; min-height: 44px; text-decoration: none; border-radius: var(--radius-sm); }
 .brand { display: flex; align-items: center; gap: var(--space-2); color: var(--heading); font-size: 1.02rem; font-weight: 700; letter-spacing: -.6px; }
@@ -92,7 +133,14 @@ h1, h2, p { margin: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  .breeze-background { display: none; }
 }
+html[data-reduce-motion='true'] .breeze-background { display: none; }
+@media (max-width: 639px) {
+  .breeze-leaf--6, .breeze-leaf--7, .breeze-leaf--8, .breeze-leaf--9, .breeze-current--two { display: none; }
+  .breeze-leaf { opacity: .8; }
+}
+@media print { .breeze-background { display: none; } }
 
 /* Reflow when the user enlarges text, without hiding overflowing content. */
 .site-header { flex-wrap: wrap; }

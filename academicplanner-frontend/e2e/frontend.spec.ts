@@ -13,6 +13,27 @@ test.afterEach(async ({ page }) => {
   if (!page.isClosed()) expect(await page.evaluate(() => (window as unknown as { qaErrors: () => Promise<string[]> }).qaErrors())).toEqual([]);
 });
 
+test('ambient breeze stays decorative and honors reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/');
+  const breeze = page.locator('.breeze-background');
+  await expect(breeze).toBeVisible();
+  await expect(breeze).toHaveAttribute('aria-hidden', 'true');
+  await expect(breeze.locator('.breeze-leaf')).toHaveCount(9);
+  expect(await breeze.evaluate((element) => getComputedStyle(element).pointerEvents)).toBe('none');
+  expect(await breeze.locator('.breeze-leaf').first().evaluate((element) => getComputedStyle(element).animationName)).toContain('breeze-drift');
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(breeze).toBeHidden();
+
+  const data = storedSession();
+  data.preferences.reducedMotion = true;
+  await seed(page, data);
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/ahora');
+  await expect(page.locator('.breeze-background')).toBeHidden();
+});
+
 test('access validation, Enter, repeated submission, privacy, reload and detail keyboard', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Continuar', exact: true }).click();

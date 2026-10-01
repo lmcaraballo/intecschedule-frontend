@@ -13,6 +13,7 @@ import { useLocalData } from '../app/LocalDataProvider';
 import { defaultPreferences, getStartPath } from '../features/preferences/preferences';
 import { useInstitutionalCalendar } from '../features/institutional/InstitutionalCalendarProvider';
 import { formatDate } from '../utils/dateFormat';
+import { BreezeBackground } from './BreezeBackground';
 
 export function AppShell() {
   const { theme, preference, setPreference, storageWarning } = useTheme();
@@ -26,6 +27,7 @@ export function AppShell() {
   return (
     <div className={`app-shell${academic ? ' app-shell--academic' : ''}`}>
       <a className="skip-link" href="#main-content">Saltar al contenido</a>
+      <BreezeBackground />
       <header className="site-header">
         <Link to={academic ? startPath : '/'} className="brand-link" aria-label={`${appConfig.name}, inicio`}><Brand /></Link>
         {academic && <PrimaryNavigation />}
