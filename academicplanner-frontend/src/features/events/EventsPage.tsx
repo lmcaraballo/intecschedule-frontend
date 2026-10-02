@@ -14,6 +14,7 @@ import { createCalendarEvent, deleteCalendarEvent, listCalendarEvents, updateCal
 import { calendarOwnerId, syncInstitutionalReminders, syncScheduleToCalendar } from './calendarSync';
 import { emptyEventDraft, type CalendarEvent, type EventDraft } from './eventSchema';
 import { getInstitutionalPeriod, getInstitutionalPeriods } from '../institutional/institutionalCalendar';
+import { scheduleStorage } from '../../storage/scheduleStorage';
 
 type EventTab = 'personal' | 'schedule' | 'institutional';
 
@@ -118,6 +119,15 @@ export function EventsPage() {
   function resetDraft(keepDate = false) {
     setEditing(null); setOptionalOpen(false);
     setDraft({ ...emptyEventDraft(), date: keepDate ? draft.date : dateKey(now), startTime: '16:00', endTime: '17:00' });
+  }
+
+  function toggleInstitutionalReminders() {
+    setError(null);
+    try {
+      scheduleStorage.savePreferences({ institutionalReminders: !preferences.institutionalReminders });
+    } catch {
+      setError('No pudimos guardar el cambio de recordatorios en este dispositivo.');
+    }
   }
 
   function cancelEditing() {
@@ -231,7 +241,7 @@ export function EventsPage() {
           {activeTab === 'personal' && <><Button onClick={() => { if (editorOpen) { resetDraft(); setEditorOpen(false); } else setEditorOpen(true); }}><Icon name={editorOpen ? 'close' : 'spark'} /> {editorOpen ? 'Cerrar formulario' : 'Nueva actividad'}</Button><Button variant="secondary" disabled={busy} onClick={() => void refresh()} title="Vuelve a consultar Google y trae los cambios hechos fuera de AcademicPlanner"><Icon name="refresh" /> Traer cambios de Google</Button></>}
           {activeTab === 'schedule' && !viewingScheduleHistory && <Button disabled={busy} onClick={() => void syncSchedule()}><Icon name="sync" /> Enviar clases a Google</Button>}
           {activeTab === 'schedule' && viewingScheduleHistory && <span className="event-folder-note"><Icon name="lock" /> Consulta de un trimestre anterior</span>}
-          {activeTab === 'institutional' && <span className="event-folder-note"><Icon name="check" /> {preferences.institutionalReminders ? 'Recordatorios automáticos activos' : 'Actívalos en Más para enviarlos a Google'}</span>}
+          {activeTab === 'institutional' && <button type="button" className={`event-folder-note event-folder-note--control${preferences.institutionalReminders ? '' : ' is-off'}`} aria-pressed={preferences.institutionalReminders} disabled={busy} onClick={toggleInstitutionalReminders} aria-label={preferences.institutionalReminders ? `Recordatorios institucionales activos, ${preferences.reminderMinutes} minutos antes. Desactivar` : 'Recordatorios institucionales desactivados. Activar'}><Icon name={preferences.institutionalReminders ? 'check' : 'calendar'} /><span><strong>{preferences.institutionalReminders ? `Recordatorios · ${preferences.reminderMinutes} min antes` : 'Recordatorios desactivados'}</strong><small>{preferences.institutionalReminders ? 'Desactivar' : 'Activar'}</small></span><Icon name="chevron-right" /></button>}
         </div>
       </section>
 

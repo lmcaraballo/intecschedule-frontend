@@ -84,7 +84,7 @@ function scheduleEvent(studentId: string, ownerId: string, academicClass: Academ
   };
 }
 
-export function institutionalReminderEvents(reminderMinutes: number): DesiredEvent[] {
+export function institutionalReminderEvents(reminderMinutes: number | null): DesiredEvent[] {
   return getInstitutionalPeriods().flatMap((period) => {
     const start: InstitutionalDate = {
       date: period.startsOn,
@@ -122,7 +122,7 @@ export async function syncScheduleToCalendar(token: string, session: AcademicSes
 }
 
 export async function syncInstitutionalReminders(token: string, studentId: string, enabled: boolean, reminderMinutes: number): Promise<CalendarSyncResult> {
-  return syncDesiredEvents(token, enabled ? institutionalReminderEvents(reminderMinutes) : [], 'institutional', undefined, calendarOwnerId(studentId));
+  return syncDesiredEvents(token, institutionalReminderEvents(enabled ? reminderMinutes : null), 'institutional', undefined, calendarOwnerId(studentId));
 }
 
 async function syncDesiredEvents(token: string, desired: DesiredEvent[], sourceType: DesiredEvent['sourceType'], scope: { startsOn: string; endsOn: string } | undefined, ownerId: string): Promise<CalendarSyncResult> {

@@ -40,4 +40,10 @@ describe('calendar synchronization plan', () => {
     expect(new Set(events.map((event) => event.sourceId)).size).toBe(events.length);
     expect(events.filter((event) => event.draft.date === '2026-08-03')).toHaveLength(1);
   });
+
+  it('keeps institutional dates when their Google reminders are disabled', () => {
+    const events = institutionalReminderEvents(null);
+    expect(events.length).toBeGreaterThan(0);
+    expect(events.every((event) => event.sourceType === 'institutional' && event.reminderMinutes === null)).toBe(true);
+  });
 });

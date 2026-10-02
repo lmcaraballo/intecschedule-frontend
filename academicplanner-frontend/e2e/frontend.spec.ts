@@ -177,6 +177,23 @@ test('day schedule controls read as one compact tactile workspace', async ({ pag
   expect(await nowCard.locator('.class-card__top > svg').evaluate((element) => getComputedStyle(element).borderRadius)).toBe('50%');
 });
 
+test('comfortable and compact density produce visibly different schedules', async ({ page }) => {
+  await page.setViewportSize({ width: 954, height: 911 });
+  await seed(page);
+  await page.goto('/horario?date=2026-09-14&view=day');
+  const schedule = page.locator('.schedule-page');
+  await expect(schedule).toHaveAttribute('data-density', 'comfortable');
+  const comfortableHeight = (await page.locator('.day-schedule .class-card').first().boundingBox())!.height;
+
+  await page.goto('/mas');
+  await page.getByLabel('Densidad del horario').selectOption('compact');
+  await expect(page.getByText('Reduce tarjetas y espacios para mostrar más clases.')).toBeVisible();
+  await page.goto('/horario?date=2026-09-14&view=day');
+  await expect(schedule).toHaveAttribute('data-density', 'compact');
+  const compactHeight = (await page.locator('.day-schedule .class-card').first().boundingBox())!.height;
+  expect(compactHeight).toBeLessThan(comfortableHeight - 20);
+});
+
 test('past schedule dates stay available as clearly marked history', async ({ page }) => {
   await seed(page);
   await page.goto('/horario?date=2026-09-30&view=day');
@@ -557,9 +574,20 @@ test('Google Calendar demo synchronizes without duplicates and supports personal
   await page.getByRole('button', { name: 'Conectar con Google' }).click();
   await expect(page.getByRole('heading', { name: 'Mis eventos personales' })).toBeVisible();
   await expect(page.getByRole('tab', { name: /Personales/ })).toHaveAttribute('aria-selected', 'true');
-  await page.getByRole('tab', { name: /Fechas INTEC/ }).click();
+  const institutionalTab = page.getByRole('tab', { name: /Fechas INTEC/ });
+  await institutionalTab.click();
   await expect(page.locator('.event-card')).toHaveCount(8);
   await expect(page.getByRole('button', { name: /Mostrar \d+ eventos más/ })).toBeVisible();
+  const activeReminders = page.getByRole('button', { name: /Recordatorios institucionales activos, 15 minutos antes\. Desactivar/ });
+  await expect(activeReminders).toHaveAttribute('aria-pressed', 'true');
+  await activeReminders.click();
+  const inactiveReminders = page.getByRole('button', { name: /Recordatorios institucionales desactivados\. Activar/ });
+  await expect(inactiveReminders).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('.event-card')).toHaveCount(8);
+  await expect(institutionalTab).toHaveAccessibleName(/Fechas INTEC [1-9]\d* eventos/);
+  await inactiveReminders.click();
+  await expect(activeReminders).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.event-card')).toHaveCount(8);
 
   await page.getByRole('tab', { name: /Mi horario/ }).click();
   await page.getByRole('button', { name: 'Enviar clases a Google' }).click();
