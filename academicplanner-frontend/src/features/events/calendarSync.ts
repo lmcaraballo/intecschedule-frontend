@@ -75,7 +75,7 @@ function scheduleEvent(studentId: string, ownerId: string, academicClass: Academ
     reminderMinutes: null,
     draft: {
       title: `${academicClass.subjectCode} · ${academicClass.subjectName}`,
-      description: `Clase institucional de AcademicPlanner · Sección ${academicClass.section || 'por confirmar'}`,
+      description: `Clase institucional de AcademicPlanner · Sección ${academicClass.section || 'no informada'}`,
       date: occurrenceDate,
       startTime: academicClass.startTime,
       endTime: academicClass.endTime,

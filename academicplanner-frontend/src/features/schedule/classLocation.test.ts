@@ -8,8 +8,8 @@ describe('virtual meeting locations', () => {
     expect(isVirtualLocation('Sesión en línea')).toBe(true);
     expect(isVirtualLocation('LABTI405')).toBe(false);
     expect(scheduledLocationLabel('LABTI405')).toBe('LABTI405');
-    expect(scheduledLocationLabel('')).toBe('Ubicación por confirmar');
-    expect(scheduledLocationLabel('Aula')).toBe('Aula por confirmar');
+    expect(scheduledLocationLabel('')).toBe('Ubicación no publicada');
+    expect(scheduledLocationLabel('Aula')).toBe('Presencial');
     expect(isGenericPhysicalLocation('SALÓN')).toBe(true);
     expect(isGenericPhysicalLocation('AULA AJ-103')).toBe(false);
   });
@@ -21,6 +21,6 @@ describe('virtual meeting locations', () => {
     expect(getClassModality('AULA AJ-203')).toBe('presential');
     expect(classModalityLabel('AULA AJ-203')).toBe('Presencial');
     expect(getClassModality('')).toBe('unknown');
-    expect(classModalityLabel()).toBe('Por confirmar');
+    expect(classModalityLabel()).toBe('No informada');
   });
 });

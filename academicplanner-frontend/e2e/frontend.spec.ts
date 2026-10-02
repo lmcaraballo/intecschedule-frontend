@@ -184,6 +184,16 @@ test('past schedule dates stay available as clearly marked history', async ({ pa
   await expect(page.getByRole('button', { name: /Ver detalle:/ }).first()).toBeVisible();
 });
 
+test('a generic BeeCampus classroom is presented as presencial, never as pending', async ({ page }) => {
+  const data = storedSession();
+  data.session.schedule.classes[0]!.location = 'Aula';
+  await seed(page, data);
+  await page.goto('/horario?date=2026-09-14&view=day');
+  const card = page.locator('.day-schedule .class-card').first();
+  await expect(card).toContainText('Presencial');
+  await expect(page.getByText(/por confirmar/i)).toHaveCount(0);
+});
+
 test('campus model keeps controls out of the map caption and reports the active camera', async ({ page }) => {
   await page.setViewportSize({ width: 954, height: 911 });
   await seed(page);
@@ -428,7 +438,7 @@ for (const width of [320,375,390,430,768,1024,1280,1440]) {
     await page.getByRole('button', { name: /Ver detalle:/ }).first().click();
     const dialog=page.getByRole('dialog');await expect(dialog).toBeVisible();
     expect(await dialog.evaluate(d => d.scrollWidth - d.clientWidth)).toBeLessThanOrEqual(1);
-    await expect(dialog).toContainText('Sección por confirmar');
+    await expect(dialog).toContainText('Sección no informada');
     await page.keyboard.press('Escape');
   });
 }

@@ -20,11 +20,11 @@ export function isGenericPhysicalLocation(location?: string): boolean {
 
 export function classModalityLabel(location?: string): string {
   const modality = getClassModality(location);
-  return modality === 'virtual' ? 'Virtual' : modality === 'presential' ? 'Presencial' : 'Por confirmar';
+  return modality === 'virtual' ? 'Virtual' : modality === 'presential' ? 'Presencial' : 'No informada';
 }
 
 export function scheduledLocationLabel(location?: string): string {
-  if (!location?.trim()) return 'Ubicación por confirmar';
-  if (isGenericPhysicalLocation(location)) return 'Aula por confirmar';
+  if (!location?.trim()) return 'Ubicación no publicada';
+  if (isGenericPhysicalLocation(location)) return 'Presencial';
   return isVirtualLocation(location) ? `${location} · con horario programado` : location;
 }

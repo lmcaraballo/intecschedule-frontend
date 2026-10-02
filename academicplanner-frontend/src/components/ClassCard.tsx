@@ -24,7 +24,7 @@ export function ClassCard({ academicClass: item, eyebrow, children, compact = fa
   }
   return <article className={`class-card${compact ? ' class-card--compact' : ''}`} data-subject={getSubjectColor(item.subjectCode)}>
     <Button variant="plain" type="button" className="class-card__button" onClick={openDetail} aria-label={`Ver detalle: ${item.subjectName}, ${formatTime(item.startTime)}${virtual ? ', encuentro virtual' : ''}`}>
-      <span className="class-card__top"><span className="subject-code">{item.subjectCode} <span>· {item.section || 'Sección por confirmar'}</span></span>{(virtual || eyebrow) && <span className="class-card__badges">{virtual && <span className="class-badge class-badge--virtual">Virtual</span>}{eyebrow && <span className="class-badge">{eyebrow}</span>}</span>}<Icon name="chevron-right" width="16" height="16" /></span>
+      <span className="class-card__top"><span className="subject-code">{item.subjectCode} <span>· {item.section || 'Sección no informada'}</span></span>{(virtual || eyebrow) && <span className="class-card__badges">{virtual && <span className="class-badge class-badge--virtual">Virtual</span>}{eyebrow && <span className="class-badge">{eyebrow}</span>}</span>}<Icon name="chevron-right" width="16" height="16" /></span>
       <span className="class-card__name">{item.subjectName}</span>
       <span className="class-card__meta"><Icon name="clock" width="16" height="16" /><span>{formatTime(item.startTime)} – {formatTime(item.endTime)}</span></span>
       <span className="class-card__meta"><Icon name="pin" width="16" height="16" /><span>{scheduledLocationLabel(item.location)}</span></span>

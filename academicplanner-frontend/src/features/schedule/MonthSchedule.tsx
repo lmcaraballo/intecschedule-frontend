@@ -2,7 +2,7 @@ import type { Schedule } from '../../types/academic';
 import { Button } from '../../components/Button';
 import { dateKey, formatDate, formatTime, weekdayNames } from '../../utils/dateFormat';
 import { getInstitutionalDate } from '../institutional/institutionalCalendar';
-import { getClassModality } from './classLocation';
+import { getClassModality, scheduledLocationLabel } from './classLocation';
 import { addDays, getTodayClasses, isPastDay, isSameDay, isoWeekday } from './scheduleDomain';
 import { getSubjectColor } from './subjectColor';
 
@@ -58,7 +58,7 @@ export function MonthSchedule({ schedule, selected, now, showInstitutionalDates,
           <strong className="month-day__preview-date">{formatDate(date, { weekday: 'long', day: 'numeric', month: 'long' })}</strong>
           {institutional && <span className="month-day__preview-institutional"><span>Fecha INTEC</span><strong>{institutional.title}</strong>{institutional.detail && <small>{institutional.detail}</small>}</span>}
           {classes.length ? <span className="month-day__preview-list">{classes.slice(0, 4).map((item) => <span key={item.id} data-subject={getSubjectColor(item.subjectCode)}>
-            <strong>{formatTime(item.startTime)} – {formatTime(item.endTime)}</strong><span>{item.subjectName}</span><small>{item.subjectCode} · {item.location || 'Ubicación por confirmar'}</small>
+            <strong>{formatTime(item.startTime)} – {formatTime(item.endTime)}</strong><span>{item.subjectName}</span><small>{item.subjectCode} · {scheduledLocationLabel(item.location)}</small>
           </span>)}{classes.length > 4 && <small className="month-day__preview-more">+{classes.length - 4} clases más</small>}</span> : <span className="month-day__preview-empty">Sin clases programadas.</span>}
           <small className="month-day__preview-action">Haz clic para abrir el día</small>
         </span>

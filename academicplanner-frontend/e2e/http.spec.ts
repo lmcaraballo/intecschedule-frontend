@@ -111,7 +111,7 @@ test('twelve-class portal response renders days, week, blank professor and virtu
   const virtualMeeting=page.getByRole('button',{name:/Ver detalle:.*ALGORITMOS MALICIOSOS.*encuentro virtual/});
   await expect(virtualMeeting).toContainText('Virtual');
   await virtualMeeting.click();
-  await expect(page.getByRole('dialog')).toContainText('ProfesorPor confirmar');
+  await expect(page.getByRole('dialog')).toContainText('ProfesorNo informado');
   await expect(page.getByRole('dialog')).toContainText('ModalidadVirtual');
   await expect(page.getByRole('dialog')).toContainText('VIRTUAL');
   await expect(page.getByRole('dialog')).toContainText('No necesitas dirigirte a un edificio del campus');
