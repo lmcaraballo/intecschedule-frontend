@@ -7,6 +7,7 @@ interface ThemeContextValue {
   theme: VisualTheme;
   phase: ContextualTheme;
   preference: Preferences['theme'];
+  reducedMotion: boolean;
   setPreference: (value: Preferences['theme']) => void;
   storageWarning: boolean;
 }
@@ -58,7 +59,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     };
     const applyPreference = () => setPreferences((current) => ({ ...current, theme: value, themeVariant: variantForMode(current) }));
     const reducedMotion = document.documentElement.dataset.reduceMotion === 'true'
-      || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      || (typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     const startViewTransition = (document as Document & { startViewTransition?: (callback: () => void) => unknown }).startViewTransition;
     if (!reducedMotion && startViewTransition) startViewTransition.call(document, applyPreference);
     else applyPreference();
@@ -71,7 +72,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  return <ThemeContext.Provider value={{ theme, phase: context, preference, setPreference, storageWarning }}>{children}</ThemeContext.Provider>;
+  return <ThemeContext.Provider value={{ theme, phase: context, preference, reducedMotion: preferences.reducedMotion, setPreference, storageWarning }}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme(): ThemeContextValue {

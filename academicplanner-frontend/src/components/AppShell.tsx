@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router';
+import { useAnimate } from 'motion/react-mini';
 import { Brand } from './Brand';
 import { Icon } from './Icon';
 import { StatusBanner } from './StatusBanner';
@@ -18,7 +19,7 @@ import { BreezeBackground } from './BreezeBackground';
 import { BrandSplash } from './BrandSplash';
 
 export function AppShell() {
-  const { theme, phase, preference, setPreference, storageWarning } = useTheme();
+  const { theme, phase, preference, reducedMotion, setPreference, storageWarning } = useTheme();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [splashDestination, setSplashDestination] = useState<{ destination: string; message: string } | null>(null);
@@ -28,6 +29,10 @@ export function AppShell() {
   const session = data?.session;
   const academic = ['/ahora', '/horario', '/eventos', '/mas'].includes(pathname);
   const startPath = getStartPath(data?.preferences ?? defaultPreferences);
+  const compactThemeControl = useCompactThemeControl();
+  const sliderShift = themeSliderShift(preference, phase, compactThemeControl);
+  const [themeToggleScope, animateThemeToggle] = useAnimate();
+  const hasPlacedThemeToggle = useRef(false);
 
   useEffect(() => {
     if (!splashDestination) return;
@@ -54,6 +59,23 @@ export function AppShell() {
     };
   }, [navigate, pathname, splashDestination]);
 
+  useEffect(() => {
+    const toggle = themeToggleScope.current;
+    if (!toggle) return;
+    const shouldAnimate = hasPlacedThemeToggle.current && !reducedMotion;
+    hasPlacedThemeToggle.current = true;
+    // JSDOM does not expose the Web Animations API. Keep the control usable in
+    // that environment while browsers use Motion's maintained mini animator.
+    if (typeof toggle.animate !== 'function') {
+      toggle.style.transform = `translateX(${sliderShift}px)`;
+      return;
+    }
+    const animation = animateThemeToggle(toggle, { transform: `translateX(${sliderShift}px)` }, shouldAnimate
+      ? { type: 'spring', duration: .9, bounce: 0 }
+      : { duration: 0 });
+    return () => animation.stop();
+  }, [animateThemeToggle, reducedMotion, sliderShift, themeToggleScope]);
+
   const homePath = academic ? startPath : '/';
   return (
     <div className={`app-shell${academic ? ' app-shell--academic' : ''}`}>
@@ -70,7 +92,7 @@ export function AppShell() {
           <Button variant="plain" className="theme-auto" aria-pressed={preference === 'auto'} onClick={() => setPreference('auto')}>Auto</Button>
           <span className="theme-scene">
             <span className="theme-rail" aria-hidden="true"><i /><i /><i /><i /></span>
-            <Button variant="plain" className="theme-toggle" aria-label={themeToggleLabel(preference, theme, phase)} onClick={() => setPreference(theme === 'day' ? 'night' : 'day')}><Icon name={phaseIcon(preference, theme, phase)} /></Button>
+            <button ref={themeToggleScope} type="button" className="control-button theme-toggle" aria-label={themeToggleLabel(preference, theme, phase)} onClick={() => setPreference(theme === 'day' ? 'night' : 'day')}><Icon name={phaseIcon(preference, theme, phase)} /></button>
           </span>
         </div>
       </header>
@@ -91,6 +113,29 @@ export function AppShell() {
 function phaseIcon(preference: 'auto' | 'day' | 'night', theme: 'day' | 'night', phase: 'morning' | 'day' | 'sunset' | 'night') {
   if (preference !== 'auto') return theme === 'day' ? 'sun' : 'moon';
   return phase === 'morning' ? 'sunrise' : phase === 'sunset' ? 'sunset' : phase === 'night' ? 'moon' : 'sun';
+}
+
+function useCompactThemeControl() {
+  const [compact, setCompact] = useState(() => themeControlQuery()?.matches ?? false);
+  useEffect(() => {
+    const query = themeControlQuery();
+    if (!query) return;
+    const update = () => setCompact(query.matches);
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
+  return compact;
+}
+
+function themeControlQuery() {
+  return typeof window.matchMedia === 'function' ? window.matchMedia('(max-width: 479px)') : null;
+}
+
+function themeSliderShift(preference: 'auto' | 'day' | 'night', phase: 'morning' | 'day' | 'sunset' | 'night', compact: boolean) {
+  if (preference === 'day' || phase === 'morning') return 0;
+  if (preference === 'night' || phase === 'night') return compact ? 56 : 64;
+  if (phase === 'sunset') return compact ? 38 : 43;
+  return compact ? 19 : 22;
 }
 
 function themeToggleLabel(preference: 'auto' | 'day' | 'night', theme: 'day' | 'night', phase: 'morning' | 'day' | 'sunset' | 'night') {
