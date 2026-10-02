@@ -53,23 +53,27 @@ export function InstitutionalCalendarProvider({ children }: { children: ReactNod
   useEffect(() => {
     if (isAcademicMock) return;
     let active = true;
-    fetch('/api/calendar/institutional', { headers: { Accept: 'application/json' }, cache: 'no-store' })
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 8_000);
+    fetch('/api/calendar/institutional', { headers: { Accept: 'application/json' }, cache: 'no-store', signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error('INSTITUTIONAL_CALENDAR_UNAVAILABLE');
         return periodsSchema.parse(await response.json());
       })
       .then((periods) => {
         if (!active) return;
+        window.clearTimeout(timeout);
         setInstitutionalPeriods(periods);
         writeCache(periods);
         setValue({ periods, status: 'fresh', lastUpdatedAt: latestUpdate(periods) });
       })
       .catch(() => {
         if (!active) return;
+        window.clearTimeout(timeout);
         const periods = getInstitutionalPeriods();
         setValue({ periods, status: 'stale', lastUpdatedAt: latestUpdate(periods) });
       });
-    return () => { active = false; };
+    return () => { active = false; window.clearTimeout(timeout); controller.abort(); };
   }, []);
 
   return <InstitutionalCalendarContext.Provider value={value}>{children}</InstitutionalCalendarContext.Provider>;

@@ -84,6 +84,28 @@
   --shadow-paper: 0 14px 28px #00000020;
 }
 
+/* Auto follows a gentle daylight cycle. Manual light/dark stays stable. */
+[data-theme-mode='auto'][data-context='morning'] {
+  --bg: #f5f0e2;
+  --surface: #fffaf0;
+  --surface-soft: #eee9d9;
+  --success-bg: #e8eee0;
+  --art-honey: #ead59f;
+}
+
+[data-theme-mode='auto'][data-context='sunset'] {
+  --bg: #eee5d9;
+  --surface: #f8f1e8;
+  --surface-soft: #e4ddd3;
+  --text: #34312d;
+  --muted: #716a62;
+  --heading: #3b503f;
+  --border: #d2cbbf;
+  --input-bg: #f6efe7;
+  --success-bg: #dde5d7;
+  --art-honey: #d8b96f;
+}
+
 /* Stable, non-semantic subject palettes for all academic surfaces. */
 [data-subject='fern'] { --subject-accent: var(--color-moss); --subject-tint: #eaf0e5; }
 [data-subject='slate'] { --subject-accent: #536590; --subject-tint: #eceef6; }

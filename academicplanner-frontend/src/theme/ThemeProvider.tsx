@@ -1,10 +1,11 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { scheduleStorage } from '../storage/scheduleStorage';
 import { defaultPreferences, type Preferences } from '../features/preferences/preferences';
-import { getContextualTheme, getVisualTheme, type VisualTheme } from './contextualTheme';
+import { getContextualTheme, getVisualTheme, type ContextualTheme, type VisualTheme } from './contextualTheme';
 
 interface ThemeContextValue {
   theme: VisualTheme;
+  phase: ContextualTheme;
   preference: Preferences['theme'];
   setPreference: (value: Preferences['theme']) => void;
   storageWarning: boolean;
@@ -37,10 +38,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     document.documentElement.dataset.context = context;
+    document.documentElement.dataset.themeMode = preference;
     document.documentElement.style.colorScheme = theme === 'night' ? 'dark' : 'light';
     const color = getComputedStyle(document.documentElement).getPropertyValue('--browser-theme').trim();
     if (color) document.querySelector('meta[name="theme-color"]')?.setAttribute('content', color);
-  }, [theme, context]);
+  }, [theme, context, preference]);
 
   useEffect(() => {
     document.documentElement.dataset.reduceMotion = String(preferences.reducedMotion);
@@ -58,7 +60,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  return <ThemeContext.Provider value={{ theme, preference, setPreference, storageWarning }}>{children}</ThemeContext.Provider>;
+  return <ThemeContext.Provider value={{ theme, phase: context, preference, setPreference, storageWarning }}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme(): ThemeContextValue {

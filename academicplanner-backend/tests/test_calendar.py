@@ -1,8 +1,15 @@
+import asyncio
 from datetime import datetime
 
+import httpx
 from fastapi.testclient import TestClient
 
-from app.calendar import CalendarEvent, get_google_service
+from app.calendar import (
+    CalendarEvent,
+    EventCreate,
+    GoogleCalendarService,
+    get_google_service,
+)
 from app.main import create_app
 
 
@@ -124,3 +131,93 @@ def test_calendar_rejects_missing_token_and_invalid_range():
         )
     assert missing.status_code == 401
     assert missing.json()["error"]["code"] == "GOOGLE_CALENDAR_AUTH_REQUIRED"
+
+
+def test_google_service_reads_primary_and_separate_managed_calendars():
+    requests: list[tuple[str, str]] = []
+
+    def google_event(event_id: str, title: str, source_type: str | None = None):
+        private = ({
+            GoogleCalendarService.SOURCE_KEY: "4a0b14e1-5e95-4a51-a89d-2b62365c69f7",
+            GoogleCalendarService.SOURCE_TYPE_KEY: source_type,
+        } if source_type else {})
+        return {
+            "id": event_id,
+            "summary": title,
+            "start": {"dateTime": "2026-10-02T10:00:00-04:00"},
+            "end": {"dateTime": "2026-10-02T11:00:00-04:00"},
+            "extendedProperties": {"private": private},
+            "created": "2026-10-01T12:00:00Z",
+            "updated": "2026-10-01T12:00:00Z",
+            "sequence": 0,
+        }
+
+    def handler(request: httpx.Request):
+        requests.append((request.method, request.url.path))
+        if request.url.path.endswith("/users/me/calendarList"):
+            return httpx.Response(200, json={"items": [
+                {"id": "schedule-id", "summary": "AcademicPlanner · Horario", "accessRole": "owner"},
+                {"id": "intec-id", "summary": "AcademicPlanner · INTEC", "accessRole": "owner"},
+            ]})
+        if request.url.path.endswith("/calendars/primary/events"):
+            return httpx.Response(200, json={"items": [google_event("personal-1", "Evento creado en Google")]})
+        if request.url.path.endswith("/calendars/schedule-id/events"):
+            return httpx.Response(200, json={"items": [google_event("class-1", "Clase", "schedule")]})
+        if request.url.path.endswith("/calendars/intec-id/events"):
+            return httpx.Response(200, json={"items": [google_event("intec-1", "Fecha INTEC", "institutional")]})
+        raise AssertionError(f"Unexpected request: {request.method} {request.url}")
+
+    async def run():
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as http_client:
+            service = GoogleCalendarService("token", http_client)
+            return await service.list(
+                datetime.fromisoformat("2026-10-01T00:00:00-04:00"),
+                datetime.fromisoformat("2026-10-10T00:00:00-04:00"),
+            )
+
+    events = asyncio.run(run())
+    assert [event.source_type for event in events] == ["google", "schedule", "institutional"]
+    assert {event.id for event in events} == {"primary:personal-1", "schedule:class-1", "institutional:intec-1"}
+    assert ("GET", "/calendar/v3/calendars/primary/events") in requests
+
+
+def test_google_service_writes_personal_to_primary_calendar():
+    requests: list[tuple[str, str]] = []
+
+    def handler(request: httpx.Request):
+        requests.append((request.method, request.url.path))
+        if request.method == "GET":
+            return httpx.Response(200, json={"items": []})
+        return httpx.Response(200, json={
+            "id": "created-personal",
+            "summary": "Estudiar",
+            "start": {"dateTime": "2026-10-02T16:00:00-04:00", "timeZone": "America/Santo_Domingo"},
+            "end": {"dateTime": "2026-10-02T17:00:00-04:00", "timeZone": "America/Santo_Domingo"},
+            "extendedProperties": {"private": {
+                GoogleCalendarService.SOURCE_KEY: "4a0b14e1-5e95-4a51-a89d-2b62365c69f7",
+                GoogleCalendarService.SOURCE_TYPE_KEY: "personal",
+            }},
+            "created": "2026-10-01T12:00:00Z",
+            "updated": "2026-10-01T12:00:00Z",
+            "sequence": 0,
+        })
+
+    event = EventCreate.model_validate({
+        "title": "Estudiar",
+        "startAt": "2026-10-02T16:00:00-04:00",
+        "endAt": "2026-10-02T17:00:00-04:00",
+        "timezone": "America/Santo_Domingo",
+        "sourceId": "4a0b14e1-5e95-4a51-a89d-2b62365c69f7",
+        "sourceType": "personal",
+    })
+
+    async def run():
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as http_client:
+            return await GoogleCalendarService("token", http_client).create(event)
+
+    created = asyncio.run(run())
+    assert created.id == "primary:created-personal"
+    assert requests == [
+        ("GET", "/calendar/v3/calendars/primary/events"),
+        ("POST", "/calendar/v3/calendars/primary/events"),
+    ]

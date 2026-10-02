@@ -88,6 +88,7 @@ test('day schedule controls read as one compact tactile workspace', async ({ pag
   await page.goto('/ahora');
   const nowHero = page.locator('.now-hero');
   await expect(nowHero).toBeVisible();
+  await expect(nowHero.getByText(/Estudiante · tu espacio académico/)).toBeVisible();
   expect(await nowHero.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
   expect(await nowHero.locator('.day-status').evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
   expect(await nowHero.getByRole('link', { name: /Ver horario/ }).evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
@@ -174,6 +175,8 @@ test('More keeps settings compact and provides clear control feedback', async ({
   const themeAuto = page.getByLabel('Tema visual').getByRole('button', { name: 'Auto', exact: true });
   await themeAuto.click();
   await expect(themeAuto).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByLabel('Ciclo diario del tema automático')).toContainText('Auto acompaña la hora');
+  await expect(page.getByLabel('Ciclo diario del tema automático').locator('[aria-current="true"]')).toHaveCount(1);
   expect(await themeAuto.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
   await page.getByText('Contraste reforzado', { exact: true }).click();
   await expect(page.getByRole('switch', { name: /Contraste reforzado/ })).toBeChecked();
@@ -184,6 +187,34 @@ test('More keeps settings compact and provides clear control feedback', async ({
   await expect(page.getByRole('heading', { name: 'Tus datos, bajo tu control' })).toHaveCount(0);
   await tabs.getByRole('tab', { name: /Privacidad/ }).click();
   await expect(page.getByRole('heading', { name: 'Tus datos, bajo tu control' })).toBeVisible();
+});
+
+test('automatic theme shows the current phase and the manual control slides between day and night', async ({ page }) => {
+  const data = storedSession();
+  data.preferences.theme = 'auto';
+  await seed(page, data);
+  await page.goto('/ahora');
+
+  const controls = page.getByRole('group', { name: 'Apariencia' });
+  const auto = controls.getByRole('button', { name: 'Auto', exact: true });
+  const toggle = controls.locator('.theme-toggle');
+  await expect(controls).toHaveAttribute('data-mode', 'auto');
+  await expect(controls).toHaveAttribute('data-phase', /morning|day|sunset|night/);
+  await expect(auto).toHaveAttribute('aria-pressed', 'true');
+  await expect(toggle).toHaveAttribute('aria-label', /Tema automático: (mañana|día|atardecer|noche)/);
+
+  await toggle.click();
+  await expect(controls).toHaveAttribute('data-mode', /day|night/);
+  await expect(auto).toHaveAttribute('aria-pressed', 'false');
+  const firstManualPosition = await toggle.evaluate((element) => getComputedStyle(element).transform);
+
+  await toggle.click();
+  const secondManualPosition = await toggle.evaluate((element) => getComputedStyle(element).transform);
+  expect(secondManualPosition).not.toBe(firstManualPosition);
+
+  await auto.click();
+  await expect(controls).toHaveAttribute('data-mode', 'auto');
+  await expect(toggle).toHaveAttribute('aria-label', /Tema automático:/);
 });
 
 test('access validation, Enter, repeated submission, privacy, reload and detail keyboard', async ({ page }) => {
@@ -360,16 +391,21 @@ test('Google Calendar demo synchronizes without duplicates and supports personal
   await seed(page);
   await page.goto('/eventos');
   await page.getByRole('button', { name: 'Conectar Google Calendar' }).click();
-  await expect(page.getByRole('heading', { name: 'Próximos eventos' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Mis eventos personales' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: /Personales/ })).toHaveAttribute('aria-selected', 'true');
+  await page.getByRole('tab', { name: /Fechas INTEC/ }).click();
   await expect(page.locator('.event-card')).toHaveCount(8);
   await expect(page.getByRole('button', { name: /Mostrar \d+ eventos más/ })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Sincronizar horario' }).click();
+  await page.getByRole('tab', { name: /Mi horario/ }).click();
+  await page.getByRole('button', { name: 'Enviar clases a Google' }).click();
   await expect(page.getByRole('status')).toContainText('Horario sincronizado');
   await expect(page.getByText('Clase sincronizada').first()).toBeVisible();
-  await page.getByRole('button', { name: 'Sincronizar horario' }).click();
+  await page.getByRole('button', { name: 'Enviar clases a Google' }).click();
   await expect(page.getByRole('status')).toContainText(/No se duplicaron [1-9]/);
 
+  await page.getByRole('tab', { name: /Personales/ }).click();
+  await page.getByRole('button', { name: 'Nueva actividad' }).click();
   await page.getByLabel('Título').fill('Preparar exposición QA');
   await page.getByLabel('Fecha').fill('2026-10-08');
   await page.getByLabel('Inicio', { exact: true }).fill('16:00');

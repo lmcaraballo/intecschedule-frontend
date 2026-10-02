@@ -16,6 +16,7 @@ describe('virtual meeting locations', () => {
 
   it('derives modality for each meeting instead of for the whole subject', () => {
     expect(getClassModality('VIRTUAL')).toBe('virtual');
+    expect(getClassModality('VIRTU')).toBe('virtual');
     expect(classModalityLabel('VIRTUAL')).toBe('Virtual');
     expect(getClassModality('AULA AJ-203')).toBe('presential');
     expect(classModalityLabel('AULA AJ-203')).toBe('Presencial');

@@ -26,13 +26,13 @@ async function parseResponse(response: Response) {
 
 export async function fetchCalendarConfig(): Promise<CalendarConfig> {
   if (isAcademicMock) return { available: true, clientId: 'demo', scopes: [], calendarName: 'AcademicPlanner · demostración' };
-  return configSchema.parse(await parseResponse(await fetch('/api/calendar/config')));
+  return configSchema.parse(await parseResponse(await fetchWithTimeout('/api/calendar/config', {}, 8_000)));
 }
 
 export async function listCalendarEvents(token: string, from: Date, to: Date): Promise<CalendarEvent[]> {
   if (isAcademicMock) return demoEvents.filter((event) => Date.parse(event.startAt) < to.getTime() && Date.parse(event.endAt) > from.getTime());
   const query = new URLSearchParams({ from: from.toISOString(), to: to.toISOString() });
-  const response = await fetch(`/api/events?${query}`, { headers: { Authorization: `Bearer ${token}` } });
+  const response = await fetchWithTimeout(`/api/events?${query}`, { headers: { Authorization: `Bearer ${token}` } }, 15_000);
   return calendarEventsSchema.parse(await parseResponse(response));
 }
 
@@ -46,7 +46,7 @@ export async function createCalendarEvent(token: string, draft: EventDraft, sour
     demoEvents.push(event);
     return event;
   }
-  const response = await fetch('/api/events', { method: 'POST', headers: jsonHeaders(token), body: JSON.stringify(payload) });
+  const response = await fetchWithTimeout('/api/events', { method: 'POST', headers: jsonHeaders(token), body: JSON.stringify(payload) }, 15_000);
   return calendarEventSchema.parse(await parseResponse(response));
 }
 
@@ -61,7 +61,7 @@ export async function updateCalendarEvent(token: string, id: string, draft: Even
     return updated;
   }
   const { sourceId: _, sourceType: __, ...changes } = payload;
-  const response = await fetch(`/api/events/${encodeURIComponent(id)}`, { method: 'PATCH', headers: jsonHeaders(token), body: JSON.stringify(changes) });
+  const response = await fetchWithTimeout(`/api/events/${encodeURIComponent(id)}`, { method: 'PATCH', headers: jsonHeaders(token), body: JSON.stringify(changes) }, 15_000);
   return calendarEventSchema.parse(await parseResponse(response));
 }
 
@@ -71,11 +71,18 @@ export async function deleteCalendarEvent(token: string, id: string): Promise<vo
     if (index >= 0) demoEvents.splice(index, 1);
     return;
   }
-  await parseResponse(await fetch(`/api/events/${encodeURIComponent(id)}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }));
+  await parseResponse(await fetchWithTimeout(`/api/events/${encodeURIComponent(id)}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }, 15_000));
 }
 
 function jsonHeaders(token: string) {
   return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+}
+
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs: number) {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try { return await fetch(input, { ...init, signal: controller.signal }); }
+  finally { window.clearTimeout(timer); }
 }
 
 function draftToPayload(draft: EventDraft, sourceId: string = crypto.randomUUID(), options: CalendarEventOptions = {}) {

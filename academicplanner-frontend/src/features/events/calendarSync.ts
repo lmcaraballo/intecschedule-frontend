@@ -123,6 +123,12 @@ async function syncDesiredEvents(token: string, desired: DesiredEvent[], sourceT
     if (!current) {
       await createCalendarEvent(token, target.draft, target.sourceId, target);
       result.created += 1;
+    } else if (current.id.startsWith('legacy:')) {
+      // Versions anteriores guardaban clases y fechas INTEC juntas. Recreate
+      // each occurrence in its dedicated calendar, then remove the old copy.
+      await createCalendarEvent(token, target.draft, target.sourceId, target);
+      await deleteCalendarEvent(token, current.id);
+      result.updated += 1;
     } else if (eventDiffers(current, target)) {
       await updateCalendarEvent(token, current.id, target.draft, target);
       result.updated += 1;

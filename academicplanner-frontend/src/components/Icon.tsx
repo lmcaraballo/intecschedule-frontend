@@ -1,6 +1,6 @@
 import type { SVGProps } from 'react';
 
-export type IconName = 'pine' | 'arrow' | 'lock' | 'eye' | 'eye-off' | 'sun' | 'moon' | 'check' | 'alert' | 'book' | 'leaf' | 'calendar' | 'spark' | 'more' | 'clock' | 'pin' | 'close' | 'chevron-left' | 'chevron-right' | 'offline' | 'edit' | 'trash' | 'refresh' | 'sync';
+export type IconName = 'pine' | 'arrow' | 'lock' | 'eye' | 'eye-off' | 'sun' | 'sunrise' | 'sunset' | 'moon' | 'check' | 'alert' | 'book' | 'leaf' | 'calendar' | 'spark' | 'more' | 'clock' | 'pin' | 'close' | 'chevron-left' | 'chevron-right' | 'offline' | 'edit' | 'trash' | 'refresh' | 'sync';
 const paths: Record<IconName, React.ReactNode> = {
   edit: <><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" /><path d="m13.5 6.5 4 4" /></>,
   trash: <><path d="M4 7h16M9 7V4h6v3m3 0-1 14H7L6 7m4 4v6m4-6v6" /></>,
@@ -21,6 +21,8 @@ const paths: Record<IconName, React.ReactNode> = {
   eye: <><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></>,
   'eye-off': <><path d="m3 3 18 18M10 5.2c.6-.1 1.3-.2 2-.2 6.5 0 10 7 10 7a19 19 0 0 1-3 3.7M6 6.5A21 21 0 0 0 2 12s3.5 7 10 7c1.8 0 3.4-.5 4.8-1.3M10 10a3 3 0 0 0 4 4" /></>,
   sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" /></>,
+  sunrise: <><path d="M4 18h16M6 14a6 6 0 0 1 12 0M12 3v4M4.5 8.5l2 2m13-2-2 2" /><path d="m9 18 3-3 3 3" /></>,
+  sunset: <><path d="M4 18h16M6 14a6 6 0 0 1 12 0M12 3v4M4.5 8.5l2 2m13-2-2 2" /><path d="m9 15 3 3 3-3" /></>,
   moon: <path d="M20.5 14A8.5 8.5 0 0 1 10 3.5 8.5 8.5 0 1 0 20.5 14Z" />,
   check: <path d="m5 12 4 4L19 6" />,
   alert: <><path d="M12 8v5m0 3v.1" /><path d="m10.3 4-8 14a2 2 0 0 0 1.7 3h16a2 2 0 0 0 1.7-3l-8-14a2 2 0 0 0-3.4 0Z" /></>,

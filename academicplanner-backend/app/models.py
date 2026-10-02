@@ -32,6 +32,7 @@ class RefreshRequest(BaseModel):
 
 class Student(BaseModel):
     id: str = Field(min_length=1, max_length=64)
+    name: str | None = Field(default=None, min_length=1, max_length=160)
     isPino: bool = False
 
 class AcademicClass(BaseModel):

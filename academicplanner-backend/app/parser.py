@@ -77,7 +77,7 @@ def parse_selection(html: str, student_id: str, fetched_at=None) -> ScheduleResp
         raise ApiError('PORTAL_STRUCTURE_CHANGED')
     header, labels = candidates[0]
     columns = {name: labels.index(name) for name in ('CLAVE', 'ASIGNATURA', 'SECCION', 'ID')}
-    for optional in ('PROFESOR', 'AULA'):
+    for optional in ('PROFESOR', 'AULA', 'NOMBRE'):
         if optional in labels:
             columns[optional] = labels.index(optional)
     days = {}
@@ -89,7 +89,7 @@ def parse_selection(html: str, student_id: str, fetched_at=None) -> ScheduleResp
     table = header.find_parent('table')
     rows = [r for r in table.find_all('tr') if r.find_parent('table') is table]
     rows = rows[rows.index(header)+1:]
-    classes, unscheduled, found_rows = [], [], 0
+    classes, unscheduled, found_rows, student_names = [], [], 0, set()
     for row in rows:
         cells = row.find_all(['th', 'td'], recursive=False)
         if not cells:
@@ -100,6 +100,10 @@ def parse_selection(html: str, student_id: str, fetched_at=None) -> ScheduleResp
             return clean(cells[columns[key]].get_text(' ', strip=True)) if key in columns else ''
         if value('ID') != student_id:
             raise ApiError('PORTAL_STRUCTURE_CHANGED')
+        if value('NOMBRE'):
+            student_names.add(value('NOMBRE'))
+            if len(student_names) > 1:
+                raise ApiError('PORTAL_STRUCTURE_CHANGED')
         found_rows += 1
         code = re.sub(r'\s+', '', value('CLAVE'))
         name, section = value('ASIGNATURA'), value('SECCION')
@@ -130,7 +134,7 @@ def parse_selection(html: str, student_id: str, fetched_at=None) -> ScheduleResp
         # A missing/empty table is not enough evidence of a genuinely empty schedule.
         raise ApiError('SCHEDULE_NOT_FOUND')
     try:
-        return ScheduleResponse(student=Student(id=student_id),
+        return ScheduleResponse(student=Student(id=student_id, name=next(iter(student_names), None)),
             fetchedAt=fetched_at or datetime.now(timezone.utc),
             unscheduledSubjects=unscheduled, classes=sorted(classes, key=lambda item: (item.day, item.startTime, item.subjectCode)))
     except ValidationError:

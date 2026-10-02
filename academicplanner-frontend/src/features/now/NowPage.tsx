@@ -30,9 +30,10 @@ export function NowPage() {
   const finishedEarlyClass = status.today.find((item) => classOverrides[`${dateKey(now)}:${item.id}`]);
   // This value is derived from the current clock and schedule. It is never persisted.
   const campusClass = status.current ?? status.next?.academicClass;
+  const firstName = studentFirstName(session.student.name);
   return <main id="main-content" className="academic-page now-page">
     <section className="now-hero" aria-label="Resumen de tu día">
-      <header className="page-heading"><div><p className="page-eyebrow">{greetings[getContextualTheme(now)]} · tu espacio académico</p><h1 id="page-title" tabIndex={-1}>Ahora</h1><p className="page-date">{formatDate(now)} <span aria-hidden="true">· </span><time dateTime={now.toISOString()}>{formatDate(now, { hour: 'numeric', minute: '2-digit', hour12: true })}</time></p></div><Link className="quick-link" to="/horario">Ver horario <Icon name="arrow" width="17" height="17" /></Link></header>
+      <header className="page-heading"><div><p className="page-eyebrow">{greetings[getContextualTheme(now)]}{firstName ? `, ${firstName}` : ''} · tu espacio académico</p><h1 id="page-title" tabIndex={-1}>Ahora</h1><p className="page-date">{formatDate(now)} <span aria-hidden="true">· </span><time dateTime={now.toISOString()}>{formatDate(now, { hour: 'numeric', minute: '2-digit', hour12: true })}</time></p></div><Link className="quick-link" to="/horario">Ver horario <Icon name="arrow" width="17" height="17" /></Link></header>
       <DayStatus status={status} hasUnscheduled={Boolean(session.schedule.unscheduledSubjects?.length)} />
     </section>
     {finishedEarlyClass && <section className="early-finish-notice" role="status"><div><strong>{finishedEarlyClass.subjectName}</strong><p>Marcaste esta clase como terminada antes. El horario institucional no cambió.</p></div><Button variant="plain" onClick={() => undoClassOverride(finishedEarlyClass)}>Deshacer</Button></section>}
@@ -57,4 +58,10 @@ export function NowPage() {
     <LastUpdated fetchedAt={session.schedule.fetchedAt} />
     {period && <p className="schedule-note"><Icon name="calendar" width="16" height="16" /><span>{period.title} · horario válido hasta el {period.endsOn.split('-').reverse().join('/')} · <a href={period.sourceUrl} target="_blank" rel="noopener noreferrer">fuente INTEC</a> (actualizada el {formatDate(new Date(institutionalCalendar.lastUpdatedAt), { day: 'numeric', month: 'long', year: 'numeric' })}).</span></p>}
   </main>;
+}
+
+function studentFirstName(name?: string) {
+  const first = name?.trim().split(/\s+/)[0];
+  if (!first) return '';
+  return first === first.toUpperCase() ? `${first.charAt(0)}${first.slice(1).toLocaleLowerCase('es-DO')}` : first;
 }

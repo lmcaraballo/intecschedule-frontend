@@ -4,6 +4,7 @@ const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Hora inválida
 
 export const studentProfileSchema = z.object({
   id: z.string().trim().min(1).max(64),
+  name: z.string().trim().min(1).max(160).nullish().transform((value) => value ?? undefined),
   isPino: z.boolean(),
 });
 

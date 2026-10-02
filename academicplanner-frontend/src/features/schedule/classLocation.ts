@@ -1,6 +1,6 @@
 export type ClassModality = 'virtual' | 'presential' | 'unknown';
 
-const VIRTUAL_LOCATION = /(?:\bvirtual\b|\bonline\b|\ben\s+l[ií]nea\b|\bremot[oa]\b|\bzoom\b|\bteams\b|\bgoogle\s+meet\b)/iu;
+const VIRTUAL_LOCATION = /(?:\bvirtual\b|\bvirtu\b|\bonline\b|\ben\s+l[ií]nea\b|\bremot[oa]\b|\bzoom\b|\bteams\b|\bgoogle\s+meet\b)/iu;
 const GENERIC_PHYSICAL_LOCATION = /^(?:aula|sal[oó]n|presencial)$/iu;
 
 /** Location text is evidence of virtual delivery, never of asynchronous study by itself. */

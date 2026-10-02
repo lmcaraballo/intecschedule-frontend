@@ -13,7 +13,7 @@ export const mockClasses: AcademicClass[] = [
 
 export function createMockSession(studentId: string): AcademicSession {
   return {
-    student: { id: studentId, isPino: true },
+    student: { id: studentId, name: 'Estudiante Demo', isPino: true },
     schedule: { fetchedAt: new Date().toISOString(), classes: mockClasses.map((item) => ({ ...item })) },
   };
 }

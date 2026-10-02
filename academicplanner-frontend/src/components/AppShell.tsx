@@ -15,9 +15,10 @@ import { defaultPreferences, getStartPath } from '../features/preferences/prefer
 import { useInstitutionalCalendar } from '../features/institutional/InstitutionalCalendarProvider';
 import { formatDate } from '../utils/dateFormat';
 import { BreezeBackground } from './BreezeBackground';
+import { BrandSplash } from './BrandSplash';
 
 export function AppShell() {
-  const { theme, preference, setPreference, storageWarning } = useTheme();
+  const { theme, phase, preference, setPreference, storageWarning } = useTheme();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [splashDestination, setSplashDestination] = useState<string | null>(null);
@@ -64,12 +65,14 @@ export function AppShell() {
           if (!splashDestination) setSplashDestination(homePath);
         }}><Brand /></Link>
         {academic && <PrimaryNavigation />}
-        <div className="theme-controls" role="group" aria-label="Apariencia">
+        <div className="theme-controls" role="group" aria-label="Apariencia" data-mode={preference} data-phase={phase}>
           <Button variant="plain" className="theme-auto" aria-pressed={preference === 'auto'} onClick={() => setPreference('auto')}>Auto</Button>
-          <Button variant="plain" className="theme-toggle" aria-label={theme === 'day' ? 'Activar tema nocturno' : 'Activar tema de día'} onClick={() => setPreference(theme === 'day' ? 'night' : 'day')}><Icon name={theme === 'day' ? 'moon' : 'sun'} /></Button>
+          <span className="theme-rail" aria-hidden="true"><i /><i /><i /><i /></span>
+          <Button variant="plain" className="theme-toggle" aria-label={themeToggleLabel(preference, theme, phase)} onClick={() => setPreference(theme === 'day' ? 'night' : 'day')}><Icon name={phaseIcon(preference, theme, phase)} /></Button>
         </div>
       </header>
-      {splashDestination && <BrandSplash />}
+      {splashDestination && <BrandSplash message="Abriendo tu espacio académico" />}
+      {!splashDestination && institutionalCalendar.status === 'loading' && <BrandSplash loading message="Actualizando el calendario institucional" />}
       {(!online || storageWarning || institutionalCalendar.status === 'stale' || (academic && session && usingLastValid)) && <div className="shell-warning shell-notices">
         {!online && <OfflineState hasSchedule={Boolean(session)} />}
         {academic && session && (usingLastValid || !online) && <LastValidSchedule session={session} />}
@@ -82,19 +85,13 @@ export function AppShell() {
   );
 }
 
-function BrandSplash() {
-  return <div className="brand-splash" role="status" aria-live="polite" aria-label="Abriendo AcademicPlanner">
-    <div className="brand-splash__glow" aria-hidden="true" />
-    <span className="brand-splash__orbit brand-splash__orbit--one" aria-hidden="true" />
-    <span className="brand-splash__orbit brand-splash__orbit--two" aria-hidden="true" />
-    <div className="brand-splash__content">
-      <span className="brand-splash__mark" aria-hidden="true"><Icon name="pine" /></span>
-      <strong>{appConfig.name}</strong>
-      <span>Organizando tu espacio académico</span>
-      <span className="brand-splash__progress" aria-hidden="true"><i /></span>
-    </div>
-    <Icon className="brand-splash__leaf brand-splash__leaf--one" name="leaf" aria-hidden="true" />
-    <Icon className="brand-splash__leaf brand-splash__leaf--two" name="leaf" aria-hidden="true" />
-    <Icon className="brand-splash__leaf brand-splash__leaf--three" name="leaf" aria-hidden="true" />
-  </div>;
+function phaseIcon(preference: 'auto' | 'day' | 'night', theme: 'day' | 'night', phase: 'morning' | 'day' | 'sunset' | 'night') {
+  if (preference !== 'auto') return theme === 'day' ? 'sun' : 'moon';
+  return phase === 'morning' ? 'sunrise' : phase === 'sunset' ? 'sunset' : phase === 'night' ? 'moon' : 'sun';
+}
+
+function themeToggleLabel(preference: 'auto' | 'day' | 'night', theme: 'day' | 'night', phase: 'morning' | 'day' | 'sunset' | 'night') {
+  const phaseLabel = { morning: 'mañana', day: 'día', sunset: 'atardecer', night: 'noche' }[phase];
+  const action = theme === 'day' ? 'Cambiar manualmente a oscuro' : 'Cambiar manualmente a claro';
+  return preference === 'auto' ? `Tema automático: ${phaseLabel}. ${action}` : action;
 }

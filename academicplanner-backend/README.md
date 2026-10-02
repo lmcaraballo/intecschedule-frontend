@@ -34,7 +34,7 @@ No hay que copiar credenciales a Docker ni al frontend. Se introducen únicament
 - `POST /user/refresh-token`: rota ambos tokens mientras la sesión sigue vigente; no extiende su duración absoluta ni revive una sesión consumida. El frontend actual no necesita llamar esta ruta.
 - `GET /calendar/config`: configuración pública de OAuth, sin secretos.
 - `GET /calendar/institutional`: período, feriados e hitos revisados de INTEC.
-- `GET|POST /events`, `PATCH|DELETE /events/{id}`: sincronización directa con el calendario dedicado **AcademicPlanner** en Google, sin base de datos local.
+- `GET|POST /events`, `PATCH|DELETE /events/{id}`: sincronización directa con Google, sin base de datos local. Los eventos personales se leen y escriben en el calendario principal del usuario; las clases van a **AcademicPlanner · Horario** y los recordatorios institucionales a **AcademicPlanner · INTEC**. El calendario heredado **AcademicPlanner** permanece legible para no perder eventos creados con versiones anteriores.
 
 Tokens opacos aleatorios de 256 bits; el servidor indexa hashes y mantiene cookies institucionales solo en memoria. No se guardan contraseñas, horarios ni cookies en archivos o base de datos. Caducidad absoluta de 15 minutos; limpieza cada 30 segundos y al apagar. Un reinicio invalida todos los tokens.
 
@@ -77,7 +77,7 @@ python3 -m venv .venv
 ACADEMIC_TERM=2230 .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --no-access-log --no-proxy-headers
 ```
 
-54 pruebas locales: contrato, correo/matrícula, redacción de errores, sesión de un solo uso, rotación, expiración, limpieza, límites, redirecciones, TLS restringido por origen, parser, calendario institucional y eventos de Google. La suite automatizada usa únicamente datos ficticios y no envía credenciales a INTEC. Además se hizo una prueba real autorizada del navegador: correo institucional normalizado, identidad coincidente, 11 reuniones (lunes–sábado: 0/3/2/3/2/1), detalle accesible, sin errores de consola ni desbordamiento móvil y sin contraseña/tokens en storage. El cliente de pruebas emite una advertencia de obsolescencia de Starlette; no afecta el resultado.
+56 pruebas locales: contrato, correo/matrícula, redacción de errores, sesión de un solo uso, rotación, expiración, limpieza, límites, redirecciones, TLS restringido por origen, parser, calendario institucional y eventos de Google. La suite automatizada usa únicamente datos ficticios y no envía credenciales a INTEC. Además se hizo una prueba real autorizada del navegador: correo institucional normalizado, identidad coincidente, 11 reuniones (lunes–sábado: 0/3/2/3/2/1), detalle accesible, sin errores de consola ni desbordamiento móvil y sin contraseña/tokens en storage. El cliente de pruebas emite una advertencia de obsolescencia de Starlette; no afecta el resultado.
 
 FastAPI publica `/openapi.json` y `/docs` para inspección local. Para publicar externamente: validar otras cuentas y períodos; configurar HTTPS, proxy de confianza y límites acordes al número de usuarios. No se cambió ni desplegó la infraestructura AWS CDK existente.
 

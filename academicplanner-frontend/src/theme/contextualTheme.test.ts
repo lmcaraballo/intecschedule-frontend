@@ -8,7 +8,7 @@ describe('contextual themes', () => {
   ] as const)('recognizes hour %i as %s', (hour, expected) => {
     expect(getContextualTheme(new Date(2026, 8, 18, hour))).toBe(expected);
   });
-  it('maps unimplemented contexts to day and respects manual preferences', () => {
+  it('maps intermediate auto phases to light tones and respects manual preferences', () => {
     expect(getVisualTheme('auto', 'morning')).toBe('day');
     expect(getVisualTheme('auto', 'sunset')).toBe('day');
     expect(getVisualTheme('auto', 'night')).toBe('night');

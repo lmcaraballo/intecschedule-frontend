@@ -8,6 +8,7 @@ interface CalendarConnection {
   loading: boolean;
   error: string | null;
   connect: () => Promise<void>;
+  retryPreparation: () => Promise<void>;
   disconnect: () => void;
 }
 
@@ -94,7 +95,20 @@ export function CalendarConnectionProvider({ children }: { children: ReactNode }
     setError(null);
   }
 
-  return <CalendarConnectionContext.Provider value={{ config, token, loading, error, connect, disconnect }}>{children}</CalendarConnectionContext.Provider>;
+  async function retryPreparation() {
+    setLoading(true);
+    setError(null);
+    try {
+      setConfig(await fetchCalendarConfig());
+    } catch {
+      setConfig(null);
+      setError('No pudimos preparar Google Calendar. Revisa tu conexión e inténtalo de nuevo.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return <CalendarConnectionContext.Provider value={{ config, token, loading, error, connect, retryPreparation, disconnect }}>{children}</CalendarConnectionContext.Provider>;
 }
 
 export function useCalendarConnection() {
@@ -115,20 +129,32 @@ function loadGoogleIdentity(): Promise<GoogleIdentity> {
       script.src = 'https://accounts.google.com/gsi/client';
       script.async = true;
       script.dataset.googleIdentity = 'true';
-      document.head.append(script);
     }
+    let settled = false;
+    let timeoutId: number | null = null;
+    const finish = (action: () => void) => {
+      if (settled) return;
+      settled = true;
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
+      action();
+    };
+    timeoutId = window.setTimeout(() => finish(() => {
+      googleScriptPromise = null;
+      reject(new Error('google-timeout'));
+    }), 10_000);
     script.addEventListener('load', () => {
       const google = (window as Window & { google?: GoogleIdentity }).google;
-      if (google) resolve(google);
-      else {
+      if (google) finish(() => resolve(google));
+      else finish(() => {
         googleScriptPromise = null;
         reject(new Error('google-unavailable'));
-      }
+      });
     }, { once: true });
-    script.addEventListener('error', () => {
+    script.addEventListener('error', () => finish(() => {
       googleScriptPromise = null;
       reject(new Error('google-unavailable'));
-    }, { once: true });
+    }), { once: true });
+    if (!existing) document.head.append(script);
   });
   return googleScriptPromise;
 }

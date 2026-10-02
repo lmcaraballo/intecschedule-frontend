@@ -3,7 +3,8 @@ import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { Icon } from '../../components/Icon';
 import { ErrorState } from '../../components/ErrorState';
-import { LoadingState, accessMessages } from '../../components/LoadingState';
+import { accessMessages } from '../../components/LoadingState';
+import { BrandSplash } from '../../components/BrandSplash';
 import { useNetworkStatus } from '../../utils/useNetworkStatus';
 import { credentialsSchema } from './authSchema';
 import type { useAcademicAccess } from './useAcademicAccess';
@@ -58,6 +59,6 @@ export function AccessForm({ access, scenario, hasSavedSchedule }: {
       <span>{isLoading ? 'Consultando…' : error ? 'Volver a intentar' : 'Continuar'}</span>{!isLoading && <Icon name="arrow" />}
     </Button>
     {!online && <p id="connection-required" className="access-retry-note">Necesitas Internet para consultar un horario actualizado.</p>}
-    {stage && <LoadingState message={accessMessages[stage]} />}
+    {stage && <BrandSplash loading message={accessMessages[stage]} />}
   </form>;
 }

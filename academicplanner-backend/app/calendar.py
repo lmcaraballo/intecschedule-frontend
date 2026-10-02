@@ -162,6 +162,8 @@ def _annual_period(
 class GoogleCalendarService:
     API_ROOT = "https://www.googleapis.com/calendar/v3"
     CALENDAR_NAME = "AcademicPlanner"
+    SCHEDULE_CALENDAR_NAME = "AcademicPlanner · Horario"
+    INSTITUTIONAL_CALENDAR_NAME = "AcademicPlanner · INTEC"
     SOURCE_KEY = "academicPlannerSourceId"
     SOURCE_TYPE_KEY = "academicPlannerSourceType"
 
@@ -170,27 +172,33 @@ class GoogleCalendarService:
         self.client = client
 
     async def list(self, from_: datetime, to: datetime) -> list[CalendarEvent]:
-        calendar_id = await self._calendar_id()
-        payload = await self._request(
-            "GET",
-            f"/calendars/{quote(calendar_id, safe='')}/events",
-            params={
-                "timeMin": from_.isoformat(),
-                "timeMax": to.isoformat(),
-                "singleEvents": "true",
-                "orderBy": "startTime",
-                "maxResults": "2500",
-            },
-        )
-        return [
-            self._to_event(item)
-            for item in payload.get("items", [])
-            if item.get("status") != "cancelled"
-            and item.get("start", {}).get("dateTime")
-        ]
+        calendars = await self._calendar_ids()
+        results: list[CalendarEvent] = []
+        for calendar_key, calendar_id in calendars.items():
+            payload = await self._request(
+                "GET",
+                f"/calendars/{quote(calendar_id, safe='')}/events",
+                params={
+                    "timeMin": from_.isoformat(),
+                    "timeMax": to.isoformat(),
+                    "singleEvents": "true",
+                    "orderBy": "startTime",
+                    "maxResults": "2500",
+                },
+            )
+            results.extend(
+                self._to_event(item, calendar_key)
+                for item in payload.get("items", [])
+                if item.get("status") != "cancelled"
+                and (
+                    item.get("start", {}).get("dateTime")
+                    or item.get("start", {}).get("date")
+                )
+            )
+        return sorted(results, key=lambda item: item.start_at)
 
     async def create(self, event: EventCreate) -> CalendarEvent:
-        calendar_id = await self._calendar_id()
+        calendar_key, calendar_id = await self._calendar_for_source(event.source_type)
         existing = await self._request(
             "GET",
             f"/calendars/{quote(calendar_id, safe='')}/events",
@@ -201,18 +209,19 @@ class GoogleCalendarService:
             },
         )
         if existing.get("items"):
-            return self._to_event(existing["items"][0])
+            return self._to_event(existing["items"][0], calendar_key)
         payload = await self._request(
             "POST",
             f"/calendars/{quote(calendar_id, safe='')}/events",
             json=self._event_body(event),
         )
-        return self._to_event(payload)
+        return self._to_event(payload, calendar_key)
 
     async def update(self, event_id: str, changes: EventUpdate) -> CalendarEvent:
-        calendar_id = await self._calendar_id()
+        calendar_key, raw_event_id, calendar_id = await self._resolve_event(event_id)
         current = self._to_event(
-            await self._request("GET", self._event_path(calendar_id, event_id))
+            await self._request("GET", self._event_path(calendar_id, raw_event_id)),
+            calendar_key,
         )
         values = current.model_dump(
             include={
@@ -234,35 +243,67 @@ class GoogleCalendarService:
             raise ApiError("INVALID_EVENT_DATA") from None
         payload = await self._request(
             "PATCH",
-            self._event_path(calendar_id, event_id),
+            self._event_path(calendar_id, raw_event_id),
             json=self._event_body(merged),
         )
-        return self._to_event(payload)
+        return self._to_event(payload, calendar_key)
 
     async def delete(self, event_id: str) -> None:
-        calendar_id = await self._calendar_id()
-        await self._request("GET", self._event_path(calendar_id, event_id))
-        await self._request("DELETE", self._event_path(calendar_id, event_id))
+        _, raw_event_id, calendar_id = await self._resolve_event(event_id)
+        await self._request("GET", self._event_path(calendar_id, raw_event_id))
+        await self._request("DELETE", self._event_path(calendar_id, raw_event_id))
 
-    async def _calendar_id(self) -> str:
+    async def _calendar_ids(self) -> dict[str, str]:
         payload = await self._request(
             "GET", "/users/me/calendarList", params={"maxResults": "250"}
         )
+        calendars = {"primary": "primary"}
         for calendar in payload.get("items", []):
-            if (
-                calendar.get("summary") == self.CALENDAR_NAME
-                and calendar.get("accessRole") == "owner"
-            ):
-                return str(calendar["id"])
+            if calendar.get("accessRole") != "owner":
+                continue
+            summary = calendar.get("summary")
+            if summary == self.SCHEDULE_CALENDAR_NAME:
+                calendars["schedule"] = str(calendar["id"])
+            elif summary == self.INSTITUTIONAL_CALENDAR_NAME:
+                calendars["institutional"] = str(calendar["id"])
+            elif summary == self.CALENDAR_NAME:
+                # Keep older AcademicPlanner events visible while new data is
+                # written to the dedicated calendars above.
+                calendars["legacy"] = str(calendar["id"])
+        return calendars
+
+    async def _calendar_for_source(self, source_type: str) -> tuple[str, str]:
+        if source_type in {"personal", "google"}:
+            return "primary", "primary"
+        key = "schedule" if source_type == "schedule" else "institutional"
+        calendars = await self._calendar_ids()
+        if key in calendars:
+            return key, calendars[key]
+        name = (
+            self.SCHEDULE_CALENDAR_NAME
+            if key == "schedule"
+            else self.INSTITUTIONAL_CALENDAR_NAME
+        )
         created = await self._request(
             "POST",
             "/calendars",
             json={
-                "summary": self.CALENDAR_NAME,
+                "summary": name,
                 "timeZone": "America/Santo_Domingo",
             },
         )
-        return str(created["id"])
+        return key, str(created["id"])
+
+    async def _resolve_event(self, event_id: str) -> tuple[str, str, str]:
+        calendars = await self._calendar_ids()
+        if ":" in event_id:
+            key, raw_event_id = event_id.split(":", 1)
+            if key in calendars and raw_event_id:
+                return key, raw_event_id, calendars[key]
+        # Backwards compatibility for links created before calendar IDs were
+        # namespaced. Those events lived in the legacy AcademicPlanner calendar.
+        key = "legacy" if "legacy" in calendars else "primary"
+        return key, event_id, calendars[key]
 
     @staticmethod
     def _event_path(calendar_id: str, event_id: str) -> str:
@@ -328,12 +369,20 @@ class GoogleCalendarService:
         }
 
     @classmethod
-    def _to_event(cls, payload: dict[str, Any]) -> CalendarEvent:
+    def _to_event(
+        cls, payload: dict[str, Any], calendar_key: str = "legacy"
+    ) -> CalendarEvent:
         private = payload.get("extendedProperties", {}).get("private", {})
         source_id = private.get(cls.SOURCE_KEY) or str(
             uuid5(NAMESPACE_URL, f"google-calendar:{payload.get('id')}")
         )
-        source_type = private.get(cls.SOURCE_TYPE_KEY) or "google"
+        source_type = private.get(cls.SOURCE_TYPE_KEY)
+        if not source_type:
+            source_type = (
+                calendar_key
+                if calendar_key in {"schedule", "institutional"}
+                else "google"
+            )
         if source_type not in {"personal", "schedule", "institutional", "google"}:
             source_type = "google"
         reminder = next(
@@ -345,14 +394,22 @@ class GoogleCalendarService:
             ),
             None,
         )
+        start = payload.get("start", {})
+        end = payload.get("end", {})
+        start_value = start.get("dateTime") or (
+            f"{start['date']}T00:00:00-04:00" if start.get("date") else None
+        )
+        end_value = end.get("dateTime") or (
+            f"{end['date']}T00:00:00-04:00" if end.get("date") else None
+        )
         try:
             return CalendarEvent(
-                id=payload["id"],
+                id=f"{calendar_key}:{payload['id']}",
                 title=payload.get("summary") or "Sin título",
                 description=payload.get("description"),
-                startAt=payload["start"]["dateTime"],
-                endAt=payload["end"]["dateTime"],
-                timezone=payload["start"].get("timeZone") or "America/Santo_Domingo",
+                startAt=start_value,
+                endAt=end_value,
+                timezone=start.get("timeZone") or "America/Santo_Domingo",
                 location=payload.get("location"),
                 sourceId=source_id,
                 sourceType=source_type,

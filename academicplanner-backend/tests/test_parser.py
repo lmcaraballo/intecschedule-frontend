@@ -14,6 +14,7 @@ def test_semantic_columns_and_stable_ids():
     b=parse_selection(html([[ROW[i] for i in order]],[HEADERS[i] for i in order]),'1234567')
     assert [c.model_dump() for c in a.classes]==[c.model_dump() for c in b.classes]
     assert [c.day for c in a.classes]==[2,4]
+    assert a.student.name=='Estudiante ficticio'
     assert a.classes[0].subjectCode=='QA202'
     assert a.classes[0].professor=='Docente de prueba'
 
