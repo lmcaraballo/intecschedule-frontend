@@ -70,8 +70,14 @@ export function AppShell() {
       toggle.style.transform = `translateX(${sliderShift}px)`;
       return;
     }
-    const animation = animateThemeToggle(toggle, { transform: `translateX(${sliderShift}px)` }, shouldAnimate
-      ? { type: 'spring', duration: .9, bounce: 0 }
+    const rootStyle = getComputedStyle(document.documentElement);
+    const animation = animateThemeToggle(toggle, {
+      transform: `translateX(${sliderShift}px)`,
+      backgroundColor: rootStyle.getPropertyValue('--surface').trim(),
+      borderColor: rootStyle.getPropertyValue('--border').trim(),
+      color: rootStyle.getPropertyValue('--muted').trim(),
+    }, shouldAnimate
+      ? { duration: 1.15, ease: [0.22, 1, 0.36, 1] }
       : { duration: 0 });
     return () => animation.stop();
   }, [animateThemeToggle, reducedMotion, sliderShift, themeToggleScope]);

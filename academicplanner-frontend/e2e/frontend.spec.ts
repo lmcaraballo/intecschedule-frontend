@@ -228,11 +228,13 @@ test('automatic theme shows the current phase and the manual control slides betw
   await toggle.click();
   await expect(controls).toHaveAttribute('data-mode', /day|night/);
   await expect(auto).toHaveAttribute('aria-pressed', 'false');
-  const firstManualPosition = await toggle.evaluate((element) => getComputedStyle(element).transform);
+  await page.waitForTimeout(1250);
+  const firstManualPosition = await toggle.boundingBox();
 
   await toggle.click();
-  const secondManualPosition = await toggle.evaluate((element) => getComputedStyle(element).transform);
-  expect(secondManualPosition).not.toBe(firstManualPosition);
+  await page.waitForTimeout(1250);
+  const secondManualPosition = await toggle.boundingBox();
+  expect(secondManualPosition?.x).not.toBe(firstManualPosition?.x);
 
   await auto.click();
   await expect(controls).toHaveAttribute('data-mode', 'auto');
