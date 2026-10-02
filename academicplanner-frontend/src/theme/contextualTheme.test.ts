@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getContextualTheme, getVisualTheme } from './contextualTheme';
+import { getCampusLighting, getContextualTheme, getVisualTheme } from './contextualTheme';
 
 describe('contextual themes', () => {
   it.each([
@@ -14,5 +14,10 @@ describe('contextual themes', () => {
     expect(getVisualTheme('auto', 'night')).toBe('night');
     expect(getVisualTheme('day', 'night')).toBe('day');
     expect(getVisualTheme('night', 'day')).toBe('night');
+  });
+  it('keeps the campus in daylight or night for manual themes', () => {
+    expect(getCampusLighting('day', 'night')).toEqual({ phase: 'day', theme: 'day' });
+    expect(getCampusLighting('night', 'day')).toEqual({ phase: 'night', theme: 'night' });
+    expect(getCampusLighting('auto', 'sunset')).toEqual({ phase: 'sunset', theme: 'day' });
   });
 });

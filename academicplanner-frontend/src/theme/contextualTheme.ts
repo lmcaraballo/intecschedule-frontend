@@ -14,3 +14,11 @@ export function getContextualTheme(date: Date = new Date()): ContextualTheme {
 export function getVisualTheme(preference: Preferences['theme'], context: ContextualTheme): VisualTheme {
   return preference === 'auto' ? (context === 'night' ? 'night' : 'day') : preference;
 }
+
+/** The campus only follows the clock in Auto; manual themes are intentional fixed lighting. */
+export function getCampusLighting(preference: Preferences['theme'], context: ContextualTheme) {
+  if (preference === 'auto') return { phase: context, theme: getVisualTheme(preference, context) } as const;
+  return preference === 'day'
+    ? { phase: 'day', theme: 'day' } as const
+    : { phase: 'night', theme: 'night' } as const;
+}

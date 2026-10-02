@@ -163,6 +163,10 @@ test('campus model keeps controls out of the map caption and reports the active 
   await appearanceToggle.click();
   if (await appearance.getAttribute('data-mode') !== 'night') await appearanceToggle.click();
   await expect(map).toHaveAttribute('data-campus-theme', 'night');
+  await appearanceToggle.click();
+  await expect(appearance).toHaveAttribute('data-mode', 'day');
+  await expect(map).toHaveAttribute('data-campus-theme', 'day');
+  await expect(map).toHaveAttribute('data-campus-light', 'day');
 
   await controls.getByRole('button', { name: 'Ver campus completo' }).click();
   await expect(controls.getByRole('button', { name: 'Ver campus completo' })).toHaveAttribute('aria-pressed', 'true');
