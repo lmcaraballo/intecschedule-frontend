@@ -35,6 +35,20 @@ const campusBuildings = {
     features: [...buildingsData.features, ...campusAddedBuildings.features]
 };
 const CAMPUS_BUILDINGS = campusBuildings.features.filter(f => f.properties.verified);
+const BUILDING_PICK_LAYERS = [
+    'active-building-name',
+    'active-building-label',
+    'building-name-label',
+    'building-code-label',
+    'campus-solar-panel-lines',
+    'campus-solar-panels',
+    'campus-rooftop-structures',
+    'campus-facade-details-3d',
+    'building-roof-caps',
+    ...Array.from({ length: 5 }, (_, index) => `building-window-band-${index + 1}`),
+    'buildings-3d',
+    'buildings-base'
+];
 
 const OFFICIAL_PARKING = {
     'way/286086060': { parkingCode: 'P1', parkingName: 'Parqueo Biblioteca' },
@@ -1936,15 +1950,35 @@ export function initCampusMap(containerId, options = {}) {
             'campus-gates-label'
         ].forEach(layerId => map.moveLayer(layerId));
 
-        // ── Interactividad: hover cursor ──
-        map.on('mouseenter', 'buildings-3d', () => { map.getCanvas().style.cursor = 'pointer'; });
-        map.on('mouseleave', 'buildings-3d', () => { map.getCanvas().style.cursor = ''; });
+        const availableBuildingLayers = BUILDING_PICK_LAYERS.filter(layerId => map.getLayer(layerId));
+        const buildingAtPoint = (point) => {
+            const renderedFeatures = map.queryRenderedFeatures(point, { layers: availableBuildingLayers });
+            for (const feature of renderedFeatures) {
+                const code = feature.properties?.code || feature.properties?.buildingCode;
+                const building = CAMPUS_BUILDINGS.find(candidate => candidate.properties.code === code);
+                if (building) return building;
+            }
+            return null;
+        };
+
+        // Toda la geometría visible de un edificio (techo, cristales, paneles,
+        // detalles y rótulos) funciona como una misma zona de selección.
+        map.on('mousemove', (e) => {
+            map.getCanvas().style.cursor = buildingAtPoint(e.point) ? 'pointer' : '';
+        });
+        map.on('mouseout', () => { map.getCanvas().style.cursor = ''; });
 
         // ── Ficha reutilizable, compacta y colocada al lado del volumen ──
         // ── Click en edificio: popup con datos oficiales ──
-        map.on('click', 'buildings-3d', (e) => {
-            if (!e.features || e.features.length === 0) return;
-            const props = e.features[0].properties;
+        map.on('click', (e) => {
+            const selectedBuilding = buildingAtPoint(e.point);
+            if (!selectedBuilding) {
+                if (popupOpenTimer) window.clearTimeout(popupOpenTimer);
+                popup?.remove();
+                popup = null;
+                return;
+            }
+            const props = selectedBuilding.properties;
             const code = props.code;
 
             if (code) {
@@ -1982,9 +2016,8 @@ export function initCampusMap(containerId, options = {}) {
             if (popupOpenTimer) window.clearTimeout(popupOpenTimer);
             popup?.remove();
             popup = null;
-            const activeBuilding = CAMPUS_BUILDINGS.find(feature => feature.properties.code === code && feature.properties.centroid_lng);
-            const popupLngLat = activeBuilding
-                ? [activeBuilding.properties.centroid_lng, activeBuilding.properties.centroid_lat]
+            const popupLngLat = props.centroid_lng
+                ? [props.centroid_lng, props.centroid_lat]
                 : e.lngLat;
 
             // Espera a que terminen el enfoque y la expansión. Si la ficha se
@@ -2024,16 +2057,6 @@ export function initCampusMap(containerId, options = {}) {
                     });
                 });
             }, selectionMotionIsReduced() ? 40 : 690);
-        });
-
-        // ── Click en fondo → cerrar popup y salir de focus ──
-        map.on('click', (e) => {
-            const features = map.queryRenderedFeatures(e.point, { layers: ['buildings-3d'] });
-            if (features.length === 0) {
-                if (popupOpenTimer) window.clearTimeout(popupOpenTimer);
-                popup?.remove();
-                popup = null;
-            }
         });
 
         if (container) {

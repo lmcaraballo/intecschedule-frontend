@@ -38,6 +38,7 @@ def clock(value, meridiem=None):
 PENDING_MARKERS = {'AANUNCIAR', 'PORANUNCIAR', 'PORCONFIRMAR'}
 ASYNC_MARKERS = {'ASINCRONA', 'ASINCRONO', 'ASINCRONICA', 'ASINCRONICO',
                  'VIRTUALASINCRONA', 'VIRTUALASINCRONO', 'VIRTUALASINCRONICA', 'VIRTUALASINCRONICO'}
+NAME_HEADERS = {'NOMBRE', 'NOMBRECOMPLETO', 'NOMBREESTUDIANTE', 'NOMBREDELESTUDIANTE', 'NOMBREDELALUMNO'}
 
 
 def unscheduled_reason(cell):
@@ -77,9 +78,14 @@ def parse_selection(html: str, student_id: str, fetched_at=None) -> ScheduleResp
         raise ApiError('PORTAL_STRUCTURE_CHANGED')
     header, labels = candidates[0]
     columns = {name: labels.index(name) for name in ('CLAVE', 'ASIGNATURA', 'SECCION', 'ID')}
-    for optional in ('PROFESOR', 'AULA', 'NOMBRE'):
+    for optional in ('PROFESOR', 'AULA'):
         if optional in labels:
             columns[optional] = labels.index(optional)
+    name_indexes = [index for index, label in enumerate(labels) if label in NAME_HEADERS]
+    if len(name_indexes) > 1:
+        raise ApiError('PORTAL_STRUCTURE_CHANGED')
+    if name_indexes:
+        columns['NOMBRE'] = name_indexes[0]
     days = {}
     for day, aliases in DAYS.items():
         indexes = [i for i, name in enumerate(labels) if name in aliases]

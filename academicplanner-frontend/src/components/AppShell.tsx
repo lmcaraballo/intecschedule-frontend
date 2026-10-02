@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router';
-import { useAnimate } from 'motion/react-mini';
 import { Brand } from './Brand';
 import { Icon } from './Icon';
 import { StatusBanner } from './StatusBanner';
@@ -19,7 +18,7 @@ import { BreezeBackground } from './BreezeBackground';
 import { BrandSplash } from './BrandSplash';
 
 export function AppShell() {
-  const { theme, phase, preference, reducedMotion, setPreference, storageWarning } = useTheme();
+  const { theme, phase, preference, setPreference, storageWarning } = useTheme();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [splashDestination, setSplashDestination] = useState<{ destination: string; message: string } | null>(null);
@@ -31,8 +30,6 @@ export function AppShell() {
   const startPath = getStartPath(data?.preferences ?? defaultPreferences);
   const compactThemeControl = useCompactThemeControl();
   const sliderShift = themeSliderShift(preference, phase, compactThemeControl);
-  const [themeToggleScope, animateThemeToggle] = useAnimate();
-  const hasPlacedThemeToggle = useRef(false);
 
   useEffect(() => {
     if (!splashDestination) return;
@@ -59,28 +56,6 @@ export function AppShell() {
     };
   }, [navigate, pathname, splashDestination]);
 
-  useEffect(() => {
-    const toggle = themeToggleScope.current;
-    if (!toggle) return;
-    const shouldAnimate = hasPlacedThemeToggle.current && !reducedMotion;
-    hasPlacedThemeToggle.current = true;
-    // JSDOM does not expose the Web Animations API. Keep the control usable in
-    // that environment while browsers use Motion's maintained mini animator.
-    if (typeof toggle.animate !== 'function') {
-      toggle.style.transform = `translateX(${sliderShift}px)`;
-      return;
-    }
-    const rootStyle = getComputedStyle(document.documentElement);
-    const animation = animateThemeToggle(toggle, {
-      backgroundColor: rootStyle.getPropertyValue('--surface').trim(),
-      borderColor: rootStyle.getPropertyValue('--border').trim(),
-      color: rootStyle.getPropertyValue('--muted').trim(),
-    }, shouldAnimate
-      ? { duration: 1.15, ease: [0.22, 1, 0.36, 1] }
-      : { duration: 0 });
-    return () => animation.stop();
-  }, [animateThemeToggle, reducedMotion, sliderShift, themeToggleScope]);
-
   const homePath = academic ? startPath : '/';
   return (
     <div className={`app-shell${academic ? ' app-shell--academic' : ''}`}>
@@ -97,7 +72,7 @@ export function AppShell() {
           <Button variant="plain" className="theme-auto" aria-pressed={preference === 'auto'} onClick={() => setPreference('auto')}>Auto</Button>
           <span className="theme-scene">
             <span className="theme-rail" aria-hidden="true"><i /><i /><i /><i /></span>
-            <button ref={themeToggleScope} type="button" className="control-button theme-toggle" style={{ transform: `translateX(${sliderShift}px)` }} aria-label={themeToggleLabel(preference, theme, phase)} onClick={() => setPreference(theme === 'day' ? 'night' : 'day')}><Icon name={phaseIcon(preference, theme, phase)} /></button>
+            <button type="button" className="control-button theme-toggle" style={{ transform: `translateX(${sliderShift}px)` }} aria-label={themeToggleLabel(preference, theme, phase)} onClick={() => setPreference(theme === 'day' ? 'night' : 'day')}><Icon name={phaseIcon(preference, theme, phase)} /></button>
           </span>
         </div>
       </header>

@@ -18,6 +18,12 @@ def test_semantic_columns_and_stable_ids():
     assert a.classes[0].subjectCode=='QA202'
     assert a.classes[0].professor=='Docente de prueba'
 
+
+@pytest.mark.parametrize('heading', ['Nombre completo', 'Nombre estudiante', 'Nombre del estudiante', 'Nombre del alumno'])
+def test_student_name_header_variants_are_preserved(heading):
+    headers=HEADERS.copy();headers[2]=heading
+    assert parse_selection(html(headers=headers),'1234567').student.name=='Estudiante ficticio'
+
 @pytest.mark.parametrize('bad',['27:00-28:00','09:00-07:00','07:00-07:00','texto','07:00-09:00 basura'])
 def test_invalid_time_never_becomes_empty(bad):
     row=ROW.copy();row[11]=bad

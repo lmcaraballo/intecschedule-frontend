@@ -149,6 +149,7 @@ test('day schedule controls read as one compact tactile workspace', async ({ pag
   await page.setViewportSize({ width: 954, height: 911 });
   await seed(page);
   await page.goto('/horario?date=2026-10-01&view=day');
+  await expect(page.getByText('Estudiante Demo · Tus clases institucionales, en un solo lugar.')).toBeVisible();
   const viewSwitch = page.getByRole('group', { name: 'Vista del horario' });
   const activeView = viewSwitch.getByRole('button', { name: 'Día', exact: true });
   const dayPicker = page.getByRole('group', { name: 'Seleccionar día' });
@@ -256,6 +257,10 @@ test('campus model keeps controls out of the map caption and reports the active 
   await expect(appearance).toHaveAttribute('data-mode', 'day');
   await expect(map).toHaveAttribute('data-campus-theme', 'day');
   await expect(map).toHaveAttribute('data-campus-light', 'day');
+  expect(await appearanceToggle.evaluate((element) => ({
+    background: (element as HTMLElement).style.backgroundColor,
+    color: (element as HTMLElement).style.color,
+  }))).toEqual({ background: '', color: '' });
 
   await controls.getByRole('button', { name: 'Ver campus completo' }).click();
   await expect(controls.getByRole('button', { name: 'Ver campus completo' })).toHaveAttribute('aria-pressed', 'true');
