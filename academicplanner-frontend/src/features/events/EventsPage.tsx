@@ -9,6 +9,7 @@ import { useAcademicSession } from '../../app/AcademicLayout';
 import { atTime, getTodayClasses } from '../schedule/scheduleDomain';
 import { dateKey, formatDate } from '../../utils/dateFormat';
 import { useCalendarConnection } from './CalendarConnectionProvider';
+import { useCalendarEvents } from './CalendarEventsProvider';
 import { createCalendarEvent, deleteCalendarEvent, listCalendarEvents, updateCalendarEvent } from './calendarApi';
 import { calendarOwnerId, syncInstitutionalReminders, syncScheduleToCalendar } from './calendarSync';
 import { emptyEventDraft, type CalendarEvent, type EventDraft } from './eventSchema';
@@ -40,6 +41,7 @@ const tabCopy: Record<EventTab, { label: string; title: string; description: str
 export function EventsPage() {
   const { session, now, preferences } = useAcademicSession();
   const connection = useCalendarConnection();
+  const { refresh: refreshCalendarEvents } = useCalendarEvents();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [params] = useSearchParams();
   const requestedTab = params.get('tab');
@@ -179,6 +181,7 @@ export function EventsPage() {
       resetDraft(true);
       setEditorOpen(false);
       await refresh(connection.token, false);
+      await refreshCalendarEvents();
     } catch (caught) { setError(readableError(caught)); }
     finally { setLoadingMessage(null); }
   }
@@ -205,6 +208,7 @@ export function EventsPage() {
       setDeleting(null);
       setMessage('Evento eliminado de tu calendario personal.');
       await refresh(connection.token, false);
+      await refreshCalendarEvents();
     } catch (caught) { setDeleting(null); setError(readableError(caught)); }
     finally { setLoadingMessage(null); }
   }

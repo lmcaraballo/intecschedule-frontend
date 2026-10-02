@@ -12,7 +12,10 @@ interface CalendarConnection {
   disconnect: () => void;
 }
 
-const CalendarConnectionContext = createContext<CalendarConnection | null>(null);
+const CalendarConnectionContext = createContext<CalendarConnection>({
+  config: null, token: null, loading: false, error: null,
+  connect: async () => {}, retryPreparation: async () => {}, disconnect: () => {},
+});
 
 interface GoogleTokenResponse { access_token?: string; expires_in?: number; error?: string; }
 interface GoogleTokenError { type?: string; }
@@ -112,9 +115,7 @@ export function CalendarConnectionProvider({ children }: { children: ReactNode }
 }
 
 export function useCalendarConnection() {
-  const value = useContext(CalendarConnectionContext);
-  if (!value) throw new Error('Se requiere CalendarConnectionProvider');
-  return value;
+  return useContext(CalendarConnectionContext);
 }
 
 let googleScriptPromise: Promise<GoogleIdentity> | null = null;

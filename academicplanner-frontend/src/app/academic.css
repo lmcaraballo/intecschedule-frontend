@@ -438,6 +438,15 @@ html[data-reduce-motion='true'] *, html[data-reduce-motion='true'] *::before, ht
 .day-picker__dot { width: 4px; height: 4px; border-radius: 50%; background: transparent; }
 .day-picker button[aria-current='date'] .day-picker__dot { background: currentColor; }
 .day-schedule { margin-top: var(--space-5); }
+.calendar-event-agenda { max-width: 720px; margin: var(--space-5) 0; padding: var(--space-5); border: 1px solid color-mix(in srgb, #316d69 34%, var(--border)); border-radius: var(--radius-lg); background: linear-gradient(145deg, color-mix(in srgb, #e5efed 58%, var(--surface)), var(--surface)); box-shadow: 0 12px 28px rgb(31 39 25 / .07); }
+.calendar-event-agenda__list { display: grid; gap: var(--space-2); margin: var(--space-4) 0 0; padding: 0; list-style: none; }
+.calendar-event-agenda__list li { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: var(--space-3); align-items: start; padding: var(--space-3); border-radius: var(--radius-sm); background: color-mix(in srgb, var(--surface) 72%, white); }
+.calendar-event-agenda__list time { color: #316d69; font-size: .8125rem; font-weight: 700; }
+.calendar-event-agenda__list div { display: grid; gap: 3px; min-width: 0; }
+.calendar-event-agenda__list strong { color: var(--heading); overflow-wrap: anywhere; }
+.calendar-event-agenda__list span { display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: .75rem; overflow-wrap: anywhere; }
+[data-theme='night'] .calendar-event-agenda { border-color: color-mix(in srgb, #8ebeb8 44%, var(--border)); background: linear-gradient(145deg, color-mix(in srgb, #243c38 70%, var(--surface)), var(--surface)); }
+[data-theme='night'] .calendar-event-agenda__list time { color: #8ebeb8; }
 .history-note { display: flex; align-items: center; gap: 6px; margin-top: 3px; color: var(--muted); font-size: .6875rem; font-weight: 400; }
 .day-schedule--past .class-card { opacity: .9; }
 .day-schedule .class-card__button { padding-block: 13px; }
@@ -570,6 +579,7 @@ button.month-day:focus-visible .month-day__preview { display: block; }
   .week-day .class-card__meta { font-size: .6875rem; }
   .week-day .class-card__meta > svg { display: none; }
   .day-schedule { max-width: 720px; margin-inline: auto; }
+  .calendar-event-agenda { margin-inline: auto; }
   .app-dialog { inset: 0 0 0 auto; width: 440px; max-width: 100%; max-height: 100svh; height: 100svh; border-radius: 0; padding: var(--space-8); }
   .app-dialog.confirmation-dialog { inset: 0; width: min(560px, calc(100% - 48px)); height: fit-content; max-height: 90svh; margin: auto; border-radius: var(--radius-lg); }
 }

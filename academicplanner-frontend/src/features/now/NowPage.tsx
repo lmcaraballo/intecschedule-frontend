@@ -17,6 +17,8 @@ import { getInstitutionalNotice, getInstitutionalPeriod } from '../institutional
 import { dateKey } from '../../utils/dateFormat';
 import { Button } from '../../components/Button';
 import { useInstitutionalCalendar } from '../institutional/InstitutionalCalendarProvider';
+import { CalendarEventAgenda } from '../events/CalendarEventAgenda';
+import { useCalendarEvents } from '../events/CalendarEventsProvider';
 
 const greetings = { morning: 'Buenos días', day: 'A tu ritmo', sunset: 'Buenas tardes', night: 'Buenas noches' };
 
@@ -27,6 +29,7 @@ export function NowPage() {
   const institutionalNotice = getInstitutionalNotice(now);
   const period = getInstitutionalPeriod(now);
   const institutionalCalendar = useInstitutionalCalendar();
+  const { events: calendarEvents } = useCalendarEvents();
   const finishedEarlyClass = status.today.find((item) => classOverrides[`${dateKey(now)}:${item.id}`]);
   // This value is derived from the current clock and schedule. It is never persisted.
   const campusClass = status.current ?? status.next?.academicClass;
@@ -54,6 +57,7 @@ export function NowPage() {
         })}</ol> : <EmptyState compact title="Hoy no hay clases en tu horario" description="Puedes explorar los demás días de tu semana." action={<Link to="/horario" className="quick-link">Explorar la semana <Icon name="arrow" width="16" height="16" /></Link>} />}
       </section>
     </div>
+    <CalendarEventAgenda events={calendarEvents} date={now} />
     {preferences.showUnscheduledSubjects && <section className="now-unscheduled" aria-label="Materias asíncronas"><UnscheduledSubjects schedule={session.schedule} /></section>}
     <LastUpdated fetchedAt={session.schedule.fetchedAt} />
     {period && <p className="schedule-note"><Icon name="calendar" width="16" height="16" /><span>{period.title} · horario válido hasta el {period.endsOn.split('-').reverse().join('/')} · <a href={period.sourceUrl} target="_blank" rel="noopener noreferrer">fuente INTEC</a> (actualizada el {formatDate(new Date(institutionalCalendar.lastUpdatedAt), { day: 'numeric', month: 'long', year: 'numeric' })}).</span></p>}

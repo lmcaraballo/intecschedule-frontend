@@ -565,8 +565,12 @@ test('Google Calendar demo synchronizes without duplicates and supports personal
 
   await page.getByRole('tab', { name: /Personales/ }).click();
   await page.getByRole('button', { name: 'Nueva actividad' }).click();
+  const today = await page.evaluate(() => {
+    const date = new Date();
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  });
   await page.getByLabel('Título').fill('Preparar exposición QA');
-  await page.getByLabel('Fecha').fill('2026-10-08');
+  await page.getByLabel('Fecha').fill(today);
   await page.getByLabel('Inicio', { exact: true }).fill('16:00');
   await page.getByLabel('Fin', { exact: true }).fill('15:00');
   await expect(page.getByText('La hora de fin debe ser posterior a la de inicio.')).toBeVisible();
@@ -576,6 +580,12 @@ test('Google Calendar demo synchronizes without duplicates and supports personal
   await page.getByLabel(/Lugar/).fill('Biblioteca');
   await page.getByRole('button', { name: 'Crear evento' }).click();
   await expect(page.getByRole('heading', { name: 'Preparar exposición QA' })).toBeVisible();
+
+  await page.getByRole('link', { name: 'Ahora', exact: true }).click();
+  await expect(page.getByText('Preparar exposición QA', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Horario', exact: true }).click();
+  await expect(page.getByText('Preparar exposición QA', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Eventos', exact: true }).click();
 
   const personalCard = page.getByRole('listitem').filter({ hasText: 'Preparar exposición QA' });
   expect(await personalCard.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
@@ -588,6 +598,28 @@ test('Google Calendar demo synchronizes without duplicates and supports personal
   await updatedCard.getByRole('button', { name: 'Eliminar' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Eliminar', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Preparar exposición final QA' })).toHaveCount(0);
+});
+
+test('clearing local data also closes the in-memory Google Calendar connection', async ({ page }) => {
+  await seed(page);
+  await page.goto('/eventos');
+  await page.getByRole('button', { name: 'Conectar con Google' }).click();
+  await expect(page.getByRole('heading', { name: 'Mis eventos personales' })).toBeVisible();
+
+  await page.goto('/mas');
+  await page.getByRole('tab', { name: /Privacidad/ }).click();
+  await page.getByRole('button', { name: 'Limpiar datos locales' }).click();
+  await page.getByRole('button', { name: 'Borrar datos de este dispositivo' }).click();
+  await expect(page).toHaveURL(/\/$/);
+
+  const data = storedSession();
+  await page.evaluate(({ key, data }) => {
+    const value = JSON.stringify(data);
+    localStorage.setItem(key, value);
+    window.dispatchEvent(new StorageEvent('storage', { key, newValue: value }));
+  }, { key, data });
+  await page.goto('/eventos');
+  await expect(page.getByRole('button', { name: 'Conectar con Google' })).toBeVisible();
 });
 
 for (const width of [320,390,640,768,1440]) {

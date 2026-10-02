@@ -12,6 +12,8 @@ import { EmptyState } from '../../components/EmptyState';
 import { WeekSchedule } from './WeekSchedule';
 import { getInstitutionalDate, getInstitutionalPeriod } from '../institutional/institutionalCalendar';
 import { MonthSchedule } from './MonthSchedule';
+import { CalendarEventAgenda } from '../events/CalendarEventAgenda';
+import { useCalendarEvents } from '../events/CalendarEventsProvider';
 
 export function SchedulePage() {
   const { session, now, preferences } = useAcademicSession();
@@ -27,6 +29,7 @@ export function SchedulePage() {
   const selectedIsPast = isPastDay(selected, now);
   const institutionalDate = getInstitutionalDate(selected);
   const period = getInstitutionalPeriod(selected);
+  const { events: calendarEvents } = useCalendarEvents();
 
   function update(date: Date, nextView = view) {
     const next = new URLSearchParams(params);
@@ -62,6 +65,7 @@ export function SchedulePage() {
       <section className={`day-schedule${selectedIsPast ? ' day-schedule--past' : ''}`} aria-labelledby="selected-day-title"><div className="section-heading"><div><h2 id="selected-day-title">{formatDate(selected, { weekday: 'long', day: 'numeric', month: 'long' })}</h2>{selectedIsPast && <p className="history-note"><Icon name="calendar" width="14" height="14" /> Día anterior: puedes consultar sus clases y detalles.</p>}</div><span>{selectedIsPast ? 'Historial · ' : ''}{classes.length} {classes.length === 1 ? 'clase' : 'clases'}</span></div>{classes.length ? <ol className="class-list">{classes.map((item) => <li key={item.id}><ClassCard academicClass={item} eyebrow={selectedIsPast ? 'Historial' : undefined} compact={preferences.scheduleDensity === 'compact'} /></li>)}</ol> : <EmptyState compact title={institutionalDate?.kind === 'no_class' ? institutionalDate.title : period ? 'No tienes clases este día' : 'Este día queda fuera del trimestre activo'} description={institutionalDate?.kind === 'no_class' ? institutionalDate.detail : period ? 'Puedes explorar otro día de la semana.' : 'El horario no se repite automáticamente fuera de las fechas académicas confirmadas.'} />}</section>
     </> : view === 'week' ? <WeekSchedule schedule={session.schedule} days={days} now={now} onSelectDay={(date) => update(date, 'day')} /> : <MonthSchedule schedule={session.schedule} selected={selected} now={now} showInstitutionalDates={preferences.showInstitutionalDates} onSelectDay={(date) => update(date, 'day')} />}
     </div>
+    <CalendarEventAgenda events={calendarEvents} date={selected} />
     <p className="schedule-note"><Icon name="calendar" width="16" height="16" /> El horario se muestra solo dentro del trimestre publicado e incorpora los feriados registrados. Las horas siguen la zona horaria de tu dispositivo.</p>
     {preferences.showUnscheduledSubjects && <UnscheduledSubjects schedule={session.schedule} />}
     <LastUpdated fetchedAt={session.schedule.fetchedAt} />

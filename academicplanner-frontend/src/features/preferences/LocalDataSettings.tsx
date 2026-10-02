@@ -6,15 +6,18 @@ import { ErrorState } from '../../components/ErrorState';
 import { Icon } from '../../components/Icon';
 import { clearAcademicPlannerData } from '../../storage/scheduleStorage';
 import { queueNextSplash } from '../../utils/transientSplash';
+import { useCalendarConnection } from '../events/CalendarConnectionProvider';
 
 export function LocalDataSettings() {
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const calendarConnection = useCalendarConnection();
 
   function clearData() {
     try {
       queueNextSplash('Tus datos locales se borraron con seguridad');
+      calendarConnection.disconnect();
       clearAcademicPlannerData();
       navigate('/', { replace: true });
     } catch {
