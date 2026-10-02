@@ -172,6 +172,10 @@ test('More keeps settings compact and provides clear control feedback', async ({
   expect(await page.locator('body').evaluate((element) => element.scrollHeight)).toBeLessThan(1250);
 
   await page.getByRole('button', { name: /Apariencia y accesibilidad/ }).click();
+  await expect(page.getByRole('button', { name: /Apariencia y accesibilidad/ })).toHaveAttribute('aria-expanded', 'true');
+  await page.getByRole('button', { name: /Apariencia y accesibilidad/ }).click();
+  await expect(page.getByRole('button', { name: /Apariencia y accesibilidad/ })).toHaveAttribute('aria-expanded', 'false');
+  await page.getByRole('button', { name: /Apariencia y accesibilidad/ }).click();
   const themeAuto = page.getByLabel('Tema visual').getByRole('button', { name: 'Auto', exact: true });
   await themeAuto.click();
   await expect(themeAuto).toHaveAttribute('aria-pressed', 'true');
@@ -390,7 +394,7 @@ test('service worker does not intercept API navigation',async({page})=>{
 test('Google Calendar demo synchronizes without duplicates and supports personal event CRUD', async ({ page }) => {
   await seed(page);
   await page.goto('/eventos');
-  await page.getByRole('button', { name: 'Conectar Google Calendar' }).click();
+  await page.getByRole('button', { name: 'Conectar con Google' }).click();
   await expect(page.getByRole('heading', { name: 'Mis eventos personales' })).toBeVisible();
   await expect(page.getByRole('tab', { name: /Personales/ })).toHaveAttribute('aria-selected', 'true');
   await page.getByRole('tab', { name: /Fechas INTEC/ }).click();

@@ -67,7 +67,7 @@ El calendario de Google es la fuente persistente de los eventos personales; no s
    ```
 
 5. Reconstruir los servicios con `docker compose -f compose.academicplanner.yml up -d --build` desde la carpeta que contiene el compose.
-6. Comprobar que `http://127.0.0.1:4294/api/calendar/config` responde con `available: true` y el client ID esperado. Después, abrir **Eventos → Conectar Google Calendar**.
+6. Comprobar que `http://127.0.0.1:4294/api/calendar/config` responde con `available: true` y el client ID esperado. Después, abrir **Eventos → Conectar con Google**.
 
 El frontend usa Google Identity Services con un token temporal conservado solo en memoria. No necesita ni debe recibir el client secret. Si aparece `origin_mismatch`, falta registrar exactamente el origen mostrado en la barra del navegador. En modo Testing, Google puede exigir reconexión periódica y solo permite las cuentas incluidas como usuarios de prueba.
 

@@ -11,7 +11,7 @@ export function PreferencesSettings() {
   const [preferences, setPreferences] = useState<Preferences>(() => scheduleStorage.get()?.preferences ?? defaultPreferences);
   const [warning, setWarning] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [openSection, setOpenSection] = useState<PreferenceSectionId>('start');
+  const [openSection, setOpenSection] = useState<PreferenceSectionId | null>('start');
 
   useEffect(() => scheduleStorage.subscribe(() => setPreferences(scheduleStorage.get()?.preferences ?? defaultPreferences)), []);
 
@@ -83,10 +83,10 @@ function phaseLabel(phase: 'morning' | 'day' | 'sunset' | 'night') {
 
 type PreferenceSectionId = 'start' | 'appearance' | 'information' | 'reminders';
 
-function PreferenceCard({ id, icon, title, detail, open, onOpen, children }: { id: PreferenceSectionId; icon: IconName; title: string; detail: string; open: boolean; onOpen: (id: PreferenceSectionId) => void; children: ReactNode }) {
+function PreferenceCard({ id, icon, title, detail, open, onOpen, children }: { id: PreferenceSectionId; icon: IconName; title: string; detail: string; open: boolean; onOpen: (id: PreferenceSectionId | null) => void; children: ReactNode }) {
   const contentId = `preference-section-${id}`;
   return <section className={`preference-card${open ? ' is-open' : ''}`}>
-    <h3><button type="button" className="preference-card__trigger" aria-expanded={open} aria-controls={contentId} onClick={() => onOpen(id)}>
+    <h3><button type="button" className="preference-card__trigger" aria-expanded={open} aria-controls={contentId} onClick={() => onOpen(open ? null : id)}>
       <Icon name={icon} /><span><strong>{title}</strong><small>{detail}</small></span><Icon className="preference-card__chevron" name="chevron-right" />
     </button></h3>
     {open && <div className="preference-card__body" id={contentId} role="group" aria-label={title}>{children}</div>}

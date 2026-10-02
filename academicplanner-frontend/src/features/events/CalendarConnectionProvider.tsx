@@ -37,7 +37,7 @@ export function CalendarConnectionProvider({ children }: { children: ReactNode }
     let active = true;
     fetchCalendarConfig()
       .then((value) => { if (active) { setConfig(value); setError(null); } })
-      .catch(() => { if (active) setError('No pudimos leer la configuración de Google Calendar.'); })
+      .catch(() => { if (active) setError('No pudimos preparar la conexión con Google. Revisa tu conexión e inténtalo de nuevo.'); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; if (expirationTimer.current) window.clearTimeout(expirationTimer.current); };
   }, []);

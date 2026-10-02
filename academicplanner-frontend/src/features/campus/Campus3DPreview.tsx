@@ -113,7 +113,7 @@ export function Campus3DPreview({ academicClass, timing }: { academicClass: Acad
     const virtualTitle = timing === 'current' ? 'Tu clase en curso es virtual' : timing === 'next' ? 'Tu próxima clase es virtual' : 'Este encuentro es virtual';
     return <section className="campus-location-pending campus-location-virtual" aria-labelledby={titleId}>
       <Icon name="book" />
-      <div><p className="section-label">Modalidad virtual</p><h2 id={titleId}>{virtualTitle}</h2><p>Como sugerencia, revisa Campus Virtual o Moodle antes de que comience para confirmar el enlace y las instrucciones de acceso.</p><a href="https://campusvirtual.intec.edu.do/" target="_blank" rel="noopener noreferrer">Revisar Campus Virtual</a></div>
+      <div><p className="section-label">Modalidad virtual</p><h2 id={titleId}>{virtualTitle}</h2><p>Como sugerencia, revisa Campus Virtual o Moodle. Si no encuentras el enlace, verifica Microsoft Teams y tu correo institucional: el docente puede publicarlo o enviarlo por allí.</p><div className="campus-virtual-links"><a href="https://campusvirtual.intec.edu.do/" target="_blank" rel="noopener noreferrer">Campus Virtual</a><a href="https://teams.microsoft.com/" target="_blank" rel="noopener noreferrer">Abrir Microsoft Teams</a></div></div>
     </section>;
   }
   if (!building) {
