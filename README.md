@@ -1,3 +1,13 @@
+# AcademicPlanner
+
+El frontend del primer incremento está en [`academicplanner-frontend/`](academicplanner-frontend/README.md). Incluye [informe QA](academicplanner-frontend/docs/QA_25_REPORT.md), [contrato y handoff](academicplanner-frontend/docs/FRONTEND_25_HANDOFF.md) y [despliegue](academicplanner-frontend/docs/DEPLOYMENT.md).
+
+El backend nuevo está en [`academicplanner-backend/`](academicplanner-backend/README.md), con pruebas locales y despliegue conjunto mediante `compose.academicplanner.yml`. La conexión autenticada con BeeCampus ya se verificó con una cuenta autorizada y el ciclo 2230: 11 reuniones obtenidas y mostradas en el frontend.
+
+La infraestructura AWS CDK existente se conserva en la raíz. Sus comandos y contratos son independientes del frontend académico.
+
+## Infraestructura existente
+
 # Welcome to your CDK TypeScript project
 
 This is a blank project for CDK development with TypeScript.

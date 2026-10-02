@@ -1,0 +1,82 @@
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { scheduleStorage } from '../storage/scheduleStorage';
+import { defaultPreferences, themeVariantFor, type Preferences } from '../features/preferences/preferences';
+import { getContextualTheme, getVisualTheme, type ContextualTheme, type VisualTheme } from './contextualTheme';
+
+interface ThemeContextValue {
+  theme: VisualTheme;
+  phase: ContextualTheme;
+  preference: Preferences['theme'];
+  reducedMotion: boolean;
+  setPreference: (value: Preferences['theme']) => void;
+  storageWarning: boolean;
+}
+
+const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [preferences, setPreferences] = useState<Preferences>(() => scheduleStorage.get()?.preferences ?? defaultPreferences);
+  const [context, setContext] = useState(getContextualTheme);
+  const [storageWarning, setStorageWarning] = useState(false);
+  const preference = preferences.theme;
+  const theme = getVisualTheme(preference, context);
+
+  useEffect(() => scheduleStorage.subscribe((change) => {
+    const stored = scheduleStorage.read();
+    if (change === 'cleared' || stored.status === 'ready') {
+      setPreferences(stored.data?.preferences ?? defaultPreferences);
+      setStorageWarning(false);
+    }
+  }), []);
+
+  useEffect(() => {
+    const refresh = () => setContext(getContextualTheme());
+    const interval = window.setInterval(refresh, 60_000);
+    document.addEventListener('visibilitychange', refresh);
+    return () => { window.clearInterval(interval); document.removeEventListener('visibilitychange', refresh); };
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.dataset.context = context;
+    document.documentElement.dataset.themeMode = preference;
+    document.documentElement.dataset.themeVariant = preference === 'auto' ? 'auto' : preferences.themeVariant;
+    document.documentElement.style.colorScheme = theme === 'night' ? 'dark' : 'light';
+    const color = getComputedStyle(document.documentElement).getPropertyValue('--browser-theme').trim();
+    if (color) document.querySelector('meta[name="theme-color"]')?.setAttribute('content', color);
+  }, [theme, context, preference, preferences.themeVariant]);
+
+  useEffect(() => {
+    document.documentElement.dataset.reduceMotion = String(preferences.reducedMotion);
+    document.documentElement.dataset.textSize = preferences.textSize;
+    document.documentElement.dataset.highContrast = String(preferences.highContrast);
+  }, [preferences.highContrast, preferences.reducedMotion, preferences.textSize]);
+
+  function setPreference(value: Preferences['theme']) {
+    const variantForMode = (current: Preferences) => {
+      if (value === 'auto') return current.themeVariant;
+      return themeVariantFor(value, current.themeTone);
+    };
+    const applyPreference = () => setPreferences((current) => ({ ...current, theme: value, themeVariant: variantForMode(current) }));
+    const reducedMotion = document.documentElement.dataset.reduceMotion === 'true'
+      || (typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    const startViewTransition = (document as Document & { startViewTransition?: (callback: () => void) => unknown }).startViewTransition;
+    if (!reducedMotion && startViewTransition) startViewTransition.call(document, applyPreference);
+    else applyPreference();
+    try {
+      const current = scheduleStorage.get()?.preferences ?? defaultPreferences;
+      scheduleStorage.savePreferences({ theme: value, themeVariant: variantForMode(current) });
+      setStorageWarning(false);
+    } catch {
+      setStorageWarning(true);
+    }
+  }
+
+  return <ThemeContext.Provider value={{ theme, phase: context, preference, reducedMotion: preferences.reducedMotion, setPreference, storageWarning }}>{children}</ThemeContext.Provider>;
+}
+
+export function useTheme(): ThemeContextValue {
+  const context = useContext(ThemeContext);
+  if (!context) throw new Error('useTheme requiere ThemeProvider');
+  return context;
+}

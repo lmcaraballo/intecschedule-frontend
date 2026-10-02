@@ -1,0 +1,150 @@
+:root {
+  --color-pine: #2f4f3a;
+  --color-moss: #556b4f;
+  --color-sage: #a8b89f;
+  --color-honey: #c89b3c;
+  --color-cream: #f6f3ea;
+  --color-error: #b85450;
+  --color-warning: #d9a441;
+  --color-text: #2e2e2b;
+  --font-body: 'DM Sans', sans-serif;
+  --font-display: 'Lora', Georgia, serif;
+  --text-xs: .75rem;
+  --text-sm: .875rem;
+  --text-base: 1rem;
+  --space-1: .25rem;
+  --space-2: .5rem;
+  --space-3: .75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --radius-sm: .5rem;
+  --radius-md: .75rem;
+  --radius-lg: 1.5rem;
+  --radius-pill: 999px;
+  --shadow-card: 0 6px 18px #2f4f3a03, 0 24px 64px #2f4f3a07;
+  --shadow-paper: 0 14px 28px #2f4f3a10;
+  --duration-fast: 160ms;
+  --overlay: #15231980;
+}
+
+:root, [data-theme='day'] {
+  --bg: var(--color-cream);
+  --browser-theme: var(--color-pine);
+  --surface: #fffefa;
+  --surface-soft: #eeeee4;
+  --text: var(--color-text);
+  --muted: #676b60;
+  --heading: var(--color-pine);
+  --border: #dcded2;
+  --input-border: #828c7a;
+  --input-bg: #fdfcf8;
+  --primary: var(--color-pine);
+  --on-primary: #ffffff;
+  --primary-hover: #243f2e;
+  --focus: var(--color-moss);
+  --error-text: #a13e3a;
+  --error-bg: #fbefec;
+  --warning-bg: #fbf0d6;
+  --warning-text: #755215;
+  --success-bg: #e9efe4;
+  --art-line: #d8ddce;
+  --art-green: #b7c5a8;
+  --art-honey: #e6cf97;
+}
+
+[data-theme='night'] {
+  --bg: #17251c;
+  --browser-theme: var(--bg);
+  --surface: #203026;
+  --surface-soft: #2c3c2f;
+  --text: #eeeede;
+  --muted: #b4bdad;
+  --heading: #d8e2c9;
+  --border: #3e5141;
+  --input-border: #70836c;
+  --input-bg: #1c2b21;
+  --primary: #b9cca8;
+  --on-primary: #19291f;
+  --primary-hover: #cddcbf;
+  --focus: #d4b56b;
+  --error-text: #ffb4a9;
+  --error-bg: #412b2a;
+  --warning-bg: #3d3523;
+  --warning-text: #efd391;
+  --success-bg: #304434;
+  --art-line: #3b503b;
+  --art-green: #637b57;
+  --art-honey: #a48b50;
+  --shadow-card: 0 20px 64px #00000018;
+  --shadow-paper: 0 14px 28px #00000020;
+}
+
+/* Auto follows a gentle daylight cycle. Manual light/dark stays stable. */
+[data-theme-mode='auto'][data-context='morning'] {
+  --bg: #f5f0e2;
+  --surface: #fffaf0;
+  --surface-soft: #eee9d9;
+  --success-bg: #e8eee0;
+  --art-honey: #ead59f;
+}
+
+[data-theme-mode='auto'][data-context='sunset'] {
+  --bg: #eee5d9;
+  --surface: #f8f1e8;
+  --surface-soft: #e4ddd3;
+  --text: #34312d;
+  --muted: #716a62;
+  --heading: #3b503f;
+  --border: #d2cbbf;
+  --input-bg: #f6efe7;
+  --success-bg: #dde5d7;
+  --art-honey: #d8b96f;
+}
+
+/* Manual palettes keep the same contrast system while offering two calm
+   temperatures for either light or dark. Auto remains governed by the hour. */
+[data-theme='day'][data-theme-mode='day'][data-theme-variant='day-paper'] {
+  --bg: #f4f4ee;
+  --surface: #ffffff;
+  --surface-soft: #e8ece5;
+  --success-bg: #e5eee7;
+  --art-honey: #e7d5a5;
+}
+
+[data-theme='night'][data-theme-mode='night'][data-theme-variant='night-midnight'] {
+  --bg: #132029;
+  --browser-theme: #132029;
+  --surface: #1d2c36;
+  --surface-soft: #283b46;
+  --text: #e7eff0;
+  --muted: #b4c2c3;
+  --heading: #d7e8e0;
+  --border: #3f5960;
+  --input-border: #789096;
+  --input-bg: #192832;
+  --primary: #b4d1c1;
+  --on-primary: #13262b;
+  --primary-hover: #c9e1d4;
+  --focus: #e5c878;
+  --success-bg: #2b4546;
+  --art-line: #3d5960;
+  --art-green: #5b7d76;
+  --art-honey: #a99058;
+}
+
+/* Stable, non-semantic subject palettes for all academic surfaces. */
+[data-subject='fern'] { --subject-accent: var(--color-moss); --subject-tint: #eaf0e5; }
+[data-subject='slate'] { --subject-accent: #536590; --subject-tint: #eceef6; }
+[data-subject='lavender'] { --subject-accent: #73577f; --subject-tint: #f0eaf3; }
+[data-subject='teal'] { --subject-accent: #316d69; --subject-tint: #e5efed; }
+[data-subject='olive'] { --subject-accent: #5b6836; --subject-tint: #edf0e2; }
+[data-theme='night'] [data-subject='fern'] { --subject-accent: var(--color-sage); --subject-tint: #2b3c2c; }
+[data-theme='night'] [data-subject='slate'] { --subject-accent: #a3b1d9; --subject-tint: #2c3445; }
+[data-theme='night'] [data-subject='lavender'] { --subject-accent: #c2a7cd; --subject-tint: #3a3041; }
+[data-theme='night'] [data-subject='teal'] { --subject-accent: #8ebeb8; --subject-tint: #243c38; }
+[data-theme='night'] [data-subject='olive'] { --subject-accent: #b3bf8d; --subject-tint: #343b28; }
