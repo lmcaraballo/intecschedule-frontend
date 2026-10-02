@@ -40,6 +40,21 @@ test('an explicit demonstration warns before any institutional credentials are e
   await expect(page.getByText('Estas clases son simuladas y no corresponden a tu cuenta.')).toBeVisible();
 });
 
+test('the access canvas and header remain continuous on wide screens', async ({ page }) => {
+  await page.setViewportSize({ width: 1720, height: 980 });
+  await page.goto('/');
+  const geometry = await page.locator('.app-shell').evaluate((element) => {
+    const shell = element.getBoundingClientRect();
+    const header = element.querySelector<HTMLElement>('.site-header')!.getBoundingClientRect();
+    return { shellLeft: shell.left, shellWidth: shell.width, headerLeft: header.left, headerWidth: header.width, viewport: window.innerWidth };
+  });
+  expect(geometry.shellLeft).toBe(0);
+  expect(geometry.shellWidth).toBe(geometry.viewport);
+  expect(geometry.headerLeft).toBe(0);
+  expect(geometry.headerWidth).toBe(geometry.viewport);
+  await noOverflow(page);
+});
+
 test('bottom navigation stays tactile, above content and clear at the page end', async ({ page }) => {
   await page.setViewportSize({ width: 954, height: 911 });
   await seed(page);

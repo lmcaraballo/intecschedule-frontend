@@ -15,7 +15,10 @@ svg { flex-shrink: 0; vertical-align: middle; }
 ::selection { background: var(--color-sage); color: var(--color-pine); }
 h1, h2, p { margin: 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
-.app-shell { position: relative; isolation: isolate; max-width: 1440px; min-height: 100svh; margin-inline: auto; display: flex; flex-direction: column; }
+.app-shell { position: relative; isolation: isolate; width: 100%; min-height: 100svh; display: flex; flex-direction: column; }
+/* The access screen owns its content width. Keep its background and header
+   continuous across wide displays instead of framing the whole application. */
+.app-shell--academic { max-width: 1440px; margin-inline: auto; }
 .site-header, .shell-warning, .access-layout, .academic-page, .recovery-page, .site-footer { position: relative; z-index: 1; }
 .breeze-background { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; user-select: none; contain: strict; }
 .breeze-current { position: absolute; left: -35vw; width: 70vw; height: 190px; border-top: 1px solid color-mix(in srgb, var(--color-moss) 18%, transparent); border-radius: 50%; opacity: .7; animation: breeze-current 22s linear infinite; }
