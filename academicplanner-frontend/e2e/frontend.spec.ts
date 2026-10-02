@@ -429,6 +429,12 @@ test('Google Calendar demo synchronizes without duplicates and supports personal
   await page.goto('/eventos');
   await page.getByRole('button', { name: 'Conectar con Google' }).click();
   await expect(page.getByRole('heading', { name: 'Mis eventos personales' })).toBeVisible();
+  await page.getByRole('button', { name: 'Desconectar Google' }).click();
+  await expect(page.getByRole('status', { name: 'Conexión con Google Calendar cerrada' })).toBeVisible();
+  await page.waitForTimeout(1250);
+  await expect(page.getByRole('button', { name: 'Conectar con Google' })).toBeVisible();
+  await page.getByRole('button', { name: 'Conectar con Google' }).click();
+  await expect(page.getByRole('heading', { name: 'Mis eventos personales' })).toBeVisible();
   await expect(page.getByRole('tab', { name: /Personales/ })).toHaveAttribute('aria-selected', 'true');
   await page.getByRole('tab', { name: /Fechas INTEC/ }).click();
   await expect(page.locator('.event-card')).toHaveCount(8);

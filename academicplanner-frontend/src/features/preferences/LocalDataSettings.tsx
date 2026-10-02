@@ -5,6 +5,7 @@ import { Dialog } from '../../components/Dialog';
 import { ErrorState } from '../../components/ErrorState';
 import { Icon } from '../../components/Icon';
 import { clearAcademicPlannerData } from '../../storage/scheduleStorage';
+import { queueNextSplash } from '../../utils/transientSplash';
 
 export function LocalDataSettings() {
   const [confirming, setConfirming] = useState(false);
@@ -13,6 +14,7 @@ export function LocalDataSettings() {
 
   function clearData() {
     try {
+      queueNextSplash('Tus datos locales se borraron con seguridad');
       clearAcademicPlannerData();
       navigate('/', { replace: true });
     } catch {

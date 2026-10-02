@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Icon } from '../../components/Icon';
 import { StatusBanner } from '../../components/StatusBanner';
@@ -10,13 +10,22 @@ import { AccessForm } from './AccessForm';
 import { DemoSettings } from './DemoSettings';
 import './access.css';
 import { defaultPreferences, getStartPath } from '../preferences/preferences';
+import { BrandSplash } from '../../components/BrandSplash';
+import { takeNextSplash } from '../../utils/transientSplash';
 
 export function AccessPage() {
   const [scenario, setScenario] = useState<MockScenario>('success');
   const access = useAcademicAccess();
-  const { data, status, dataCleared, setUsingLastValid } = useLocalData();
+  const { data, status, setUsingLastValid } = useLocalData();
   const savedSession = data?.session;
   const navigate = useNavigate();
+  const [arrivalSplash, setArrivalSplash] = useState<string | null>(takeNextSplash);
+
+  useEffect(() => {
+    if (!arrivalSplash) return;
+    const timer = window.setTimeout(() => setArrivalSplash(null), 1180);
+    return () => window.clearTimeout(timer);
+  }, [arrivalSplash]);
 
   function continueWithSaved() {
     setUsingLastValid(true);
@@ -25,6 +34,7 @@ export function AccessPage() {
 
   return (
     <main id="main-content" className="access-layout">
+      {arrivalSplash && <BrandSplash message={arrivalSplash} />}
       <section className="welcome" aria-labelledby="welcome-title">
         <span className="eyebrow"><span className="small-dot" /> TU VIDA ACADÉMICA, EN ORDEN</span>
         <h1 id="welcome-title">Un poco de orden.<br /><em>Más espacio<br className="desktop-break" /> para ti.</em></h1>
@@ -48,7 +58,6 @@ export function AccessPage() {
       </section>
 
       <section className="access-panel" aria-labelledby="access-title">
-        {dataCleared && <StatusBanner tone="success">Se borraron los datos locales de AcademicPlanner.</StatusBanner>}
         {savedSession && <LastValidSchedule session={savedSession} recovery={Boolean(access.error)} onContinue={continueWithSaved} />}
         <div className="access-card">
           <div className="card-heading"><span className="book-mark"><Icon name="book" width="25" height="25" /></span><span className="step-label">TU PUNTO DE PARTIDA</span></div>

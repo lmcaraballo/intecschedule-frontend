@@ -50,6 +50,7 @@ export function EventsPage() {
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
   const [optionalOpen, setOptionalOpen] = useState(false);
   const [eventsExpanded, setEventsExpanded] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
   const busy = Boolean(loadingMessage) || connection.loading;
 
   async function refresh(token = connection.token, showSplash = true) {
@@ -112,6 +113,12 @@ export function EventsPage() {
     setEventsExpanded(false);
     if (tab !== 'personal') cancelEditing();
     setMessage(null); setError(null);
+  }
+
+  function disconnectGoogle() {
+    connection.disconnect();
+    setDisconnecting(true);
+    window.setTimeout(() => setDisconnecting(false), preferences.reducedMotion ? 180 : 1180);
   }
 
   async function syncSchedule() {
@@ -188,7 +195,8 @@ export function EventsPage() {
 
   return <main id="main-content" className="academic-page events-page">
     {(connection.loading || loadingMessage) && <BrandSplash loading message={loadingMessage ?? 'Preparando Google Calendar'} />}
-    <header className="page-heading"><div><p className="page-eyebrow">Tu tiempo, cada cosa en su lugar</p><h1 id="page-title" tabIndex={-1}>Eventos</h1><p className="page-date">Personales, clases y fechas INTEC viven en espacios separados.</p></div>{connection.token && <Button variant="secondary" onClick={connection.disconnect}>Desconectar Google</Button>}</header>
+    {disconnecting && <BrandSplash message="Conexión con Google Calendar cerrada" />}
+    <header className="page-heading"><div><p className="page-eyebrow">Tu tiempo, cada cosa en su lugar</p><h1 id="page-title" tabIndex={-1}>Eventos</h1><p className="page-date">Personales, clases y fechas INTEC viven en espacios separados.</p></div>{connection.token && <Button variant="secondary" onClick={disconnectGoogle}>Desconectar Google</Button>}</header>
 
     {!connection.token && <section className="calendar-onboarding" aria-labelledby="calendar-onboarding-title"><Icon name="calendar" width="28" height="28" /><div><p className="section-label">Tus calendarios, bien organizados</p><h2 id="calendar-onboarding-title">Conecta tus calendarios de Google</h2><p>Importa los eventos de tu calendario personal. Tus clases y fechas INTEC se guardarán por separado para que no se mezclen.</p><Button disabled={connection.loading} onClick={() => void (connection.config?.available ? connection.connect() : connection.retryPreparation())}>{connection.loading ? 'Preparando conexión…' : connection.config?.available ? 'Conectar con Google' : 'Reintentar conexión'}</Button>{!connection.loading && connection.config && !connection.config.available && <p className="connection-help">La conexión con Google no está disponible todavía. Vuelve a intentarlo en unos minutos.</p>}{connection.error && <p role="alert" className="preference-warning">{connection.error}</p>}</div></section>}
 

@@ -170,7 +170,7 @@ describe('access → saved schedule → Ahora', () => {
     expect(scheduleStorage.get()).toBeNull();
     expect(localStorage.getItem('other-app')).toBe('untouched');
     expect(document.documentElement.dataset.theme).toBe('day');
-    expect(screen.getByText('Se borraron los datos locales de AcademicPlanner.')).toBeVisible();
+    expect(screen.getByRole('status', { name: 'Tus datos locales se borraron con seguridad' })).toBeVisible();
     await act(async () => { await router.navigate('/ahora'); });
     expect(router.state.location.pathname).toBe('/');
   });
