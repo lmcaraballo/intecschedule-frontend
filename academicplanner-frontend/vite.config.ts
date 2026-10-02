@@ -6,11 +6,14 @@ import { appConfig } from './src/app/appConfig';
 
 export default defineConfig(({ mode }) => {
   const env = { ...loadEnv(mode, process.cwd(), ''), ...process.env };
-  const apiMode = env.VITE_ACADEMIC_API_MODE || 'mock';
+  // Real consultation is the safe default. A demo must always be selected
+  // deliberately; otherwise valid credentials could appear to return a
+  // fabricated timetable.
+  const apiMode = env.VITE_ACADEMIC_API_MODE || 'http';
   if (!['mock', 'http'].includes(apiMode)) {
     throw new Error('VITE_ACADEMIC_API_MODE debe ser mock o http.');
   }
-  const upstream = env.API_PROXY_TARGET;
+  const upstream = env.API_PROXY_TARGET || (apiMode === 'http' && mode !== 'production' ? 'http://127.0.0.1:8000' : undefined);
   if (upstream && !/^https?:\/\//.test(upstream)) {
     throw new Error('API_PROXY_TARGET debe ser un origen HTTP o HTTPS.');
   }
@@ -48,6 +51,7 @@ export default defineConfig(({ mode }) => {
   ],
   test: {
     environment: 'jsdom',
+    env: { VITE_ACADEMIC_API_MODE: 'mock' },
     clearMocks: true,
     restoreMocks: true,
     include: ['src/**/*.test.{ts,tsx}'],

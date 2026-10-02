@@ -63,6 +63,7 @@ export function AccessPage() {
           <div className="card-heading"><span className="book-mark"><Icon name="book" width="25" height="25" /></span><span className="step-label">TU PUNTO DE PARTIDA</span></div>
           <h2 id="access-title">Todo empieza aquí.</h2>
           <p className="card-description">Accede con tus datos institucionales<br className="wide-break" /> y deja que tu semana tome forma.</p>
+          {isAcademicMock && <StatusBanner tone="warning"><strong>Modo de demostración</strong><p>Estas clases son simuladas y no corresponden a tu cuenta. No introduzcas credenciales institucionales reales aquí.</p></StatusBanner>}
           <AccessForm access={access} scenario={scenario} hasSavedSchedule={Boolean(savedSession)} />
           <div className="credential-note"><Icon name="lock" /><p>Tus credenciales se usan solo para consultar tu horario. <strong>No guardamos tu contraseña.</strong></p></div>
           <div className="card-divider" />

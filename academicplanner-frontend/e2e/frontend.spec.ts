@@ -34,6 +34,12 @@ test('ambient breeze stays decorative and honors reduced motion', async ({ page 
   await expect(page.locator('.breeze-background')).toBeHidden();
 });
 
+test('an explicit demonstration warns before any institutional credentials are entered', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByText('Modo de demostración')).toBeVisible();
+  await expect(page.getByText('Estas clases son simuladas y no corresponden a tu cuenta.')).toBeVisible();
+});
+
 test('bottom navigation stays tactile, above content and clear at the page end', async ({ page }) => {
   await page.setViewportSize({ width: 954, height: 911 });
   await seed(page);

@@ -20,7 +20,7 @@ npm run preview
 
 `npm run test:watch` activa el modo interactivo y `npm run typecheck` verifica TypeScript. No hay script de lint. Para comprobar la PWA, usa build/preview y cárgala una vez antes de desconectar.
 
-El mock es el modo predeterminado para pruebas reproducibles. El modo HTTP consume el backend de Caraballo para autenticación, horario, calendario institucional y el puente sin base de datos hacia Google Calendar. `.env.example` documenta el selector público `VITE_ACADEMIC_API_MODE`; nunca debe contener credenciales.
+El modo HTTP es el predeterminado: consulta el backend para autenticación, horario, calendario institucional y el puente sin base de datos hacia Google Calendar. El modo `mock` es exclusivamente una demostración señalizada y no debe usarse con credenciales reales. `.env.example` documenta el selector público `VITE_ACADEMIC_API_MODE`; nunca debe contener credenciales.
 
 Se conserva únicamente perfil básico, horario, fecha de actualización, preferencias y marcas locales de una clase terminada antes bajo `academicplanner:data:v1`. Más permite limpiar esos datos. No se guardan contraseñas, sesiones del portal ni tokens de Google.
 
