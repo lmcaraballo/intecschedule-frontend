@@ -12,6 +12,7 @@ import './access.css';
 import { defaultPreferences, getStartPath } from '../preferences/preferences';
 import { BrandSplash } from '../../components/BrandSplash';
 import { takeNextSplash } from '../../utils/transientSplash';
+import { useTheme } from '../../theme/ThemeProvider';
 
 const welcomeBenefits = [
   {
@@ -30,14 +31,24 @@ export function AccessPage() {
   const { data, status, setUsingLastValid } = useLocalData();
   const savedSession = data?.session;
   const navigate = useNavigate();
+  const { reducedMotion } = useTheme();
   const [arrivalSplash, setArrivalSplash] = useState<string | null>(takeNextSplash);
   const [flippedBenefit, setFlippedBenefit] = useState<string | null>(null);
+  const [artPulse, setArtPulse] = useState(0);
 
   useEffect(() => {
     if (!arrivalSplash) return;
     const timer = window.setTimeout(() => setArrivalSplash(null), 1180);
     return () => window.clearTimeout(timer);
   }, [arrivalSplash]);
+
+  useEffect(() => {
+    const systemReducedMotion = typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducedMotion || systemReducedMotion) return;
+    const timer = window.setInterval(() => setArtPulse((pulse) => pulse + 1), 20_000);
+    return () => window.clearInterval(timer);
+  }, [reducedMotion]);
 
   function continueWithSaved() {
     setUsingLastValid(true);
@@ -66,17 +77,19 @@ export function AccessPage() {
             </li>;
           })}
         </ul>
-        <div className="quiet-art" aria-hidden="true">
-          <div className="orbit orbit--one" /><div className="orbit orbit--two" />
-          <div className="paper paper--back" />
-          <div className="paper paper--front">
-            <div className="paper__top"><span className="paper__line" /><span className="paper__dot" /></div>
-            <div className="paper__grid">{Array.from({ length: 15 }, (_, i) => <span key={i} className={`paper__cell paper__cell--${i}`} />)}</div>
-            <div className="paper__bottom"><span /><span /></div>
-          </div>
-          <span className="art-check"><Icon name="check" width="25" height="25" /></span>
-          <span className="art-spark">✧</span>
-        </div>
+        <button type="button" className="quiet-art" aria-label="Animar ilustración del calendario" onClick={() => setArtPulse((pulse) => pulse + 1)}>
+          <span className="quiet-art__scene" key={artPulse} aria-hidden="true">
+            <span className="orbit orbit--one" /><span className="orbit orbit--two" />
+            <span className="paper paper--back" />
+            <span className="paper paper--front">
+              <span className="paper__top"><span className="paper__line" /><span className="paper__dot" /></span>
+              <span className="paper__grid">{Array.from({ length: 15 }, (_, i) => <span key={i} className={`paper__cell paper__cell--${i}`} />)}</span>
+              <span className="paper__bottom"><span /><span /></span>
+            </span>
+            <span className="art-check"><Icon name="check" width="25" height="25" /></span>
+            <span className="art-spark">✧</span>
+          </span>
+        </button>
         <div className="welcome__footnote"><span className="leaf-circle"><Icon name="leaf" /></span><span>Menos ruido. Más claridad.</span></div>
       </section>
 

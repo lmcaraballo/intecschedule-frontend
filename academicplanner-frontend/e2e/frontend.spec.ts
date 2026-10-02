@@ -53,6 +53,20 @@ test('welcome cards reveal their details on click without losing keyboard semant
   await expect(card).toHaveAttribute('aria-pressed', 'false');
 });
 
+test('the calendar illustration offers a gentle replay and honors reduced motion', async ({ page }) => {
+  await page.setViewportSize({ width: 1200, height: 900 });
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/');
+  const illustration = page.getByRole('button', { name: 'Animar ilustración del calendario' });
+  await expect(illustration).toBeVisible();
+  await illustration.click();
+  expect(await illustration.locator('.paper--front').evaluate((element) => getComputedStyle(element).animationName)).toContain('welcome-calendar-settle');
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.reload();
+  expect(await illustration.locator('.paper--front').evaluate((element) => getComputedStyle(element).animationName)).toBe('none');
+});
+
 test('the access canvas and header remain continuous on wide screens', async ({ page }) => {
   await page.setViewportSize({ width: 1720, height: 980 });
   await page.goto('/');
@@ -65,6 +79,37 @@ test('the access canvas and header remain continuous on wide screens', async ({ 
   expect(geometry.shellWidth).toBe(geometry.viewport);
   expect(geometry.headerLeft).toBe(0);
   expect(geometry.headerWidth).toBe(geometry.viewport);
+  await noOverflow(page);
+});
+
+test('saved schedule recovery and welcome cards reflow before the desktop layout', async ({ page }) => {
+  for (const width of [760, 900, 1024]) {
+    await page.setViewportSize({ width, height: 900 });
+    await seed(page);
+    await page.goto('/');
+    const recovery = page.locator('.access-panel > .last-valid-schedule');
+    await expect(recovery).toBeVisible();
+    await expect(recovery.getByRole('button', { name: 'Continuar con horario guardado' })).toBeVisible();
+    expect(await recovery.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+    const benefitWidths = await page.locator('.welcome-benefit__button').evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().width));
+    expect(Math.min(...benefitWidths)).toBeGreaterThan(300);
+    await noOverflow(page);
+  }
+});
+
+test('bottom navigation stays above mobile content and inside the viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 740 });
+  await seed(page);
+  await page.goto('/ahora');
+  const navigation = page.getByRole('navigation', { name: 'Navegación principal' });
+  await expect(navigation).toBeVisible();
+  const bounds = await navigation.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return { bottom: rect.bottom, viewport: window.innerHeight, zIndex: getComputedStyle(element).zIndex };
+  });
+  expect(bounds.bottom).toBeLessThanOrEqual(bounds.viewport);
+  expect(Number(bounds.zIndex)).toBeGreaterThanOrEqual(30);
+  await expect(navigation.getByRole('link', { name: 'Ahora' })).toBeInViewport();
   await noOverflow(page);
 });
 
@@ -289,10 +334,12 @@ test('automatic theme shows the current phase and the manual control slides betw
   await expect(auto).toHaveAttribute('aria-pressed', 'false');
   await page.waitForTimeout(1250);
   const firstManualPosition = await toggle.boundingBox();
+  await expect(controls).toHaveAttribute('data-mode', 'night');
 
   await toggle.click();
   await page.waitForTimeout(1250);
   const secondManualPosition = await toggle.boundingBox();
+  await expect(controls).toHaveAttribute('data-mode', 'day');
   expect(secondManualPosition?.x).not.toBe(firstManualPosition?.x);
 
   await auto.click();

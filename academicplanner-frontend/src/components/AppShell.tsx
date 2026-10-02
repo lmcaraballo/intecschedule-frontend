@@ -72,7 +72,6 @@ export function AppShell() {
     }
     const rootStyle = getComputedStyle(document.documentElement);
     const animation = animateThemeToggle(toggle, {
-      transform: `translateX(${sliderShift}px)`,
       backgroundColor: rootStyle.getPropertyValue('--surface').trim(),
       borderColor: rootStyle.getPropertyValue('--border').trim(),
       color: rootStyle.getPropertyValue('--muted').trim(),
@@ -98,7 +97,7 @@ export function AppShell() {
           <Button variant="plain" className="theme-auto" aria-pressed={preference === 'auto'} onClick={() => setPreference('auto')}>Auto</Button>
           <span className="theme-scene">
             <span className="theme-rail" aria-hidden="true"><i /><i /><i /><i /></span>
-            <button ref={themeToggleScope} type="button" className="control-button theme-toggle" aria-label={themeToggleLabel(preference, theme, phase)} onClick={() => setPreference(theme === 'day' ? 'night' : 'day')}><Icon name={phaseIcon(preference, theme, phase)} /></button>
+            <button ref={themeToggleScope} type="button" className="control-button theme-toggle" style={{ transform: `translateX(${sliderShift}px)` }} aria-label={themeToggleLabel(preference, theme, phase)} onClick={() => setPreference(theme === 'day' ? 'night' : 'day')}><Icon name={phaseIcon(preference, theme, phase)} /></button>
           </span>
         </div>
       </header>
@@ -138,8 +137,12 @@ function themeControlQuery() {
 }
 
 function themeSliderShift(preference: 'auto' | 'day' | 'night', phase: 'morning' | 'day' | 'sunset' | 'night', compact: boolean) {
-  if (preference === 'day' || phase === 'morning') return 0;
-  if (preference === 'night' || phase === 'night') return compact ? 56 : 64;
+  // A manual choice must take precedence over the current automatic phase.
+  // Without this order, choosing night in the morning leaves the thumb at day.
+  if (preference === 'day') return 0;
+  if (preference === 'night') return compact ? 56 : 64;
+  if (phase === 'morning') return 0;
+  if (phase === 'night') return compact ? 56 : 64;
   if (phase === 'sunset') return compact ? 38 : 43;
   return compact ? 19 : 22;
 }
