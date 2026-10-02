@@ -10,7 +10,7 @@ import { atTime, getTodayClasses } from '../schedule/scheduleDomain';
 import { dateKey, formatDate } from '../../utils/dateFormat';
 import { useCalendarConnection } from './CalendarConnectionProvider';
 import { createCalendarEvent, deleteCalendarEvent, listCalendarEvents, updateCalendarEvent } from './calendarApi';
-import { syncInstitutionalReminders, syncScheduleToCalendar } from './calendarSync';
+import { calendarOwnerId, syncInstitutionalReminders, syncScheduleToCalendar } from './calendarSync';
 import { emptyEventDraft, type CalendarEvent, type EventDraft } from './eventSchema';
 import { getInstitutionalPeriod, getInstitutionalPeriods } from '../institutional/institutionalCalendar';
 
@@ -57,6 +57,7 @@ export function EventsPage() {
   const [disconnecting, setDisconnecting] = useState(false);
   const busy = Boolean(loadingMessage) || connection.loading;
   const selectedPeriod = useMemo(() => getInstitutionalPeriods().find((period) => period.id === params.get('period')) ?? null, [params]);
+  const scheduleOwnerId = calendarOwnerId(session.student.id);
   const sessionPeriod = getInstitutionalPeriod(new Date(session.schedule.fetchedAt));
   const viewingScheduleHistory = activeTab === 'schedule' && Boolean(selectedPeriod && selectedPeriod.id !== sessionPeriod?.id);
 
@@ -69,7 +70,7 @@ export function EventsPage() {
     const to = isPeriodHistory ? new Date(`${selectedPeriod.endsOn}T23:59:59`) : new Date(now);
     if (!isPeriodHistory) to.setDate(to.getDate() + 180);
     try {
-      const nextEvents = await listCalendarEvents(token, from, to);
+      const nextEvents = await listCalendarEvents(token, from, to, scheduleOwnerId);
       setEvents([...nextEvents].sort((left, right) => Date.parse(left.startAt) - Date.parse(right.startAt)));
       setLastSyncedAt(new Date());
     } catch (caught) {
@@ -88,7 +89,7 @@ export function EventsPage() {
     void (async () => {
       setLoadingMessage('Preparando tus calendarios separados');
       try {
-        await syncInstitutionalReminders(token, preferences.institutionalReminders, preferences.reminderMinutes);
+        await syncInstitutionalReminders(token, session.student.id, preferences.institutionalReminders, preferences.reminderMinutes);
         await refresh(token, false);
       } catch (caught) {
         setError(readableError(caught));
@@ -100,9 +101,9 @@ export function EventsPage() {
 
   const groupedEvents = useMemo<Record<EventTab, CalendarEvent[]>>(() => ({
     personal: events.filter((event) => event.sourceType === 'personal' || event.sourceType === 'google'),
-    schedule: events.filter((event) => event.sourceType === 'schedule'),
+    schedule: events.filter((event) => event.sourceType === 'schedule' && event.ownerId === scheduleOwnerId),
     institutional: events.filter((event) => event.sourceType === 'institutional'),
-  }), [events]);
+  }), [events, scheduleOwnerId]);
   const tabEvents = groupedEvents[activeTab];
   const visibleEvents = eventsExpanded ? tabEvents : tabEvents.slice(0, 8);
   const hiddenEventCount = Math.max(0, tabEvents.length - visibleEvents.length);

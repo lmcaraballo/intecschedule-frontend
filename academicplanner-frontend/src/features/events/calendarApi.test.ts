@@ -22,11 +22,11 @@ describe('calendar demo adapter', () => {
     expect(updated.title).toBe('Estudiar física');
     expect(updated.revision).toBe(1);
 
-    const listed = await listCalendarEvents('demo', new Date('2026-10-01T00:00:00Z'), new Date('2026-10-02T00:00:00Z'));
+    const listed = await listCalendarEvents('demo', new Date('2026-10-01T00:00:00Z'), new Date('2026-10-02T00:00:00Z'), crypto.randomUUID());
     expect(listed.map((event) => event.id)).toContain(first.id);
 
     await deleteCalendarEvent('demo', first.id);
-    const afterDelete = await listCalendarEvents('demo', new Date('2026-10-01T00:00:00Z'), new Date('2026-10-02T00:00:00Z'));
+    const afterDelete = await listCalendarEvents('demo', new Date('2026-10-01T00:00:00Z'), new Date('2026-10-02T00:00:00Z'), crypto.randomUUID());
     expect(afterDelete.map((event) => event.id)).not.toContain(first.id);
   });
 

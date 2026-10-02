@@ -14,6 +14,7 @@ const demoEvents: CalendarEvent[] = [];
 
 export interface CalendarEventOptions {
   sourceType?: CalendarEvent['sourceType'];
+  ownerId?: string | null;
   reminderMinutes?: number | null;
 }
 
@@ -29,9 +30,9 @@ export async function fetchCalendarConfig(): Promise<CalendarConfig> {
   return configSchema.parse(await parseResponse(await fetchWithTimeout('/api/calendar/config', {}, 8_000)));
 }
 
-export async function listCalendarEvents(token: string, from: Date, to: Date): Promise<CalendarEvent[]> {
+export async function listCalendarEvents(token: string, from: Date, to: Date, ownerId: string): Promise<CalendarEvent[]> {
   if (isAcademicMock) return demoEvents.filter((event) => Date.parse(event.startAt) < to.getTime() && Date.parse(event.endAt) > from.getTime());
-  const query = new URLSearchParams({ from: from.toISOString(), to: to.toISOString() });
+  const query = new URLSearchParams({ from: from.toISOString(), to: to.toISOString(), ownerId });
   const response = await fetchWithTimeout(`/api/events?${query}`, { headers: { Authorization: `Bearer ${token}` } }, 15_000);
   return calendarEventsSchema.parse(await parseResponse(response));
 }
@@ -98,6 +99,7 @@ function draftToPayload(draft: EventDraft, sourceId: string = crypto.randomUUID(
     location: draft.location.trim() || null,
     sourceId,
     sourceType: options.sourceType ?? 'personal',
+    ownerId: options.ownerId ?? null,
     reminderMinutes: options.reminderMinutes ?? null,
   };
 }

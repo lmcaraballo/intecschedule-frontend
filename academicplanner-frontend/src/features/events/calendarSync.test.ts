@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createMockSession } from '../../mocks/academicSession';
-import { institutionalReminderEvents, scheduleEventsForSession, stableSourceId } from './calendarSync';
+import { calendarOwnerId, institutionalReminderEvents, scheduleEventsForSession, stableSourceId } from './calendarSync';
 
 describe('calendar synchronization plan', () => {
   it('uses deterministic UUIDs for idempotent synchronization', () => {
@@ -21,6 +21,15 @@ describe('calendar synchronization plan', () => {
     expect(events.every((event) => event.sourceType === 'schedule')).toBe(true);
     expect(events.some((event) => event.draft.date === '2026-09-24')).toBe(false);
     expect(events.every((event) => event.draft.date >= '2026-08-03' && event.draft.date <= '2026-10-17')).toBe(true);
+    expect(events.every((event) => event.ownerId === calendarOwnerId('1127998'))).toBe(true);
+  });
+
+  it('uses a separate opaque owner namespace for each academic account', () => {
+    const accountA = calendarOwnerId('1127998');
+    const accountB = calendarOwnerId('1130042');
+    expect(accountA).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(accountA).not.toBe(accountB);
+    expect(accountA).not.toContain('1127998');
   });
 
   it('creates one stable reminder per institutional milestone with the selected lead time', () => {

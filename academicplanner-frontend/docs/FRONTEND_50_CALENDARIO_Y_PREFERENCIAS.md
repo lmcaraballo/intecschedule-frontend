@@ -45,9 +45,11 @@ El calendario de Google es la fuente persistente de los eventos personales; no s
 1. Crear un cliente OAuth de Google para la URL final de AcademicPlanner y entregar únicamente el **client ID público**. Registrar también las URL de desarrollo autorizadas.
 2. Solicitar los scopes mínimos `calendar.events` y, si se crea un calendario separado, `calendar.calendars`. El consentimiento debe explicar que se leen y modifican solo los eventos creados por AcademicPlanner.
 3. El backend crea o localiza un calendario llamado **AcademicPlanner**. Todo evento propio lleva `extendedProperties.private.academicPlannerSourceId`, un UUID creado una vez por el frontend. Ese identificador y el `event.id` de Google evitan duplicados.
-4. Sincronización de doble vía: cada entrada a Eventos vuelve a leer Google y las altas, ediciones y eliminaciones se envían inmediatamente. No se conserva una copia que pueda quedar desactualizada.
-5. El calendario institucional es de una vía: INTEC → AcademicPlanner → eventos de solo lectura en el calendario AcademicPlanner. No debe sobrescribirse desde Google ni mezclarse con los eventos personales.
-6. Nunca registrar cuerpos OAuth, códigos de autorización, encabezados `Authorization`, `refresh_token` ni contraseñas. Si se decide usar un backend para OAuth, debe usar PKCE y no persistir tokens; con esa restricción el usuario reconecta Google cuando expira la sesión.
+4. Cada ocurrencia de horario institucional incluye además `extendedProperties.private.academicPlannerOwnerId`: un UUID opaco y determinista de la cuenta académica, nunca la matrícula. Al sincronizar, una cuenta solo puede actualizar o retirar sus propias ocurrencias; no ve ni administra las de otra cuenta que haya conectado el mismo Google Calendar.
+5. Los eventos de versiones anteriores sin propietario se consideran legado: no se eliminan ni se atribuyen por título, materia u hora. Solo se adoptan cuando su `academicPlannerSourceId` coincide exactamente con la ocurrencia de la cuenta actual.
+6. Sincronización de doble vía: cada entrada a Eventos vuelve a leer Google y las altas, ediciones y eliminaciones se envían inmediatamente. No se conserva una copia que pueda quedar desactualizada.
+7. El calendario institucional es de una vía: INTEC → AcademicPlanner → eventos de solo lectura en el calendario AcademicPlanner. No debe sobrescribirse desde Google ni mezclarse con los eventos personales.
+8. Nunca registrar cuerpos OAuth, códigos de autorización, encabezados `Authorization`, `refresh_token` ni contraseñas. Si se decide usar un backend para OAuth, debe usar PKCE y no persistir tokens; con esa restricción el usuario reconecta Google cuando expira la sesión.
 
 ## Configuración de Google Calendar en este proyecto
 
