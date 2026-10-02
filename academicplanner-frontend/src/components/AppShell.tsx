@@ -70,7 +70,7 @@ export function AppShell() {
           <Button variant="plain" className="theme-auto" aria-pressed={preference === 'auto'} onClick={() => setPreference('auto')}>Auto</Button>
           <span className="theme-scene">
             <span className="theme-rail" aria-hidden="true"><i /><i /><i /><i /></span>
-            <Button variant="plain" className="theme-toggle" aria-label={themeToggleLabel(preference, theme, phase)} onClick={() => setPreference(theme === 'day' ? 'night' : 'day')}><Icon key={`${preference}-${theme}-${phase}`} name={phaseIcon(preference, theme, phase)} /></Button>
+            <Button variant="plain" className="theme-toggle" aria-label={themeToggleLabel(preference, theme, phase)} onClick={() => setPreference(theme === 'day' ? 'night' : 'day')}><Icon name={phaseIcon(preference, theme, phase)} /></Button>
           </span>
         </div>
       </header>

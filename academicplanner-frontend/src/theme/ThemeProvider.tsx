@@ -56,7 +56,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       if (value === 'auto') return current.themeVariant;
       return themeVariantFor(value, current.themeTone);
     };
-    setPreferences((current) => ({ ...current, theme: value, themeVariant: variantForMode(current) }));
+    const applyPreference = () => setPreferences((current) => ({ ...current, theme: value, themeVariant: variantForMode(current) }));
+    const reducedMotion = document.documentElement.dataset.reduceMotion === 'true'
+      || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const startViewTransition = (document as Document & { startViewTransition?: (callback: () => void) => unknown }).startViewTransition;
+    if (!reducedMotion && startViewTransition) startViewTransition.call(document, applyPreference);
+    else applyPreference();
     try {
       const current = scheduleStorage.get()?.preferences ?? defaultPreferences;
       scheduleStorage.savePreferences({ theme: value, themeVariant: variantForMode(current) });
