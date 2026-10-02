@@ -7,11 +7,18 @@
 .desktop-break { display: none; }
 .welcome__description { margin-top: var(--space-4); color: var(--muted); font-size: .875rem; line-height: 1.8; }
 .welcome__benefits { display: grid; gap: var(--space-2); margin: var(--space-5) 0 0; padding: 0; list-style: none; }
-.welcome__benefits li { display: flex; align-items: center; gap: var(--space-3); min-width: 0; padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-md); background: linear-gradient(145deg, color-mix(in srgb, var(--surface) 96%, white), color-mix(in srgb, var(--surface-soft) 78%, var(--surface))); box-shadow: 0 3px 0 color-mix(in srgb, var(--border) 72%, var(--heading)), 0 9px 17px rgb(31 39 25 / .065), inset 0 1px 0 rgb(255 255 255 / .76); }
-.welcome__benefits svg { color: var(--heading); }
-.welcome__benefits span, .welcome__benefits strong, .welcome__benefits small { display: block; min-width: 0; }
-.welcome__benefits strong { color: var(--heading); font-size: .75rem; }
-.welcome__benefits small { margin-top: 1px; color: var(--muted); font-size: .6875rem; }
+.welcome__benefits li { min-width: 0; min-height: 84px; perspective: 900px; }
+.welcome-benefit__button { display: block; width: 100%; min-height: 84px; padding: 0; border: 0; border-radius: var(--radius-md); background: transparent; color: inherit; text-align: left; }
+.welcome-benefit__rotor { position: relative; display: block; min-height: 84px; transform-style: preserve-3d; transition: transform 520ms cubic-bezier(.2,.78,.22,1); }
+.welcome__benefits li.is-flipped .welcome-benefit__rotor { transform: rotateY(180deg); }
+.welcome-benefit__face { position: absolute; inset: 0; display: flex; align-items: center; gap: var(--space-3); min-width: 0; padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-md); background: linear-gradient(145deg, color-mix(in srgb, var(--surface) 96%, white), color-mix(in srgb, var(--surface-soft) 78%, var(--surface))); box-shadow: 0 3px 0 color-mix(in srgb, var(--border) 72%, var(--heading)), 0 9px 17px rgb(31 39 25 / .065), inset 0 1px 0 rgb(255 255 255 / .76); backface-visibility: hidden; }
+.welcome-benefit__face--back { transform: rotateY(180deg); background: linear-gradient(145deg, color-mix(in srgb, var(--success-bg) 58%, var(--surface)), var(--surface)); }
+.welcome-benefit__face svg { flex: 0 0 auto; color: var(--heading); }
+.welcome-benefit__face > span, .welcome-benefit__face strong, .welcome-benefit__face small, .welcome-benefit__face em { display: block; min-width: 0; }
+.welcome-benefit__face strong { color: var(--heading); font-size: .75rem; }
+.welcome-benefit__face small { margin-top: 1px; color: var(--muted); font-size: .6875rem; line-height: 1.4; }
+.welcome-benefit__face em { margin-top: 3px; color: var(--heading); font-size: .625rem; font-style: normal; font-weight: 700; }
+.welcome-benefit__button:hover .welcome-benefit__face--front, .welcome-benefit__button:focus-visible .welcome-benefit__face--front { border-color: color-mix(in srgb, var(--primary) 58%, var(--border)); }
 .quiet-art, .welcome__footnote { display: none; }
 .access-panel { width: 100%; max-width: 450px; margin-inline: auto; }
 .access-card { padding: var(--space-6); border: 1px solid color-mix(in srgb, var(--border) 78%, var(--heading)); border-radius: var(--radius-lg); background: linear-gradient(145deg, color-mix(in srgb, var(--surface) 98%, white), var(--surface)); box-shadow: 0 4px 0 color-mix(in srgb, var(--border) 66%, var(--heading)), 0 26px 58px rgb(31 39 25 / .12), 0 7px 16px rgb(31 39 25 / .06), inset 0 1px 0 rgb(255 255 255 / .82); }
@@ -108,10 +115,17 @@
   .welcome h1 { margin-top: var(--space-3); font-size: clamp(2rem, 6.6vw, 2.45rem); line-height: 1.16; }
   .welcome__description { margin-top: var(--space-3); line-height: 1.6; }
   .welcome__benefits { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: var(--space-4); }
-  .welcome__benefits li { align-items: flex-start; min-height: 94px; padding: var(--space-3); }
+  .welcome__benefits li, .welcome-benefit__button, .welcome-benefit__rotor { min-height: 94px; }
   .access-card { padding: var(--space-5) var(--space-6); }
 }
 @media (min-width: 760px) {
   .access-layout { grid-template-columns: minmax(0, 1fr) minmax(340px, .9fr); align-items: start; gap: clamp(28px, 5vw, 64px); }
   .access-panel { padding-top: 2px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .welcome-benefit__rotor { transition: none; transform: none !important; }
+  .welcome-benefit__face { transform: none; }
+  .welcome-benefit__face--back { display: none; }
+  .welcome__benefits li.is-flipped .welcome-benefit__face--front { display: none; }
+  .welcome__benefits li.is-flipped .welcome-benefit__face--back { display: flex; }
 }

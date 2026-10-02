@@ -162,10 +162,10 @@ describe('access → saved schedule → Ahora', () => {
     const user = mount('/mas');
     await user.click(screen.getByRole('tab', { name: /Privacidad/ }));
     await user.click(screen.getByRole('button', { name: 'Limpiar datos locales' }));
-    await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+    await user.click(screen.getByRole('button', { name: 'Conservar mis datos' }));
     expect(scheduleStorage.get()?.session).not.toBeNull();
     await user.click(screen.getByRole('button', { name: 'Limpiar datos locales' }));
-    await user.click(screen.getByRole('button', { name: 'Borrar mis datos locales' }));
+    await user.click(screen.getByRole('button', { name: 'Borrar datos de este dispositivo' }));
     expect(router.state.location.pathname).toBe('/');
     expect(scheduleStorage.get()).toBeNull();
     expect(localStorage.getItem('other-app')).toBe('untouched');
@@ -181,7 +181,7 @@ describe('access → saved schedule → Ahora', () => {
     const user = mount('/mas');
     await user.click(screen.getByRole('tab', { name: /Privacidad/ }));
     await user.click(screen.getByRole('button', { name: 'Limpiar datos locales' }));
-    await user.click(screen.getByRole('button', { name: 'Borrar mis datos locales' }));
+    await user.click(screen.getByRole('button', { name: 'Borrar datos de este dispositivo' }));
     expect(within(screen.getByRole('dialog')).getByRole('alert')).toHaveTextContent('No pudimos borrar los datos.');
     expect(localStorage.getItem(ACADEMIC_STORAGE_KEY)).toBe(original);
   });

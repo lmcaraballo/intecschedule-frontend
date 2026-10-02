@@ -40,6 +40,19 @@ test('an explicit demonstration warns before any institutional credentials are e
   await expect(page.getByText('Estas clases son simuladas y no corresponden a tu cuenta.')).toBeVisible();
 });
 
+test('welcome cards reveal their details on click without losing keyboard semantics', async ({ page }) => {
+  await page.goto('/');
+  const card = page.locator('.welcome-benefit__button').first();
+  await expect(card).toHaveAccessibleName('Descubrir más sobre Tu semana, clara');
+  await card.click();
+  await expect(card).toHaveAttribute('aria-pressed', 'true');
+  await expect(card).toHaveAccessibleName('Volver a Tu semana, clara');
+  await page.waitForTimeout(560);
+  expect(await card.locator('.welcome-benefit__rotor').evaluate((element) => getComputedStyle(element).transform)).not.toBe('none');
+  await card.click();
+  await expect(card).toHaveAttribute('aria-pressed', 'false');
+});
+
 test('the access canvas and header remain continuous on wide screens', async ({ page }) => {
   await page.setViewportSize({ width: 1720, height: 980 });
   await page.goto('/');

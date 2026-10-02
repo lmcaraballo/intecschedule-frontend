@@ -13,6 +13,17 @@ import { defaultPreferences, getStartPath } from '../preferences/preferences';
 import { BrandSplash } from '../../components/BrandSplash';
 import { takeNextSplash } from '../../utils/transientSplash';
 
+const welcomeBenefits = [
+  {
+    id: 'week', icon: 'calendar' as const, title: 'Tu semana, clara', summary: 'Clases y fechas INTEC en contexto.',
+    message: 'Consulta tu horario por día, semana o mes. Los días sin clases también se explican.',
+  },
+  {
+    id: 'privacy', icon: 'lock' as const, title: 'Privado por diseño', summary: 'Tu contraseña nunca se guarda.',
+    message: 'La usamos solo para consultar tu horario. Puedes borrar tus datos locales cuando quieras.',
+  },
+];
+
 export function AccessPage() {
   const [scenario, setScenario] = useState<MockScenario>('success');
   const access = useAcademicAccess();
@@ -20,6 +31,7 @@ export function AccessPage() {
   const savedSession = data?.session;
   const navigate = useNavigate();
   const [arrivalSplash, setArrivalSplash] = useState<string | null>(takeNextSplash);
+  const [flippedBenefit, setFlippedBenefit] = useState<string | null>(null);
 
   useEffect(() => {
     if (!arrivalSplash) return;
@@ -40,8 +52,19 @@ export function AccessPage() {
         <h1 id="welcome-title">Un poco de orden.<br /><em>Más espacio<br className="desktop-break" /> para ti.</em></h1>
         <p className="welcome__description">Tus clases, tu tiempo, tu ritmo.<br />Empieza por tener tu horario en un solo lugar.</p>
         <ul className="welcome__benefits" aria-label="Ventajas de AcademicPlanner">
-          <li><Icon name="calendar" /><span><strong>Tu semana, clara</strong><small>Clases y fechas INTEC en contexto.</small></span></li>
-          <li><Icon name="lock" /><span><strong>Privado por diseño</strong><small>Tu contraseña nunca se guarda.</small></span></li>
+          {welcomeBenefits.map((benefit) => {
+            const flipped = flippedBenefit === benefit.id;
+            return <li key={benefit.id} className={flipped ? 'is-flipped' : ''}>
+              <button type="button" className="welcome-benefit__button" aria-pressed={flipped}
+                aria-label={flipped ? `Volver a ${benefit.title}` : `Descubrir más sobre ${benefit.title}`}
+                onClick={() => setFlippedBenefit((current) => current === benefit.id ? null : benefit.id)}>
+                <span className="welcome-benefit__rotor" aria-hidden="true">
+                  <span className="welcome-benefit__face welcome-benefit__face--front"><Icon name={benefit.icon} /><span><strong>{benefit.title}</strong><small>{benefit.summary}</small><em>Descubrir más</em></span></span>
+                  <span className="welcome-benefit__face welcome-benefit__face--back"><Icon name="spark" /><span><strong>{benefit.title}</strong><small>{benefit.message}</small><em>Volver</em></span></span>
+                </span>
+              </button>
+            </li>;
+          })}
         </ul>
         <div className="quiet-art" aria-hidden="true">
           <div className="orbit orbit--one" /><div className="orbit orbit--two" />

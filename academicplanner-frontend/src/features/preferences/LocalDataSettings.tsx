@@ -30,10 +30,14 @@ export function LocalDataSettings() {
     </ul>
     <div className="local-data-danger"><div><strong>Empezar de nuevo</strong><p>Borra la información de AcademicPlanner sin afectar otras aplicaciones.</p></div><Button variant="secondary" onClick={() => { setError(null); setConfirming(true); }}>Limpiar datos locales</Button></div>
     {confirming && <Dialog title="Limpiar datos locales" className="confirmation-dialog" onClose={() => setConfirming(false)}>
-      <p>Se borrarán el horario, el perfil y las preferencias de AcademicPlanner en este dispositivo.</p>
-      <p>Para volver a usar tu horario necesitarás conexión y una nueva consulta. Los datos de otras aplicaciones se conservan.</p>
+      <div className="confirmation-dialog__lead"><span className="confirmation-dialog__icon confirmation-dialog__icon--warning"><Icon name="alert" /></span><div><p className="section-label">Esta acción no se puede deshacer</p><p>Eliminarás la información de AcademicPlanner guardada en este dispositivo.</p></div></div>
+      <ul className="confirmation-dialog__impact">
+        <li><Icon name="calendar" /><span><strong>Se borrará</strong>Tu último horario, perfil básico y preferencias.</span></li>
+        <li><Icon name="lock" /><span><strong>Se conserva</strong>Las demás aplicaciones y la información de Google Calendar.</span></li>
+      </ul>
+      <div className="confirmation-dialog__note"><Icon name="spark" /><p>Para consultar tu horario otra vez necesitarás conexión y una nueva consulta institucional.</p></div>
       {error && <ErrorState message={error} />}
-      <div className="dialog-actions"><Button variant="secondary" onClick={() => setConfirming(false)}>Cancelar</Button><Button onClick={clearData}>Borrar mis datos locales</Button></div>
+      <div className="dialog-actions"><Button variant="secondary" onClick={() => setConfirming(false)}>Conservar mis datos</Button><Button onClick={clearData}>Borrar datos de este dispositivo</Button></div>
     </Dialog>}
   </section>;
 }
