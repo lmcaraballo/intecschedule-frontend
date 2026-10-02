@@ -361,6 +361,8 @@ test('Google Calendar demo synchronizes without duplicates and supports personal
   await page.goto('/eventos');
   await page.getByRole('button', { name: 'Conectar Google Calendar' }).click();
   await expect(page.getByRole('heading', { name: 'Próximos eventos' })).toBeVisible();
+  await expect(page.locator('.event-card')).toHaveCount(8);
+  await expect(page.getByRole('button', { name: /Mostrar \d+ eventos más/ })).toBeVisible();
 
   await page.getByRole('button', { name: 'Sincronizar horario' }).click();
   await expect(page.getByRole('status')).toContainText('Horario sincronizado');
@@ -371,12 +373,17 @@ test('Google Calendar demo synchronizes without duplicates and supports personal
   await page.getByLabel('Título').fill('Preparar exposición QA');
   await page.getByLabel('Fecha').fill('2026-10-08');
   await page.getByLabel('Inicio', { exact: true }).fill('16:00');
+  await page.getByLabel('Fin', { exact: true }).fill('15:00');
+  await expect(page.getByText('La hora de fin debe ser posterior a la de inicio.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Crear evento' })).toBeDisabled();
   await page.getByLabel('Fin', { exact: true }).fill('17:00');
+  await page.getByText('Añadir detalles opcionales').click();
   await page.getByLabel(/Lugar/).fill('Biblioteca');
   await page.getByRole('button', { name: 'Crear evento' }).click();
   await expect(page.getByRole('heading', { name: 'Preparar exposición QA' })).toBeVisible();
 
   const personalCard = page.getByRole('listitem').filter({ hasText: 'Preparar exposición QA' });
+  expect(await personalCard.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
   await personalCard.getByRole('button', { name: 'Editar' }).click();
   await page.getByLabel('Título').fill('Preparar exposición final QA');
   await page.getByRole('button', { name: 'Guardar cambios' }).click();

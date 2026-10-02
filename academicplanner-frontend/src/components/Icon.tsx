@@ -1,7 +1,11 @@
 import type { SVGProps } from 'react';
 
-export type IconName = 'pine' | 'arrow' | 'lock' | 'eye' | 'eye-off' | 'sun' | 'moon' | 'check' | 'alert' | 'book' | 'leaf' | 'calendar' | 'spark' | 'more' | 'clock' | 'pin' | 'close' | 'chevron-left' | 'chevron-right' | 'offline';
+export type IconName = 'pine' | 'arrow' | 'lock' | 'eye' | 'eye-off' | 'sun' | 'moon' | 'check' | 'alert' | 'book' | 'leaf' | 'calendar' | 'spark' | 'more' | 'clock' | 'pin' | 'close' | 'chevron-left' | 'chevron-right' | 'offline' | 'edit' | 'trash' | 'refresh' | 'sync';
 const paths: Record<IconName, React.ReactNode> = {
+  edit: <><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" /><path d="m13.5 6.5 4 4" /></>,
+  trash: <><path d="M4 7h16M9 7V4h6v3m3 0-1 14H7L6 7m4 4v6m4-6v6" /></>,
+  refresh: <><path d="M20 7v5h-5" /><path d="M19 12a7 7 0 1 0-2 5" /></>,
+  sync: <><path d="M7 7h11l-3-3m3 3-3 3M17 17H6l3 3m-3-3 3-3" /></>,
   offline: <><path d="m3 3 18 18M8 8a13 13 0 0 1 13 1M3 9l2-1m3 5a7 7 0 0 1 8 0m-6 4a3 3 0 0 1 4 0" /><circle cx="12" cy="21" r=".5" /></>,
   calendar: <><rect x="3" y="5" width="18" height="16" rx="3" /><path d="M7 3v4m10-4v4M3 11h18m-14 4h2m4 0h2" /></>,
   spark: <path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z" />,
