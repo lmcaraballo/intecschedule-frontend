@@ -35,10 +35,9 @@ export function PreferencesSettings() {
     </header>
 
     <div className="preference-grid">
-      <PreferenceCard id="start" icon="clock" title="Inicio y horario" detail="Pantalla inicial, vista y densidad" open={openSection === 'start'} onOpen={setOpenSection}>
+      <PreferenceCard id="start" icon="clock" title="Inicio y horario" detail="Pantalla inicial y vista del horario" open={openSection === 'start'} onOpen={setOpenSection}>
         <label className="preference-select"><span><strong>Pantalla al iniciar</strong><small>Se abre después de consultar o recuperar tu horario.</small></span><select aria-label="Pantalla al iniciar" value={preferences.startPage} onChange={(event) => update({ startPage: event.target.value as Preferences['startPage'] })}><option value="now">Ahora</option><option value="schedule">Horario</option><option value="events">Eventos</option></select></label>
         <label className="preference-select"><span><strong>Vista del horario</strong><small>La vista que encontrarás al entrar.</small></span><select aria-label="Vista predeterminada del horario" value={preferences.defaultScheduleView} onChange={(event) => update({ defaultScheduleView: event.target.value as Preferences['defaultScheduleView'] })}><option value="day">Día</option><option value="week">Semana</option><option value="month">Mes</option></select></label>
-        <label className="preference-select"><span><strong>Densidad</strong><small>{preferences.scheduleDensity === 'compact' ? 'Reduce tarjetas y espacios para mostrar más clases.' : 'Da más aire a las tarjetas para una lectura relajada.'}</small></span><select aria-label="Densidad del horario" value={preferences.scheduleDensity} onChange={(event) => update({ scheduleDensity: event.target.value as Preferences['scheduleDensity'] })}><option value="comfortable">Cómoda</option><option value="compact">Compacta</option></select></label>
       </PreferenceCard>
 
       <PreferenceCard id="appearance" icon="spark" title="Apariencia y accesibilidad" detail="Tema, texto, contraste y movimiento" open={openSection === 'appearance'} onOpen={setOpenSection}>

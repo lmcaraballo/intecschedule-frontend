@@ -32,7 +32,7 @@ describe('scheduleStorage', () => {
     const session = createMockSession('1101234');
     localStorage.setItem(key, JSON.stringify({ version: 1, session, preferences: { theme: 'day' }, classOverrides: {} }));
     expect(scheduleStorage.get()?.preferences).toMatchObject({
-      theme: 'day', startPage: 'now', defaultScheduleView: 'day', scheduleDensity: 'comfortable',
+      theme: 'day', startPage: 'now', defaultScheduleView: 'day',
       showCampusPreview: true, showUnscheduledSubjects: true, textSize: 'normal', highContrast: false,
     });
   });

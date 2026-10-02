@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { completeSubjectName } from '../utils/subjectName';
 
 const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Hora inválida');
 
@@ -22,7 +23,10 @@ export const academicClassSchema = z.object({
 }).refine((value) => value.endTime > value.startTime, {
   message: 'La hora final debe ser posterior a la inicial',
   path: ['endTime'],
-});
+}).transform((value) => ({
+  ...value,
+  subjectName: completeSubjectName(value.subjectCode, value.subjectName),
+}));
 
 export const scheduleSchema = z.object({
   fetchedAt: z.iso.datetime({ offset: true }),
@@ -34,7 +38,10 @@ export const scheduleSchema = z.object({
     section: z.string().trim(),
     professor: z.string().trim().optional(),
     location: z.string().trim().optional(),
-  })).optional(),
+  }).transform((value) => ({
+    ...value,
+    subjectName: completeSubjectName(value.subjectCode, value.subjectName),
+  }))).optional(),
   classes: z.array(academicClassSchema).refine(
     (classes) => new Set(classes.map((item) => item.id)).size === classes.length,
     'Los identificadores de clase deben ser únicos',

@@ -177,21 +177,16 @@ test('day schedule controls read as one compact tactile workspace', async ({ pag
   expect(await nowCard.locator('.class-card__top > svg').evaluate((element) => getComputedStyle(element).borderRadius)).toBe('50%');
 });
 
-test('comfortable and compact density produce visibly different schedules', async ({ page }) => {
+test('schedule uses one readable presentation and expands abbreviated course names', async ({ page }) => {
   await page.setViewportSize({ width: 954, height: 911 });
-  await seed(page);
+  const data = storedSession();
+  data.session.schedule.classes[0]!.subjectCode = 'IINF325L';
+  data.session.schedule.classes[0]!.subjectName = 'LABORATORIO ASEGURAMIENTO DE L';
+  await seed(page, data);
   await page.goto('/horario?date=2026-09-14&view=day');
-  const schedule = page.locator('.schedule-page');
-  await expect(schedule).toHaveAttribute('data-density', 'comfortable');
-  const comfortableHeight = (await page.locator('.day-schedule .class-card').first().boundingBox())!.height;
-
+  await expect(page.getByText('LABORATORIO ASEGURAMIENTO DE LA CALIDAD DE SOFTWARE')).toBeVisible();
   await page.goto('/mas');
-  await page.getByLabel('Densidad del horario').selectOption('compact');
-  await expect(page.getByText('Reduce tarjetas y espacios para mostrar más clases.')).toBeVisible();
-  await page.goto('/horario?date=2026-09-14&view=day');
-  await expect(schedule).toHaveAttribute('data-density', 'compact');
-  const compactHeight = (await page.locator('.day-schedule .class-card').first().boundingBox())!.height;
-  expect(compactHeight).toBeLessThan(comfortableHeight - 20);
+  await expect(page.getByLabel('Densidad del horario')).toHaveCount(0);
 });
 
 test('past schedule dates stay available as clearly marked history', async ({ page }) => {
@@ -489,7 +484,6 @@ test('monthly schedule and expanded preferences persist and control startup', as
   await page.goto('/mas');
   await page.getByLabel(/Pantalla al iniciar/).selectOption('schedule');
   await page.getByLabel(/Vista predeterminada del horario/).selectOption('month');
-  await page.getByLabel(/Densidad del horario/).selectOption('compact');
   await page.getByRole('button', { name: /Apariencia y accesibilidad/ }).click();
   await page.getByLabel(/Tamaño del texto/).selectOption('large');
   await page.getByText('Contraste reforzado', { exact: true }).click();
@@ -518,7 +512,7 @@ test('monthly schedule and expanded preferences persist and control startup', as
   await expect(page).toHaveURL(/\/horario$/);
   await expect(page.getByRole('button', { name: 'Mes', exact: true })).toHaveAttribute('aria-pressed', 'true');
   const saved = await page.evaluate(k => JSON.parse(localStorage.getItem(k)!).preferences, key);
-  expect(saved).toMatchObject({ startPage: 'schedule', defaultScheduleView: 'month', scheduleDensity: 'compact', textSize: 'large', highContrast: true });
+  expect(saved).toMatchObject({ startPage: 'schedule', defaultScheduleView: 'month', textSize: 'large', highContrast: true });
 });
 
 test('corrupt storage, unsupported version, null classes and changes in another tab', async ({ page, context }) => {
