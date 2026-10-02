@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const preferencesSchema = z.object({
   theme: z.enum(['auto', 'day', 'night']),
+  themeVariant: z.enum(['day-cream', 'day-paper', 'night-forest', 'night-midnight']).default('day-cream'),
   reducedMotion: z.boolean().default(false),
   textSize: z.enum(['normal', 'large']).default('normal'),
   highContrast: z.boolean().default(false),
@@ -18,6 +19,7 @@ export const preferencesSchema = z.object({
 export type Preferences = z.infer<typeof preferencesSchema>;
 export const defaultPreferences: Preferences = {
   theme: 'auto',
+  themeVariant: 'day-cream',
   reducedMotion: false,
   textSize: 'normal',
   highContrast: false,

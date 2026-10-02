@@ -42,8 +42,9 @@ export function PreferencesSettings() {
       </PreferenceCard>
 
       <PreferenceCard id="appearance" icon="spark" title="Apariencia y accesibilidad" detail="Tema, texto, contraste y movimiento" open={openSection === 'appearance'} onOpen={setOpenSection}>
-        <div className="preference-options" aria-label="Tema visual">{(['auto', 'day', 'night'] as const).map((theme) => <Button type="button" key={theme} variant="plain" aria-pressed={preferences.theme === theme} onClick={() => update({ theme })}><Icon name={theme === 'auto' ? 'spark' : theme === 'day' ? 'sun' : 'moon'} />{theme === 'auto' ? 'Auto' : theme === 'day' ? 'Claro' : 'Oscuro'}</Button>)}</div>
-        <section className="theme-day-cycle" aria-label="Ciclo diario del tema automático">
+        <div className="preference-options" aria-label="Tema visual">{(['auto', 'day', 'night'] as const).map((theme) => <Button type="button" key={theme} variant="plain" aria-pressed={preferences.theme === theme} onClick={() => update(themeChange(preferences, theme))}><Icon name={theme === 'auto' ? 'spark' : theme === 'day' ? 'sun' : 'moon'} />{theme === 'auto' ? 'Auto' : theme === 'day' ? 'Claro' : 'Oscuro'}</Button>)}</div>
+        {preferences.theme !== 'auto' && <label className="preference-select preference-palette-select"><span><strong>{preferences.theme === 'day' ? 'Matiz claro' : 'Matiz oscuro'}</strong><small>Elige una de las dos variantes sin cambiar el contraste ni la lectura.</small></span><select aria-label={preferences.theme === 'day' ? 'Matiz claro' : 'Matiz oscuro'} value={activeVariant(preferences)} onChange={(event) => update({ themeVariant: event.target.value as Preferences['themeVariant'] })}>{preferences.theme === 'day' ? <><option value="day-cream">Claro crema</option><option value="day-paper">Claro papel</option></> : <><option value="night-forest">Oscuro bosque</option><option value="night-midnight">Oscuro medianoche</option></>}</select></label>}
+        {preferences.theme === 'auto' && <section className="theme-day-cycle" aria-label="Ciclo diario del tema automático">
           <div><strong>Auto acompaña la hora</strong><p>La luz cambia suavemente durante el día. Ahora corresponde a <b>{phaseLabel(phase)}</b>.</p></div>
           <ol>
             <ThemePhase icon="sunrise" label="Mañana" time="5–10" active={preferences.theme === 'auto' && phase === 'morning'} />
@@ -51,7 +52,7 @@ export function PreferencesSettings() {
             <ThemePhase icon="sunset" label="Atardecer" time="17–20" active={preferences.theme === 'auto' && phase === 'sunset'} />
             <ThemePhase icon="moon" label="Noche" time="20–5" active={preferences.theme === 'auto' && phase === 'night'} />
           </ol>
-        </section>
+        </section>}
         <label className="preference-select"><span><strong>Tamaño del texto</strong><small>Aumenta el texto sin depender del zoom.</small></span><select aria-label="Tamaño del texto" value={preferences.textSize} onChange={(event) => update({ textSize: event.target.value as Preferences['textSize'] })}><option value="normal">Normal</option><option value="large">Grande</option></select></label>
         <Toggle checked={preferences.highContrast} onChange={(checked) => update({ highContrast: checked })} title="Contraste reforzado" detail="Oscurece bordes y texto secundario." />
         <Toggle checked={preferences.reducedMotion} onChange={(checked) => update({ reducedMotion: checked })} title="Reducir movimiento" detail="Evita transiciones que no sean esenciales." />
@@ -79,6 +80,17 @@ function ThemePhase({ icon, label, time, active }: { icon: IconName; label: stri
 
 function phaseLabel(phase: 'morning' | 'day' | 'sunset' | 'night') {
   return { morning: 'la mañana', day: 'el día', sunset: 'el atardecer', night: 'la noche' }[phase];
+}
+
+function themeChange(preferences: Preferences, theme: Preferences['theme']): Pick<Preferences, 'theme' | 'themeVariant'> {
+  if (theme === 'auto') return { theme, themeVariant: preferences.themeVariant };
+  if (theme === 'day') return { theme, themeVariant: preferences.themeVariant.startsWith('day-') ? preferences.themeVariant : 'day-cream' };
+  return { theme, themeVariant: preferences.themeVariant.startsWith('night-') ? preferences.themeVariant : 'night-forest' };
+}
+
+function activeVariant(preferences: Preferences): Preferences['themeVariant'] {
+  if (preferences.theme === 'day') return preferences.themeVariant.startsWith('day-') ? preferences.themeVariant : 'day-cream';
+  return preferences.themeVariant.startsWith('night-') ? preferences.themeVariant : 'night-forest';
 }
 
 type PreferenceSectionId = 'start' | 'appearance' | 'information' | 'reminders';

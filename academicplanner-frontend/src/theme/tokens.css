@@ -106,6 +106,37 @@
   --art-honey: #d8b96f;
 }
 
+/* Manual palettes keep the same contrast system while offering two calm
+   temperatures for either light or dark. Auto remains governed by the hour. */
+[data-theme='day'][data-theme-mode='day'][data-theme-variant='day-paper'] {
+  --bg: #f4f4ee;
+  --surface: #ffffff;
+  --surface-soft: #e8ece5;
+  --success-bg: #e5eee7;
+  --art-honey: #e7d5a5;
+}
+
+[data-theme='night'][data-theme-mode='night'][data-theme-variant='night-midnight'] {
+  --bg: #132029;
+  --browser-theme: #132029;
+  --surface: #1d2c36;
+  --surface-soft: #283b46;
+  --text: #e7eff0;
+  --muted: #b4c2c3;
+  --heading: #d7e8e0;
+  --border: #3f5960;
+  --input-border: #789096;
+  --input-bg: #192832;
+  --primary: #b4d1c1;
+  --on-primary: #13262b;
+  --primary-hover: #c9e1d4;
+  --focus: #e5c878;
+  --success-bg: #2b4546;
+  --art-line: #3d5960;
+  --art-green: #5b7d76;
+  --art-honey: #a99058;
+}
+
 /* Stable, non-semantic subject palettes for all academic surfaces. */
 [data-subject='fern'] { --subject-accent: var(--color-moss); --subject-tint: #eaf0e5; }
 [data-subject='slate'] { --subject-accent: #536590; --subject-tint: #eceef6; }

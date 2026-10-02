@@ -2,6 +2,7 @@ export interface CampusMapController {
   highlightBuilding(code?: string): void;
   focusCamera(code: string): void;
   zoomBy(amount: number): void;
+  setLighting(phase: 'morning' | 'day' | 'sunset' | 'night', theme: 'day' | 'night'): void;
   destroy(): void;
 }
 

@@ -107,6 +107,7 @@ test('campus model keeps controls out of the map caption and reports the active 
 
   const map = page.locator('.campus-3d-map');
   await map.scrollIntoViewIfNeeded();
+  await expect(map).toHaveAttribute('data-campus-light', /morning|day|sunset|night/);
   const mapBox = await map.boundingBox();
   expect(mapBox).not.toBeNull();
   await page.mouse.click(mapBox!.x + mapBox!.width * 0.5, mapBox!.y + mapBox!.height * 0.42);
@@ -149,6 +150,12 @@ test('campus model keeps controls out of the map caption and reports the active 
   await page.keyboard.press('Escape');
   await expect(expandedPreview).toHaveCount(0);
 
+  const appearance = page.getByRole('group', { name: 'Apariencia' });
+  const appearanceToggle = appearance.locator('.theme-toggle');
+  await appearanceToggle.click();
+  if (await appearance.getAttribute('data-mode') !== 'night') await appearanceToggle.click();
+  await expect(map).toHaveAttribute('data-campus-theme', 'night');
+
   await controls.getByRole('button', { name: 'Ver campus completo' }).click();
   await expect(controls.getByRole('button', { name: 'Ver campus completo' })).toHaveAttribute('aria-pressed', 'true');
   await expect(controls.getByRole('button', { name: /Enfocar/ })).toHaveAttribute('aria-pressed', 'false');
@@ -182,6 +189,16 @@ test('More keeps settings compact and provides clear control feedback', async ({
   await expect(page.getByLabel('Ciclo diario del tema automático')).toContainText('Auto acompaña la hora');
   await expect(page.getByLabel('Ciclo diario del tema automático').locator('[aria-current="true"]')).toHaveCount(1);
   expect(await themeAuto.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe('none');
+  await page.getByLabel('Tema visual').getByRole('button', { name: 'Claro', exact: true }).click();
+  const lightPalette = page.getByLabel('Matiz claro');
+  await expect(lightPalette).toBeVisible();
+  await lightPalette.selectOption('day-paper');
+  await expect(page.locator('html')).toHaveAttribute('data-theme-variant', 'day-paper');
+  await page.getByLabel('Tema visual').getByRole('button', { name: 'Oscuro', exact: true }).click();
+  const darkPalette = page.getByLabel('Matiz oscuro');
+  await expect(darkPalette).toBeVisible();
+  await darkPalette.selectOption('night-midnight');
+  await expect(page.locator('html')).toHaveAttribute('data-theme-variant', 'night-midnight');
   await page.getByText('Contraste reforzado', { exact: true }).click();
   await expect(page.getByRole('switch', { name: /Contraste reforzado/ })).toBeChecked();
   await expect(page.getByRole('status')).toContainText('Cambios guardados');
@@ -219,6 +236,19 @@ test('automatic theme shows the current phase and the manual control slides betw
   await auto.click();
   await expect(controls).toHaveAttribute('data-mode', 'auto');
   await expect(toggle).toHaveAttribute('aria-label', /Tema automático:/);
+});
+
+test('brand only shows a contextual splash when it actually changes an academic view', async ({ page }) => {
+  await page.goto('/');
+  const brand = page.getByRole('link', { name: /Abrir inicio de AcademicPlanner/ });
+  await brand.click();
+  await expect(page.locator('.brand-splash')).toHaveCount(0);
+
+  await seed(page);
+  await page.goto('/eventos');
+  await page.getByRole('link', { name: /Abrir inicio de AcademicPlanner/ }).click();
+  await expect(page.getByRole('status', { name: 'Volviendo a tu vista de inicio' })).toBeVisible();
+  await expect(page).toHaveURL(/\/ahora$/);
 });
 
 test('access validation, Enter, repeated submission, privacy, reload and detail keyboard', async ({ page }) => {

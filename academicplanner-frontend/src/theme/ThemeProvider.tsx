@@ -39,10 +39,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     document.documentElement.dataset.theme = theme;
     document.documentElement.dataset.context = context;
     document.documentElement.dataset.themeMode = preference;
+    document.documentElement.dataset.themeVariant = preference === 'auto' ? 'auto' : preferences.themeVariant;
     document.documentElement.style.colorScheme = theme === 'night' ? 'dark' : 'light';
     const color = getComputedStyle(document.documentElement).getPropertyValue('--browser-theme').trim();
     if (color) document.querySelector('meta[name="theme-color"]')?.setAttribute('content', color);
-  }, [theme, context, preference]);
+  }, [theme, context, preference, preferences.themeVariant]);
 
   useEffect(() => {
     document.documentElement.dataset.reduceMotion = String(preferences.reducedMotion);
@@ -51,9 +52,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [preferences.highContrast, preferences.reducedMotion, preferences.textSize]);
 
   function setPreference(value: Preferences['theme']) {
-    setPreferences((current) => ({ ...current, theme: value }));
+    const variantForMode = (current: Preferences) => {
+      if (value === 'auto') return current.themeVariant;
+      if (value === 'day') return current.themeVariant.startsWith('day-') ? current.themeVariant : 'day-cream';
+      return current.themeVariant.startsWith('night-') ? current.themeVariant : 'night-forest';
+    };
+    setPreferences((current) => ({ ...current, theme: value, themeVariant: variantForMode(current) }));
     try {
-      scheduleStorage.savePreferences({ theme: value });
+      const current = scheduleStorage.get()?.preferences ?? defaultPreferences;
+      scheduleStorage.savePreferences({ theme: value, themeVariant: variantForMode(current) });
       setStorageWarning(false);
     } catch {
       setStorageWarning(true);

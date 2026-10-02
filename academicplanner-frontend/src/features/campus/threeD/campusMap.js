@@ -535,6 +535,50 @@ export function initCampusMap(containerId, options = {}) {
     });
     let popup = null;
     let popupOpenTimer = null;
+    let requestedLighting = { phase: 'day', theme: 'day' };
+
+    const applyLighting = () => {
+        if (!map.getLayer('background') || !map.getLayer('campus-ground')) return;
+        const isNight = requestedLighting.theme === 'night';
+        const palette = {
+            morning: {
+                background: '#E7F0EA', ground: '#F2EADD', lightColor: '#FFE6BF', intensity: 0.48,
+                position: [1.4, 205, 42], exteriorOpacity: 0.36
+            },
+            day: {
+                background: '#EEF3EA', ground: '#F2EDE4', lightColor: '#FFF6E8', intensity: 0.62,
+                position: [1.35, 205, 52], exteriorOpacity: 0.34
+            },
+            sunset: {
+                background: '#E7DDD4', ground: '#EDE0D4', lightColor: '#FFD0A6', intensity: 0.44,
+                position: [1.8, 190, 28], exteriorOpacity: 0.42
+            },
+            night: {
+                background: '#14241D', ground: '#4A5049', lightColor: '#A9C7BC', intensity: 0.27,
+                position: [1.8, 180, 22], exteriorOpacity: 0.58
+            }
+        }[requestedLighting.phase];
+
+        container?.setAttribute('data-campus-light', requestedLighting.phase);
+        container?.setAttribute('data-campus-theme', requestedLighting.theme);
+        map.setPaintProperty('background', 'background-color', palette.background);
+        map.setPaintProperty('campus-ground', 'fill-color', palette.ground);
+        map.setPaintProperty('buildings-base', 'fill-color', selectedBuildingColor(buildingWallColor(isNight)));
+        map.setPaintProperty('buildings-3d', 'fill-extrusion-color', selectedBuildingColor(buildingWallColor(isNight)));
+        map.setPaintProperty('building-roof-caps', 'fill-extrusion-color', selectedBuildingColor(buildingRoofColor(isNight)));
+        for (let floor = 1; floor <= 5; floor += 1) {
+            map.setPaintProperty(`building-window-band-${floor}`, 'fill-extrusion-color', buildingGlassColor(isNight));
+        }
+        map.setPaintProperty('campus-exterior-mask', 'fill-opacity', palette.exteriorOpacity);
+        if (typeof map.setLight === 'function') {
+            try {
+                map.setLight({ anchor: 'map', color: palette.lightColor, intensity: palette.intensity, position: palette.position });
+            } catch {
+                // Some WebGL implementations draw the fallback shading correctly but reject
+                // dynamic style light updates. The color layers above still communicate time.
+            }
+        }
+    };
 
     map.addControl(new maplibregl.AttributionControl({
         compact: true,
@@ -1993,6 +2037,7 @@ export function initCampusMap(containerId, options = {}) {
         });
 
         if (container) {
+            applyLighting();
             container.dataset.loaded = 'true';
             container.dispatchEvent(new CustomEvent('campus-map-ready'));
         }
@@ -2100,19 +2145,9 @@ export function initCampusMap(containerId, options = {}) {
             map.isStyleLoaded() ? doHighlight() : map.once('load', doHighlight);
         },
 
-        setTheme: (themeId) => {
-            if (!map.isStyleLoaded()) return;
-            const isNight = themeId === 'night';
-            // El campus conserva la mayor jerarquía; el contexto queda desaturado.
-            map.setPaintProperty('background', 'background-color', isNight ? '#E5ECE3' : '#EEF3EA');
-            map.setPaintProperty('campus-ground', 'fill-color', isNight ? '#E8E3DA' : '#F2EDE4');
-            map.setPaintProperty('buildings-base', 'fill-color', selectedBuildingColor(buildingWallColor(isNight)));
-            map.setPaintProperty('buildings-3d', 'fill-extrusion-color', selectedBuildingColor(buildingWallColor(isNight)));
-            map.setPaintProperty('building-roof-caps', 'fill-extrusion-color', selectedBuildingColor(buildingRoofColor(isNight)));
-            for (let floor = 1; floor <= 5; floor += 1) {
-                map.setPaintProperty(`building-window-band-${floor}`, 'fill-extrusion-color', buildingGlassColor(isNight));
-            }
-            map.setPaintProperty('campus-exterior-mask', 'fill-opacity', isNight ? 0.42 : 0.34);
+        setLighting: (phase, theme) => {
+            requestedLighting = { phase, theme };
+            applyLighting();
         },
 
         focusCamera: (presetId) => {

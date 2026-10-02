@@ -3,15 +3,26 @@ import type { AcademicClass } from '../../types/academic';
 import { Icon } from '../../components/Icon';
 import { isGenericPhysicalLocation, isVirtualLocation, scheduledLocationLabel } from '../schedule/classLocation';
 import { resolveCampusBuilding } from './campusBuildings';
+import { useTheme } from '../../theme/ThemeProvider';
 
 type Timing = 'current' | 'next' | 'detail';
+type CampusMapController = {
+  highlightBuilding(code?: string): void;
+  focusCamera(code: string): void;
+  zoomBy(amount: number): void;
+  setLighting(phase: 'morning' | 'day' | 'sunset' | 'night', theme: 'day' | 'night'): void;
+  destroy(): void;
+};
 
 // The geometry and rendering layers come from the local Intec Schedule campus model.
 // It renders from bundled coordinates, so it does not need a Mapbox, Google, or Cesium key.
 export function Campus3DPreview({ academicClass, timing }: { academicClass: AcademicClass; timing: Timing }) {
+  const { theme, phase } = useTheme();
   const building = resolveCampusBuilding(academicClass.location);
   const mapElement = useRef<HTMLDivElement>(null);
-  const mapController = useRef<{ highlightBuilding(code?: string): void; focusCamera(code: string): void; zoomBy(amount: number): void; destroy(): void } | undefined>(undefined);
+  const mapController = useRef<CampusMapController | undefined>(undefined);
+  const lighting = useRef({ theme, phase });
+  lighting.current = { theme, phase };
   const [unavailable, setUnavailable] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
   const [cameraView, setCameraView] = useState<'building' | 'campus'>('building');
@@ -37,7 +48,7 @@ export function Campus3DPreview({ academicClass, timing }: { academicClass: Acad
     setIsMapReady(false);
     setCameraView('building');
     setMapSelection({ code: building.code, name: building.name });
-    let controller: { highlightBuilding(code?: string): void; focusCamera(code: string): void; zoomBy(amount: number): void; destroy(): void } | undefined;
+    let controller: CampusMapController | undefined;
 
     const handleMapReady = () => setIsMapReady(true);
     mapElement.current.addEventListener('campus-map-ready', handleMapReady);
@@ -55,6 +66,7 @@ export function Campus3DPreview({ academicClass, timing }: { academicClass: Acad
         });
         controller = nextController;
         mapController.current = nextController;
+        nextController.setLighting(lighting.current.phase, lighting.current.theme);
         nextController.highlightBuilding(building.code);
         nextController.focusCamera(building.code);
       })
@@ -69,6 +81,10 @@ export function Campus3DPreview({ academicClass, timing }: { academicClass: Acad
       controller?.destroy();
     };
   }, [building, timing, loadAttempt]);
+
+  useEffect(() => {
+    mapController.current?.setLighting(phase, theme);
+  }, [phase, theme]);
 
   useEffect(() => {
     if (!isExpanded) return;
@@ -138,6 +154,10 @@ export function Campus3DPreview({ academicClass, timing }: { academicClass: Acad
       </div>
       <p id={instructionsId} className="campus-map-instructions">{isExpanded ? 'Vista ampliada. Arrastra para explorar y pulsa Esc para cerrar.' : 'Selecciona un edificio para ampliar. Arrastra para explorar.'}</p>
     </div>
-    <div className="campus-preview__details"><div><Icon name="pin" /><span><strong>{mapSelection?.name || building.name}</strong><small>{mapSelection?.code || academicClass.location}</small></span></div>{unavailable ? <div className="campus-map-recovery" role="alert"><p>La maqueta 3D no pudo cargarse. La ubicación escrita sigue disponible.</p><button type="button" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>Volver a intentar</button></div> : <p>Edificio resaltado en rojo. La cámara conserva una vista clara del entorno inmediato.</p>}</div>
+    <div className="campus-preview__details"><div><Icon name="pin" /><span><strong>{mapSelection?.name || building.name}</strong><small>{mapSelection?.code || academicClass.location}</small></span></div>{unavailable ? <div className="campus-map-recovery" role="alert"><p>La maqueta 3D no pudo cargarse. La ubicación escrita sigue disponible.</p><button type="button" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>Volver a intentar</button></div> : <p>Edificio resaltado en rojo. Iluminación sincronizada con {lightingLabel(phase)}.</p>}</div>
   </section>;
+}
+
+function lightingLabel(phase: 'morning' | 'day' | 'sunset' | 'night') {
+  return { morning: 'la mañana', day: 'el día', sunset: 'el atardecer', night: 'la noche' }[phase];
 }

@@ -21,7 +21,7 @@ export function AppShell() {
   const { theme, phase, preference, setPreference, storageWarning } = useTheme();
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const [splashDestination, setSplashDestination] = useState<string | null>(null);
+  const [splashDestination, setSplashDestination] = useState<{ destination: string; message: string } | null>(null);
   const online = useNetworkStatus();
   const { data, usingLastValid } = useLocalData();
   const institutionalCalendar = useInstitutionalCalendar();
@@ -37,7 +37,7 @@ export function AppShell() {
     document.body.style.overflow = 'hidden';
     const finish = () => {
       setSplashDestination(null);
-      if (pathname !== splashDestination) navigate(splashDestination);
+      if (pathname !== splashDestination.destination) navigate(splashDestination.destination);
     };
     const timer = window.setTimeout(finish, reducedMotion ? 180 : 1180);
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -61,8 +61,9 @@ export function AppShell() {
       <BreezeBackground />
       <header className="site-header">
         <Link to={homePath} className="brand-link" aria-label={`Abrir inicio de ${appConfig.name}`} onClick={(event) => {
+          if (!academic || pathname === homePath || splashDestination) return;
           event.preventDefault();
-          if (!splashDestination) setSplashDestination(homePath);
+          setSplashDestination({ destination: homePath, message: splashMessageFor(homePath) });
         }}><Brand /></Link>
         {academic && <PrimaryNavigation />}
         <div className="theme-controls" role="group" aria-label="Apariencia" data-mode={preference} data-phase={phase}>
@@ -71,7 +72,7 @@ export function AppShell() {
           <Button variant="plain" className="theme-toggle" aria-label={themeToggleLabel(preference, theme, phase)} onClick={() => setPreference(theme === 'day' ? 'night' : 'day')}><Icon name={phaseIcon(preference, theme, phase)} /></Button>
         </div>
       </header>
-      {splashDestination && <BrandSplash message="Abriendo tu espacio académico" />}
+      {splashDestination && <BrandSplash message={splashDestination.message} />}
       {!splashDestination && institutionalCalendar.status === 'loading' && <BrandSplash loading message="Actualizando el calendario institucional" />}
       {(!online || storageWarning || institutionalCalendar.status === 'stale' || (academic && session && usingLastValid)) && <div className="shell-warning shell-notices">
         {!online && <OfflineState hasSchedule={Boolean(session)} />}
@@ -94,4 +95,8 @@ function themeToggleLabel(preference: 'auto' | 'day' | 'night', theme: 'day' | '
   const phaseLabel = { morning: 'mañana', day: 'día', sunset: 'atardecer', night: 'noche' }[phase];
   const action = theme === 'day' ? 'Cambiar manualmente a oscuro' : 'Cambiar manualmente a claro';
   return preference === 'auto' ? `Tema automático: ${phaseLabel}. ${action}` : action;
+}
+
+function splashMessageFor(destination: string) {
+  return destination === '/horario' ? 'Abriendo tu horario' : destination === '/eventos' ? 'Abriendo tus eventos' : 'Volviendo a tu vista de inicio';
 }
