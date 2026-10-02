@@ -365,13 +365,13 @@ export const campusRoofDetails = {
         // EL: la losa superior sobresale de la torre, tal como muestran P2 y
         // las vistas profesionales. La torre vertical de vidrio sigue siendo EL.
         rectangle(-69.962571, 18.487804, -69.962369, 18.488087, {
-            id: 'el-roof-overhang', material: 'roof-white', base: EL_ROOF_CAP_METERS, height: EL_ROOF_CAP_METERS + 0.45
+            id: 'el-roof-overhang', buildingCode: 'EL', material: 'roof-white', base: EL_ROOF_CAP_METERS, height: EL_ROOF_CAP_METERS + 0.45
         }),
 
         // AJ: remate oscuro del atrio central; aproximación estilizada basada
         // en la foto 1 y la fachada oficial, contenida dentro de su huella.
         rectangle(-69.963932, 18.487660, -69.963875, 18.487700, {
-            id: 'aj-atrium-canopy', material: 'roof-charcoal', base: 10.50, height: 10.90
+            id: 'aj-atrium-canopy', buildingCode: 'AJ', material: 'roof-charcoal', base: 10.50, height: 10.90
         })
     ]
 };
@@ -390,59 +390,59 @@ export const campusFacadeDetails = {
     features: [
         // Biblioteca: dos paños murales que flanquean la entrada principal.
         rectangle(-69.962032, 18.487700, -69.961992, 18.487765, {
-            id: 'biblioteca-mural-sur', material: 'mural-magenta', base: 0, height: 11.0
+            id: 'biblioteca-mural-sur', buildingCode: 'Biblioteca', material: 'mural-magenta', base: 0, height: 11.0
         }),
         rectangle(-69.962034, 18.487895, -69.961994, 18.487958, {
-            id: 'biblioteca-mural-norte', material: 'mural-coral', base: 0, height: 11.0
+            id: 'biblioteca-mural-norte', buildingCode: 'Biblioteca', material: 'mural-coral', base: 0, height: 11.0
         }),
         rectangle(-69.962040, 18.487720, -69.962030, 18.487752, {
-            id: 'biblioteca-mural-azul-sur', material: 'mural-blue', base: 2.5, height: 9.7
+            id: 'biblioteca-mural-azul-sur', buildingCode: 'Biblioteca', material: 'mural-blue', base: 2.5, height: 9.7
         }),
         rectangle(-69.962042, 18.487912, -69.962032, 18.487944, {
-            id: 'biblioteca-mural-azul-norte', material: 'mural-blue', base: 2.5, height: 9.7
+            id: 'biblioteca-mural-azul-norte', buildingCode: 'Biblioteca', material: 'mural-blue', base: 2.5, height: 9.7
         }),
 
         // Colores secundarios del mural actual, usados como acentos low-poly.
         rectangle(-69.962044, 18.487735, -69.962034, 18.487756, {
-            id: 'biblioteca-mural-amarillo-sur', material: 'mural-yellow', base: 7.2, height: 10.1
+            id: 'biblioteca-mural-amarillo-sur', buildingCode: 'Biblioteca', material: 'mural-yellow', base: 7.2, height: 10.1
         }),
         rectangle(-69.962044, 18.487902, -69.962034, 18.487920, {
-            id: 'biblioteca-mural-naranja-norte', material: 'mural-orange', base: 5.6, height: 10.4
+            id: 'biblioteca-mural-naranja-norte', buildingCode: 'Biblioteca', material: 'mural-orange', base: 5.6, height: 10.4
         }),
         rectangle(-69.962035, 18.487765, -69.962013, 18.487895, {
-            id: 'biblioteca-salmon-entry', material: 'library-salmon', base: 0, height: 3.45
+            id: 'biblioteca-salmon-entry', buildingCode: 'Biblioteca', material: 'library-salmon', base: 0, height: 3.45
         }),
 
         // Núcleo localizado de FD, visible en fotografías institucionales.
         rectangle(-69.9630074, 18.4879898, -69.9629416, 18.4880727, {
-            id: 'fd-red-core', material: 'architectural-wine', base: 0, height: 14.15
+            id: 'fd-red-core', buildingCode: 'FD', material: 'architectural-wine', base: 0, height: 14.15
         }),
 
         // EL: torre acristalada vertical y planta baja vidriada. Las fotos que
         // parecían mostrar AH corresponden en realidad a EL y Puerta 2.
         rectangle(-69.962578, 18.487832, -69.962548, 18.488062, {
-            id: 'el-glass-tower', material: 'glass', base: 0, height: 17.8
+            id: 'el-glass-tower', buildingCode: 'EL', material: 'glass', base: 0, height: 17.8
         }),
         rectangle(-69.962559, 18.487815, -69.962381, 18.487832, {
-            id: 'el-ground-glass-plaza', material: 'glass', base: 0, height: 3.35
+            id: 'el-ground-glass-plaza', buildingCode: 'EL', material: 'glass', base: 0, height: 3.35
         }),
         rectangle(-69.962559, 18.488060, -69.962381, 18.488077, {
-            id: 'el-ground-glass-street', material: 'glass', base: 0, height: 3.35
+            id: 'el-ground-glass-street', buildingCode: 'EL', material: 'glass', base: 0, height: 3.35
         }),
         rectangle(-69.962559, 18.487815, -69.962381, 18.487827, {
-            id: 'el-charcoal-fascia', material: 'charcoal-band', base: 3.18, height: 3.82
+            id: 'el-charcoal-fascia', buildingCode: 'EL', material: 'charcoal-band', base: 3.18, height: 3.82
         }),
 
         // AJ: la foto 1 corresponde a esta escalera, no a AH. El acento ocupa
         // sólo el vacío central y evita teñir de rojo todo el edificio.
         rectangle(-69.963925, 18.487672, -69.963882, 18.487694, {
-            id: 'aj-red-stair-core', material: 'stair-red', base: 0, height: 8.6
+            id: 'aj-red-stair-core', buildingCode: 'AJ', material: 'stair-red', base: 0, height: 8.6
         }),
 
         // DP: solo se conserva el acceso de LibrINTEC cuya posición sí está
         // respaldada. El acento vertical previo rebasaba la huella del edificio.
         rectangle(-69.962145, 18.487785, -69.962082, 18.487812, {
-            id: 'librintec-red-entry', material: 'brand-red', base: 0, height: 4.2
+            id: 'librintec-red-entry', buildingCode: 'DP', material: 'brand-red', base: 0, height: 4.2
         })
     ]
 };

@@ -5,6 +5,9 @@
 *.d.ts
 !academicplanner-frontend/src/features/campus/threeD/campusMap.d.ts
 node_modules
+.env
+.env.*
+!.env.example
 
 # CDK asset staging directory
 .cdk.staging

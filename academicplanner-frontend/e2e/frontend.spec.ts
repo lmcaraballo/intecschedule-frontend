@@ -125,6 +125,16 @@ test('campus model keeps controls out of the map caption and reports the active 
   await expect(popup).toBeVisible();
   await expect(popup.locator('.popup-code')).not.toHaveText('');
   await expect(popup.locator('.popup-body > .popup-facilities > li')).toHaveCount(3);
+  const [popupContentBox, mapShellBox] = await Promise.all([
+    popup.locator('.maplibregl-popup-content').boundingBox(),
+    page.locator('.campus-3d-map-shell').boundingBox(),
+  ]);
+  expect(popupContentBox).not.toBeNull();
+  expect(mapShellBox).not.toBeNull();
+  expect(popupContentBox!.x).toBeGreaterThanOrEqual(mapShellBox!.x - 2);
+  expect(popupContentBox!.y).toBeGreaterThanOrEqual(mapShellBox!.y - 2);
+  expect(popupContentBox!.x + popupContentBox!.width).toBeLessThanOrEqual(mapShellBox!.x + mapShellBox!.width + 2);
+  expect(popupContentBox!.y + popupContentBox!.height).toBeLessThanOrEqual(mapShellBox!.y + mapShellBox!.height + 2);
   const moreFacilities = popup.locator('.popup-more');
   await expect(moreFacilities.locator('summary')).toHaveText(/Ver \d+ espacios más/);
   const closeButtonBox = await popup.getByRole('button', { name: /Close popup|Cerrar/ }).boundingBox();

@@ -14,9 +14,15 @@ interface CalendarConnection {
 const CalendarConnectionContext = createContext<CalendarConnection | null>(null);
 
 interface GoogleTokenResponse { access_token?: string; expires_in?: number; error?: string; }
+interface GoogleTokenError { type?: string; }
 interface GoogleTokenClient { requestAccessToken: (options?: { prompt?: string }) => void; }
 interface GoogleIdentity {
-  accounts: { oauth2: { initTokenClient: (options: { client_id: string; scope: string; callback: (response: GoogleTokenResponse) => void }) => GoogleTokenClient } };
+  accounts: { oauth2: { initTokenClient: (options: {
+    client_id: string;
+    scope: string;
+    callback: (response: GoogleTokenResponse) => void;
+    error_callback?: (error: GoogleTokenError) => void;
+  }) => GoogleTokenClient } };
 }
 
 export function CalendarConnectionProvider({ children }: { children: ReactNode }) {
@@ -44,14 +50,31 @@ export function CalendarConnectionProvider({ children }: { children: ReactNode }
       if (!config.clientId) throw new Error('missing-client-id');
       const google = await loadGoogleIdentity();
       const accessToken = await new Promise<{ token: string; expiresIn: number }>((resolve, reject) => {
-        const client = google.accounts.oauth2.initTokenClient({
-          client_id: config.clientId!,
-          scope: config.scopes.join(' '),
-          callback: (response) => response.access_token
-            ? resolve({ token: response.access_token, expiresIn: response.expires_in ?? 3600 })
-            : reject(new Error(response.error ?? 'oauth-failed')),
-        });
-        client.requestAccessToken({ prompt: 'consent' });
+        let timeoutId: number | null = null;
+        let settled = false;
+        const finish = (action: () => void) => {
+          if (settled) return;
+          settled = true;
+          if (timeoutId !== null) window.clearTimeout(timeoutId);
+          action();
+        };
+        try {
+          const client = google.accounts.oauth2.initTokenClient({
+            client_id: config.clientId!,
+            scope: config.scopes.join(' '),
+            callback: (response) => response.access_token
+              ? finish(() => resolve({ token: response.access_token!, expiresIn: response.expires_in ?? 3600 }))
+              : finish(() => reject(new Error(response.error ?? 'oauth-failed'))),
+            error_callback: (oauthError) => finish(() => reject(new Error(oauthError.type ?? 'oauth-popup-failed'))),
+          });
+          timeoutId = window.setTimeout(
+            () => finish(() => reject(new Error('oauth-timeout'))),
+            45_000,
+          );
+          client.requestAccessToken({ prompt: 'consent' });
+        } catch (oauthError) {
+          finish(() => reject(oauthError));
+        }
       });
       if (expirationTimer.current) window.clearTimeout(expirationTimer.current);
       setToken(accessToken.token);

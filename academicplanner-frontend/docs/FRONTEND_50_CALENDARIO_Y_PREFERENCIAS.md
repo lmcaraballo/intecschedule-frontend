@@ -54,10 +54,11 @@ El calendario de Google es la fuente persistente de los eventos personales; no s
 1. En Google Cloud, habilitar **Google Calendar API** para el proyecto elegido.
 2. En **Google Auth Platform**, completar Branding, Audience y Data Access. Mientras la aplicación esté en modo Testing, añadir como usuarios de prueba las cuentas que conectarán su calendario.
 3. Crear un cliente OAuth 2.0 de tipo **Web application**. En Authorized JavaScript origins registrar por separado los orígenes que realmente se usarán, porque Google distingue host y puerto:
+   - `http://localhost`
    - `http://localhost:4294`
-   - `http://127.0.0.1:4294`
-   - `http://localhost.localdomain:4294`, solo si se abre la app con ese host
+   - opcionalmente `http://127.0.0.1:4294`, si también se probará con la IP de loopback
    - el origen HTTPS de producción, cuando esté disponible
+   Para desarrollo, abrir la aplicación con `http://localhost:4294`; no usar `localhost.localdomain` para este flujo. El cliente de token de Google Identity Services no necesita una URI de redirección local ni el client secret.
 4. Crear un archivo `.env` al lado de `compose.academicplanner.yml` con el client ID público, no con el client secret:
 
    ```dotenv
@@ -69,6 +70,8 @@ El calendario de Google es la fuente persistente de los eventos personales; no s
 6. Comprobar que `http://127.0.0.1:4294/api/calendar/config` responde con `available: true` y el client ID esperado. Después, abrir **Eventos → Conectar Google Calendar**.
 
 El frontend usa Google Identity Services con un token temporal conservado solo en memoria. No necesita ni debe recibir el client secret. Si aparece `origin_mismatch`, falta registrar exactamente el origen mostrado en la barra del navegador. En modo Testing, Google puede exigir reconexión periódica y solo permite las cuentas incluidas como usuarios de prueba.
+
+Una cuenta de servicio y su archivo JSON no sustituyen este flujo: representan una identidad del servidor, no al estudiante que pulsa **Conectar Google Calendar**. AcademicPlanner no guarda claves privadas ni usa una cuenta común para mezclar calendarios personales. Si una clave privada se comparte accidentalmente, debe eliminarse en **IAM y administración → Cuentas de servicio → Claves** y sustituirse solo si existe otro proceso servidor-servidor que realmente la necesite.
 
 ## Lo que corresponde al backend de Caraballo
 

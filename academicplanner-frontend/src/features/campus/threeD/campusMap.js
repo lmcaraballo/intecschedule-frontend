@@ -122,6 +122,62 @@ function buildingGlassColor(isNight = false) {
     ];
 }
 
+const SELECTED_BUILDING_COLOR = '#D91F3D';
+
+function selectedBuildingColor(defaultColor) {
+    return [
+        'case',
+        ['boolean', ['feature-state', 'active'], false], SELECTED_BUILDING_COLOR,
+        defaultColor
+    ];
+}
+
+function selectedDetailColor(selectedCode, defaultColor) {
+    if (!selectedCode) return defaultColor;
+    return [
+        'case',
+        ['==', ['get', 'buildingCode'], selectedCode], SELECTED_BUILDING_COLOR,
+        defaultColor
+    ];
+}
+
+function facadeDetailColor(selectedCode = '') {
+    return selectedDetailColor(selectedCode, [
+        'match', ['get', 'material'],
+        'brand-red', '#C51E36',
+        'architectural-wine', '#842635',
+        'glass', '#A8C8CA',
+        'charcoal-band', '#596164',
+        'stair-red', '#B51F38',
+        'library-salmon', '#B77A70',
+        'mural-coral', '#C86070',
+        'mural-magenta', '#B0446A',
+        'mural-blue', '#4898B8',
+        'mural-orange', '#D77A42',
+        'mural-yellow', '#E1B95C',
+        '#D7D2C9'
+    ]);
+}
+
+function solarPanelColor(selectedCode = '') {
+    return selectedDetailColor(selectedCode, [
+        'match', ['get', 'buildingCode'],
+        'Biblioteca', '#264F61',
+        'EP', '#244B5E',
+        'PB', '#2C5566',
+        '#214C62'
+    ]);
+}
+
+function rooftopStructureColor(selectedCode = '') {
+    return selectedDetailColor(selectedCode, [
+        'match', ['get', 'material'],
+        'roof-white', '#F1F2EF',
+        'roof-charcoal', '#4D5152',
+        '#D8D6D1'
+    ]);
+}
+
 // El extracto OSM local también contiene calles y senderos del vecindario.
 // Conservamos únicamente los recorridos que cruzan el perímetro del campus.
 const INTERNAL_PATH_IDS = new Set([
@@ -477,6 +533,8 @@ export function initCampusMap(containerId, options = {}) {
         minZoom: 15,
         maxZoom: 20
     });
+    let popup = null;
+    let popupOpenTimer = null;
 
     map.addControl(new maplibregl.AttributionControl({
         compact: true,
@@ -1499,7 +1557,7 @@ export function initCampusMap(containerId, options = {}) {
             type: 'fill',
             source: 'campus',
             paint: {
-                'fill-color': buildingWallColor(false),
+                'fill-color': selectedBuildingColor(buildingWallColor(false)),
                 'fill-opacity': 1
             }
         });
@@ -1513,7 +1571,7 @@ export function initCampusMap(containerId, options = {}) {
             source: 'campus',
             layout: { 'fill-extrusion-rounded-corner-distance': 0.22 },
             paint: {
-                'fill-extrusion-color': buildingWallColor(false),
+                'fill-extrusion-color': selectedBuildingColor(buildingWallColor(false)),
                 // 3.5m per floor = realistic Dominican university construction
                 // EP: 5 floors = 17.5m (tallest), EL: 5 floors = 17.5m
                 // GC y FD: 4 floors = 14m, AH: 5 floors = 17.5m
@@ -1548,28 +1606,6 @@ export function initCampusMap(containerId, options = {}) {
             });
         }
 
-        // El volumen activo se vuelve rojo por completo para que la selección
-        // sea inequívoca incluso entre edificios con fachadas similares.
-        map.addLayer({
-            id: 'building-selection-tint',
-            type: 'fill-extrusion',
-            source: 'campus',
-            filter: ['==', ['get', 'code'], ''],
-            layout: { 'fill-extrusion-rounded-corner-distance': 0.22 },
-            paint: {
-                'fill-extrusion-color': '#B31734',
-                'fill-extrusion-height': [
-                    '+',
-                    ['*', ['coalesce', ['get', 'levels'], 2], CAMPUS_FLOOR_HEIGHT_METERS],
-                    0.9
-                ],
-                'fill-extrusion-base': 0,
-                'fill-extrusion-opacity': 0.96,
-                'fill-extrusion-vertical-gradient': true,
-                'fill-extrusion-opacity-transition': { duration: 320 }
-            }
-        });
-
         // Tapas de techo — coherentes con los colores de las paredes
         map.addLayer({
             id: 'building-roof-caps',
@@ -1577,7 +1613,7 @@ export function initCampusMap(containerId, options = {}) {
             source: 'campus',
             layout: { 'fill-extrusion-rounded-corner-distance': 0.22 },
             paint: {
-                'fill-extrusion-color': buildingRoofColor(false),
+                'fill-extrusion-color': selectedBuildingColor(buildingRoofColor(false)),
                 'fill-extrusion-base': ['*', ['coalesce', ['get', 'levels'], 2], CAMPUS_FLOOR_HEIGHT_METERS],
                 'fill-extrusion-height': ['+', ['*', ['coalesce', ['get', 'levels'], 2], CAMPUS_FLOOR_HEIGHT_METERS], 0.48],
                 'fill-extrusion-opacity': 1,
@@ -1592,21 +1628,7 @@ export function initCampusMap(containerId, options = {}) {
             type: 'fill-extrusion',
             source: 'campus-facade-details',
             paint: {
-                'fill-extrusion-color': [
-                    'match', ['get', 'material'],
-                    'brand-red', '#C51E36',
-                    'architectural-wine', '#842635',
-                    'glass',     '#A8C8CA',   // muted glass, less vivid teal
-                    'charcoal-band', '#596164',
-                    'stair-red', '#B51F38',
-                    'library-salmon', '#B77A70',
-                    'mural-coral',   '#C86070',  // softer coral
-                    'mural-magenta', '#B0446A',  // softer magenta
-                    'mural-blue',    '#4898B8',  // softer blue
-                    'mural-orange',  '#D77A42',
-                    'mural-yellow',  '#E1B95C',
-                    '#D7D2C9'
-                ],
+                'fill-extrusion-color': facadeDetailColor(),
                 'fill-extrusion-base': ['coalesce', ['get', 'base'], 0],
                 'fill-extrusion-height': ['get', 'height'],
                 'fill-extrusion-opacity': 0.96
@@ -1642,13 +1664,7 @@ export function initCampusMap(containerId, options = {}) {
             source: 'campus-roof-details',
             filter: ['==', ['get', 'material'], 'solar'],
             paint: {
-                'fill-extrusion-color': [
-                    'match', ['get', 'buildingCode'],
-                    'Biblioteca', '#264F61',
-                    'EP', '#244B5E',
-                    'PB', '#2C5566',
-                    '#214C62'
-                ],
+                'fill-extrusion-color': solarPanelColor(),
                 'fill-extrusion-base': ['get', 'base'],
                 'fill-extrusion-height': ['get', 'height'],
                 'fill-extrusion-opacity': 1
@@ -1668,21 +1684,12 @@ export function initCampusMap(containerId, options = {}) {
             source: 'campus-roof-details',
             filter: ['!=', ['get', 'material'], 'solar'],
             paint: {
-                'fill-extrusion-color': [
-                    'match', ['get', 'material'],
-                    'roof-white', '#F1F2EF',
-                    'roof-charcoal', '#4D5152',
-                    '#D8D6D1'
-                ],
+                'fill-extrusion-color': rooftopStructureColor(),
                 'fill-extrusion-base': ['get', 'base'],
                 'fill-extrusion-height': ['get', 'height'],
                 'fill-extrusion-opacity': 1
             }
         });
-
-        // Mantiene el rojo de selección por encima de ventanas, murales,
-        // paneles y remates del techo para que se lea como un volumen único.
-        map.moveLayer('building-selection-tint');
 
         // Halo de selección: refuerza el perímetro del volumen activo.
         map.addLayer({
@@ -1890,8 +1897,6 @@ export function initCampusMap(containerId, options = {}) {
         map.on('mouseleave', 'buildings-3d', () => { map.getCanvas().style.cursor = ''; });
 
         // ── Ficha reutilizable, compacta y colocada al lado del volumen ──
-        let popup = null;
-
         // ── Click en edificio: popup con datos oficiales ──
         map.on('click', 'buildings-3d', (e) => {
             if (!e.features || e.features.length === 0) return;
@@ -1930,45 +1935,58 @@ export function initCampusMap(containerId, options = {}) {
                 ${facilitiesList}
             `;
 
-            const mapWidth = container?.clientWidth || map.getCanvas().clientWidth;
-            const anchor = e.point.x <= mapWidth / 2 ? 'left' : 'right';
+            if (popupOpenTimer) window.clearTimeout(popupOpenTimer);
             popup?.remove();
-            popup = new maplibregl.Popup({
-                closeButton: true,
-                closeOnClick: false,
-                className: `campus-popup campus-popup--${anchor}`,
-                maxWidth: '276px',
-                anchor,
-                offset: anchor === 'left' ? [18, 0] : [-18, 0]
-            });
-            popup
-                .setLngLat(e.lngLat)
-                .setHTML(html)
-                .addTo(map);
+            popup = null;
+            const activeBuilding = CAMPUS_BUILDINGS.find(feature => feature.properties.code === code && feature.properties.centroid_lng);
+            const popupLngLat = activeBuilding
+                ? [activeBuilding.properties.centroid_lng, activeBuilding.properties.centroid_lat]
+                : e.lngLat;
 
-            const popupBody = popup.getElement()?.querySelector('.popup-body');
-            const moreDetails = popupBody?.querySelector('.popup-more');
-            moreDetails?.addEventListener('toggle', () => {
-                if (!moreDetails.open) {
-                    popupBody.scrollTo({ top: 0, behavior: 'auto' });
-                    return;
-                }
-                window.requestAnimationFrame(() => {
-                    const bodyTop = popupBody.getBoundingClientRect().top;
-                    const detailsTop = moreDetails.getBoundingClientRect().top;
-                    const nextTop = popupBody.scrollTop + detailsTop - bodyTop - 6;
-                    popupBody.scrollTo({
-                        top: Math.max(0, nextTop),
-                        behavior: selectionMotionIsReduced() ? 'auto' : 'smooth'
+            // Espera a que terminen el enfoque y la expansión. Si la ficha se
+            // añade durante el vuelo, el auto-pan calcula sobre el viewport
+            // anterior y puede dejarla recortada en el borde.
+            popupOpenTimer = window.setTimeout(() => {
+                if (!map.getCanvas()?.isConnected) return;
+                const projected = map.project(popupLngLat);
+                const mapWidth = container?.clientWidth || map.getCanvas().clientWidth;
+                const anchor = projected.x <= mapWidth / 2 ? 'left' : 'right';
+                const nextPopup = new maplibregl.Popup({
+                    closeButton: true,
+                    closeOnClick: false,
+                    className: `campus-popup campus-popup--${anchor}`,
+                    maxWidth: '256px',
+                    anchor,
+                    offset: anchor === 'left' ? [28, 0] : [-28, 0]
+                });
+                popup = nextPopup;
+                nextPopup.setLngLat(popupLngLat).setHTML(html).addTo(map);
+
+                const popupBody = nextPopup.getElement()?.querySelector('.popup-body');
+                const moreDetails = popupBody?.querySelector('.popup-more');
+                moreDetails?.addEventListener('toggle', () => {
+                    if (!moreDetails.open) {
+                        popupBody.scrollTo({ top: 0, behavior: 'auto' });
+                        return;
+                    }
+                    window.requestAnimationFrame(() => {
+                        const bodyTop = popupBody.getBoundingClientRect().top;
+                        const detailsTop = moreDetails.getBoundingClientRect().top;
+                        const nextTop = popupBody.scrollTop + detailsTop - bodyTop - 6;
+                        popupBody.scrollTo({
+                            top: Math.max(0, nextTop),
+                            behavior: selectionMotionIsReduced() ? 'auto' : 'smooth'
+                        });
                     });
                 });
-            });
+            }, selectionMotionIsReduced() ? 40 : 690);
         });
 
         // ── Click en fondo → cerrar popup y salir de focus ──
         map.on('click', (e) => {
             const features = map.queryRenderedFeatures(e.point, { layers: ['buildings-3d'] });
             if (features.length === 0) {
+                if (popupOpenTimer) window.clearTimeout(popupOpenTimer);
                 popup?.remove();
                 popup = null;
             }
@@ -2050,9 +2068,17 @@ export function initCampusMap(containerId, options = {}) {
                 const activeBuilding = code
                     ? CAMPUS_BUILDINGS.find(feature => feature.properties.code === code && feature.properties.centroid_lng)
                     : null;
-                if (map.getLayer('building-selection-tint')) {
-                    map.setFilter('building-selection-tint', ['==', ['get', 'code'], activeBuilding?.properties.code || '']);
+                const selectedCode = activeBuilding?.properties.code || '';
+                for (let floor = 1; floor <= 5; floor += 1) {
+                    map.setFilter(`building-window-band-${floor}`, [
+                        'all',
+                        ['>=', ['coalesce', ['get', 'levels'], 2], floor],
+                        ['!=', ['get', 'code'], selectedCode]
+                    ]);
                 }
+                map.setPaintProperty('campus-facade-details-3d', 'fill-extrusion-color', facadeDetailColor(selectedCode));
+                map.setPaintProperty('campus-solar-panels', 'fill-extrusion-color', solarPanelColor(selectedCode));
+                map.setPaintProperty('campus-rooftop-structures', 'fill-extrusion-color', rooftopStructureColor(selectedCode));
                 const activeLabelSource = map.getSource('active-building-label');
                 activeLabelSource?.setData({
                     type: 'FeatureCollection',
@@ -2080,9 +2106,9 @@ export function initCampusMap(containerId, options = {}) {
             // El campus conserva la mayor jerarquía; el contexto queda desaturado.
             map.setPaintProperty('background', 'background-color', isNight ? '#E5ECE3' : '#EEF3EA');
             map.setPaintProperty('campus-ground', 'fill-color', isNight ? '#E8E3DA' : '#F2EDE4');
-            map.setPaintProperty('buildings-base', 'fill-color', buildingWallColor(isNight));
-            map.setPaintProperty('buildings-3d', 'fill-extrusion-color', buildingWallColor(isNight));
-            map.setPaintProperty('building-roof-caps', 'fill-extrusion-color', buildingRoofColor(isNight));
+            map.setPaintProperty('buildings-base', 'fill-color', selectedBuildingColor(buildingWallColor(isNight)));
+            map.setPaintProperty('buildings-3d', 'fill-extrusion-color', selectedBuildingColor(buildingWallColor(isNight)));
+            map.setPaintProperty('building-roof-caps', 'fill-extrusion-color', selectedBuildingColor(buildingRoofColor(isNight)));
             for (let floor = 1; floor <= 5; floor += 1) {
                 map.setPaintProperty(`building-window-band-${floor}`, 'fill-extrusion-color', buildingGlassColor(isNight));
             }
@@ -2107,6 +2133,8 @@ export function initCampusMap(containerId, options = {}) {
         },
 
         destroy: () => {
+            if (popupOpenTimer) window.clearTimeout(popupOpenTimer);
+            popup?.remove();
             if (selectionAnimationFrame) window.cancelAnimationFrame(selectionAnimationFrame);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             resizeObserver?.disconnect();
