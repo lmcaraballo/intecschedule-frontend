@@ -18,7 +18,10 @@ export default defineConfig(({ mode }) => {
     throw new Error('API_PROXY_TARGET debe ser un origen HTTP o HTTPS.');
   }
   return {
-  server: upstream ? { proxy: { '/api': { target: upstream.replace(/\/$/, ''), changeOrigin: true, rewrite: (path: string) => path.replace(/^\/api(?=\/|$)/, '') } } } : {},
+  server: {
+    headers: { 'Cross-Origin-Opener-Policy': 'same-origin-allow-popups' },
+    ...(upstream ? { proxy: { '/api': { target: upstream.replace(/\/$/, ''), changeOrigin: true, rewrite: (path: string) => path.replace(/^\/api(?=\/|$)/, '') } } } : {}),
+  },
   plugins: [
     react(),
     VitePWA({

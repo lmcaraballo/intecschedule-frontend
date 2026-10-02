@@ -9,7 +9,7 @@ describe('virtual meeting locations', () => {
     expect(isVirtualLocation('LABTI405')).toBe(false);
     expect(scheduledLocationLabel('LABTI405')).toBe('LABTI405');
     expect(scheduledLocationLabel('')).toBe('Ubicación no publicada');
-    expect(scheduledLocationLabel('Aula')).toBe('Presencial');
+    expect(scheduledLocationLabel('Aula')).toBe('Aula pendiente de actualizar');
     expect(isGenericPhysicalLocation('SALÓN')).toBe(true);
     expect(isGenericPhysicalLocation('AULA AJ-103')).toBe(false);
   });

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router';
 import { BrandSplash } from '../../components/BrandSplash';
 import { Button } from '../../components/Button';
@@ -55,6 +55,7 @@ export function EventsPage() {
   const [optionalOpen, setOptionalOpen] = useState(false);
   const [eventsExpanded, setEventsExpanded] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+  const preparedConnectionRef = useRef<string | null>(null);
   const busy = Boolean(loadingMessage) || connection.loading;
   const selectedPeriod = useMemo(() => getInstitutionalPeriods().find((period) => period.id === params.get('period')) ?? null, [params]);
   const scheduleOwnerId = calendarOwnerId(session.student.id);
@@ -82,10 +83,14 @@ export function EventsPage() {
 
   useEffect(() => {
     if (!connection.token) {
+      preparedConnectionRef.current = null;
       setEvents([]); setEventsExpanded(false); setLastSyncedAt(null); setEditorOpen(false);
       return;
     }
     const token = connection.token;
+    const preparationKey = `${token}:${session.student.id}:${preferences.institutionalReminders}:${preferences.reminderMinutes}`;
+    if (preparedConnectionRef.current === preparationKey) return;
+    preparedConnectionRef.current = preparationKey;
     void (async () => {
       setLoadingMessage('Preparando tus calendarios separados');
       try {
@@ -256,5 +261,6 @@ function readableError(error: unknown) {
   if (code === 'INVALID_EVENT_DATA' || code === 'INVALID_REQUEST') return 'Revisa el título, la fecha y que la hora final sea posterior a la inicial.';
   if (code === 'GOOGLE_CALENDAR_AUTH_REQUIRED') return 'La sesión de Google expiró. Desconecta y vuelve a conectar el calendario.';
   if (code === 'GOOGLE_CALENDAR_PERMISSION_DENIED') return 'Google no concedió los permisos necesarios para estos calendarios.';
+  if (code === 'GOOGLE_CALENDAR_UNAVAILABLE') return 'Google Calendar respondió, pero no pudimos completar esta sincronización. Tus clases siguen guardadas; inténtalo nuevamente.';
   return 'No pudimos sincronizar con Google Calendar. Revisa tu conexión e inténtalo de nuevo.';
 }

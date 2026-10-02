@@ -25,6 +25,6 @@ export function classModalityLabel(location?: string): string {
 
 export function scheduledLocationLabel(location?: string): string {
   if (!location?.trim()) return 'Ubicación no publicada';
-  if (isGenericPhysicalLocation(location)) return 'Presencial';
+  if (isGenericPhysicalLocation(location)) return 'Aula pendiente de actualizar';
   return isVirtualLocation(location) ? `${location} · con horario programado` : location;
 }
