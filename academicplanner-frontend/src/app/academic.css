@@ -252,15 +252,22 @@ html[data-reduce-motion='true'] .campus-3d-map .maplibregl-canvas { transition: 
 .calendar-data-status { grid-column: 2; justify-self: start; padding: 3px 7px; border-radius: var(--radius-pill); background: var(--success-bg); color: var(--heading); font-size: .625rem; font-weight: 700; }
 .calendar-data-status--stale { background: var(--warning-bg); color: var(--warning-text); }
 .academic-periods { display: grid; gap: var(--space-2); margin: var(--space-5) 0; padding: 0; list-style: none; }
-.academic-periods li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: var(--space-2); min-height: 52px; padding: var(--space-2); border: 1px solid transparent; border-radius: var(--radius-md); background: var(--surface-soft); }
-.academic-periods li > span { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 50%; color: var(--muted); font-size: .6875rem; font-weight: 700; }
+.academic-periods li { min-width: 0; }
+.academic-periods li > button { display: grid; width: 100%; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: var(--space-2); min-height: 52px; padding: var(--space-2); border: 1px solid transparent; border-radius: var(--radius-md); background: var(--surface-soft); color: inherit; text-align: left; cursor: pointer; transition: border-color var(--duration-fast), background var(--duration-fast), transform var(--duration-fast); }
+.academic-periods li > button:hover { border-color: var(--border); transform: translateY(-1px); }
+.academic-periods li > button:focus-visible { outline: 2px solid var(--heading); outline-offset: 2px; }
+.academic-periods li > button > span:first-child { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 50%; color: var(--muted); font-size: .6875rem; font-weight: 700; }
 .academic-periods li strong, .academic-periods li small { display: block; }
 .academic-periods li strong { color: var(--heading); font-size: .75rem; line-height: 1.4; }
 .academic-periods li small { margin-top: 1px; color: var(--muted); font-size: .625rem; }
 .academic-periods li em { padding: 3px 7px; border-radius: var(--radius-pill); background: var(--primary); color: var(--on-primary); font-size: .625rem; font-style: normal; font-weight: 700; }
-.academic-periods li.is-active { border-color: var(--primary); background: var(--success-bg); }
-.academic-periods li.is-active > span { border-color: var(--primary); color: var(--heading); }
+.academic-periods li.is-active > button { border-color: var(--primary); background: var(--success-bg); }
+.academic-periods li.is-active > button > span:first-child { border-color: var(--primary); color: var(--heading); }
 .upcoming-academic-dates { padding-top: var(--space-4); border-top: 1px solid var(--border); }
+.academic-period-detail-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.academic-period-detail-heading .section-label { margin-bottom: 2px; }
+.academic-period-detail-heading .button { flex: 0 0 auto; min-height: 38px; padding-inline: var(--space-3); font-size: .6875rem; }
+.academic-period-detail-copy { max-width: 62ch; margin-top: var(--space-2); color: var(--muted); font-size: .75rem; line-height: 1.55; }
 .upcoming-academic-dates h3 { color: var(--heading); font-size: .8125rem; font-weight: 700; }
 .upcoming-academic-dates > p { margin-top: var(--space-3); color: var(--muted); font-size: .75rem; }
 .upcoming-academic-dates ul { display: grid; gap: var(--space-1); margin: var(--space-3) 0 0; padding: 0; list-style: none; }

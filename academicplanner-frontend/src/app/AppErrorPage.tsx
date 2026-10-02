@@ -1,11 +1,15 @@
-import { Link } from 'react-router';
-import { ErrorState } from '../components/ErrorState';
+import { Brand } from '../components/Brand';
 
 /** Route errors never render the exception, stack, request or credentials. */
 export function AppErrorPage() {
   return <main id="main-content" className="recovery-page">
-    <h1>No pudimos abrir esta pantalla.</h1>
-    <ErrorState message="Algo no salió como esperábamos. Vuelve al acceso e inténtalo de nuevo." />
-    <Link className="button button--secondary" to="/">Volver al acceso</Link>
+    <div className="recovery-page__card">
+      <Brand />
+      <span className="recovery-page__icon" aria-hidden="true">↻</span>
+      <p className="section-label">Podemos recuperarnos de esto</p>
+      <h1>Esta vista necesita volver a cargarse.</h1>
+      <p>No modificamos tu horario ni tus preferencias. Intenta abrir AcademicPlanner otra vez; si el problema continúa, vuelve al acceso para consultar tu horario de nuevo.</p>
+      <div className="recovery-page__actions"><a className="button" href="/">Reintentar</a><a className="button button--secondary" href="/acceso">Ir al acceso</a></div>
+    </div>
   </main>;
 }

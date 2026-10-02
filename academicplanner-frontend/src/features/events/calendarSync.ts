@@ -102,17 +102,21 @@ export function institutionalReminderEvents(reminderMinutes: number): DesiredEve
 }
 
 export async function syncScheduleToCalendar(token: string, session: AcademicSession): Promise<CalendarSyncResult> {
-  return syncDesiredEvents(token, scheduleEventsForSession(session), 'schedule');
+  const period = getInstitutionalPeriod(new Date(session.schedule.fetchedAt));
+  if (!period) return { created: 0, updated: 0, removed: 0, unchanged: 0 };
+  // A new trimester must never erase classes from an earlier one. We only
+  // reconcile this term; missing occurrences here represent a withdrawn class.
+  return syncDesiredEvents(token, scheduleEventsForSession(session), 'schedule', period);
 }
 
 export async function syncInstitutionalReminders(token: string, enabled: boolean, reminderMinutes: number): Promise<CalendarSyncResult> {
   return syncDesiredEvents(token, enabled ? institutionalReminderEvents(reminderMinutes) : [], 'institutional');
 }
 
-async function syncDesiredEvents(token: string, desired: DesiredEvent[], sourceType: DesiredEvent['sourceType']): Promise<CalendarSyncResult> {
+async function syncDesiredEvents(token: string, desired: DesiredEvent[], sourceType: DesiredEvent['sourceType'], scope?: { startsOn: string; endsOn: string }): Promise<CalendarSyncResult> {
   const periods = getInstitutionalPeriods();
-  const from = new Date(`${periods[0]!.startsOn}T00:00:00`);
-  const to = new Date(`${periods.at(-1)!.endsOn}T23:59:59`);
+  const from = new Date(`${scope?.startsOn ?? periods[0]!.startsOn}T00:00:00`);
+  const to = new Date(`${scope?.endsOn ?? periods.at(-1)!.endsOn}T23:59:59`);
   const existing = (await listCalendarEvents(token, from, to)).filter((event) => event.sourceType === sourceType);
   const existingBySource = new Map(existing.map((event) => [event.sourceId, event]));
   const desiredIds = new Set(desired.map((event) => event.sourceId));

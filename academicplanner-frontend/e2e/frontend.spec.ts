@@ -223,6 +223,19 @@ test('More keeps settings compact and provides clear control feedback', async ({
   await expect(page.getByRole('heading', { name: 'Tus datos, bajo tu control' })).toBeVisible();
 });
 
+test('the academic calendar narrows to one selected trimester and opens its Google history', async ({ page }) => {
+  await seed(page);
+  await page.goto('/mas');
+  await page.getByRole('tab', { name: /Calendario INTEC/ }).click();
+  const period = page.getByRole('button', { name: /noviembre 2026–enero 2027/ });
+  await period.click();
+  await expect(period).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('heading', { name: 'noviembre 2026–enero 2027' })).toBeVisible();
+  await page.getByRole('link', { name: 'Ver clases sincronizadas' }).click();
+  await expect(page).toHaveURL(/\/eventos\?tab=schedule&period=2026-T4/);
+  await expect(page.getByRole('heading', { name: 'Recupera noviembre 2026–enero 2027' })).toBeVisible();
+});
+
 test('automatic theme shows the current phase and the manual control slides between day and night', async ({ page }) => {
   const data = storedSession();
   data.preferences.theme = 'auto';

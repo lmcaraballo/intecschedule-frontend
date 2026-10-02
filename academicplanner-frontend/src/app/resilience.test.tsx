@@ -17,7 +17,7 @@ it('recovers from a provider render failure without revealing details or removin
   vi.spyOn(contextualTheme,'getContextualTheme').mockImplementation(()=>{throw new Error('PRIVATE-render-detail');});
   vi.spyOn(console,'error').mockImplementation(()=>{});
   render(<App />);
-  expect(screen.getByRole('heading',{name:'No pudimos abrir esta pantalla.'})).toBeVisible();
+  expect(screen.getByRole('heading',{name:'Necesitamos recargar esta parte.'})).toBeVisible();
   expect(document.body).not.toHaveTextContent('PRIVATE-render-detail');
   expect(localStorage.getItem(ACADEMIC_STORAGE_KEY)).toBe(previous);
 });

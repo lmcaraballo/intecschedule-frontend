@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useSearchParams } from 'react-router';
 import { BrandSplash } from '../../components/BrandSplash';
 import { Button } from '../../components/Button';
 import { Dialog } from '../../components/Dialog';
@@ -11,6 +12,7 @@ import { useCalendarConnection } from './CalendarConnectionProvider';
 import { createCalendarEvent, deleteCalendarEvent, listCalendarEvents, updateCalendarEvent } from './calendarApi';
 import { syncInstitutionalReminders, syncScheduleToCalendar } from './calendarSync';
 import { emptyEventDraft, type CalendarEvent, type EventDraft } from './eventSchema';
+import { getInstitutionalPeriod, getInstitutionalPeriods } from '../institutional/institutionalCalendar';
 
 type EventTab = 'personal' | 'schedule' | 'institutional';
 
@@ -39,7 +41,9 @@ export function EventsPage() {
   const { session, now, preferences } = useAcademicSession();
   const connection = useCalendarConnection();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [activeTab, setActiveTab] = useState<EventTab>('personal');
+  const [params] = useSearchParams();
+  const requestedTab = params.get('tab');
+  const [activeTab, setActiveTab] = useState<EventTab>(() => requestedTab === 'schedule' || requestedTab === 'institutional' ? requestedTab : 'personal');
   const [editorOpen, setEditorOpen] = useState(false);
   const [draft, setDraft] = useState<EventDraft>(() => ({ ...emptyEventDraft(), date: dateKey(now), startTime: '16:00', endTime: '17:00' }));
   const [editing, setEditing] = useState<CalendarEvent | null>(null);
@@ -52,13 +56,18 @@ export function EventsPage() {
   const [eventsExpanded, setEventsExpanded] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const busy = Boolean(loadingMessage) || connection.loading;
+  const selectedPeriod = useMemo(() => getInstitutionalPeriods().find((period) => period.id === params.get('period')) ?? null, [params]);
+  const sessionPeriod = getInstitutionalPeriod(new Date(session.schedule.fetchedAt));
+  const viewingScheduleHistory = activeTab === 'schedule' && Boolean(selectedPeriod && selectedPeriod.id !== sessionPeriod?.id);
 
-  async function refresh(token = connection.token, showSplash = true) {
+  async function refresh(token = connection.token, showSplash = true, tab = activeTab) {
     if (!token) return;
     if (showSplash) setLoadingMessage('Trayendo tus cambios de Google Calendar');
     setError(null);
-    const from = new Date(now);
-    const to = new Date(now); to.setDate(to.getDate() + 180);
+    const isPeriodHistory = tab === 'schedule' && selectedPeriod;
+    const from = isPeriodHistory ? new Date(`${selectedPeriod.startsOn}T00:00:00`) : new Date(now);
+    const to = isPeriodHistory ? new Date(`${selectedPeriod.endsOn}T23:59:59`) : new Date(now);
+    if (!isPeriodHistory) to.setDate(to.getDate() + 180);
     try {
       const nextEvents = await listCalendarEvents(token, from, to);
       setEvents([...nextEvents].sort((left, right) => Date.parse(left.startAt) - Date.parse(right.startAt)));
@@ -113,6 +122,7 @@ export function EventsPage() {
     setEventsExpanded(false);
     if (tab !== 'personal') cancelEditing();
     setMessage(null); setError(null);
+    if (connection.token) void refresh(connection.token, true, tab);
   }
 
   function disconnectGoogle() {
@@ -127,7 +137,7 @@ export function EventsPage() {
     try {
       const result = await syncScheduleToCalendar(connection.token, session);
       setMessage(`Horario sincronizado: ${result.created} creadas, ${result.updated} actualizadas y ${result.removed} retiradas. No se duplicaron ${result.unchanged} ocurrencias.`);
-      await refresh(connection.token, false);
+      await refresh(connection.token, false, 'schedule');
       setActiveTab('schedule'); setEventsExpanded(false);
     } catch (caught) { setError(readableError(caught)); }
     finally { setLoadingMessage(null); }
@@ -198,7 +208,7 @@ export function EventsPage() {
     {disconnecting && <BrandSplash message="Conexión con Google Calendar cerrada" />}
     <header className="page-heading"><div><p className="page-eyebrow">Tu tiempo, cada cosa en su lugar</p><h1 id="page-title" tabIndex={-1}>Eventos</h1><p className="page-date">Personales, clases y fechas INTEC viven en espacios separados.</p></div>{connection.token && <Button variant="secondary" onClick={disconnectGoogle}>Desconectar Google</Button>}</header>
 
-    {!connection.token && <section className="calendar-onboarding" aria-labelledby="calendar-onboarding-title"><Icon name="calendar" width="28" height="28" /><div><p className="section-label">Tus calendarios, bien organizados</p><h2 id="calendar-onboarding-title">Conecta tus calendarios de Google</h2><p>Importa los eventos de tu calendario personal. Tus clases y fechas INTEC se guardarán por separado para que no se mezclen.</p><Button disabled={connection.loading} onClick={() => void (connection.config?.available ? connection.connect() : connection.retryPreparation())}>{connection.loading ? 'Preparando conexión…' : connection.config?.available ? 'Conectar con Google' : 'Reintentar conexión'}</Button>{!connection.loading && connection.config && !connection.config.available && <p className="connection-help">La conexión con Google no está disponible todavía. Vuelve a intentarlo en unos minutos.</p>}{connection.error && <p role="alert" className="preference-warning">{connection.error}</p>}</div></section>}
+    {!connection.token && <section className="calendar-onboarding" aria-labelledby="calendar-onboarding-title"><Icon name="calendar" width="28" height="28" /><div><p className="section-label">{selectedPeriod ? 'Historial de un trimestre' : 'Tus calendarios, bien organizados'}</p><h2 id="calendar-onboarding-title">{selectedPeriod ? `Recupera ${selectedPeriod.title.replace('Trimestre ', '')}` : 'Conecta tus calendarios de Google'}</h2><p>{selectedPeriod ? 'Al conectarte, mostraremos solo las clases que AcademicPlanner hubiera sincronizado para este trimestre. Las materias retiradas no se incluyen.' : 'Importa los eventos de tu calendario personal. Tus clases y fechas INTEC se guardarán por separado para que no se mezclen.'}</p><Button disabled={connection.loading} onClick={() => void (connection.config?.available ? connection.connect() : connection.retryPreparation())}>{connection.loading ? 'Preparando conexión…' : connection.config?.available ? 'Conectar con Google' : 'Reintentar conexión'}</Button>{!connection.loading && connection.config && !connection.config.available && <p className="connection-help">La conexión con Google no está disponible todavía. Vuelve a intentarlo en unos minutos.</p>}{connection.error && <p role="alert" className="preference-warning">{connection.error}</p>}</div></section>}
 
     {connection.token && <div className="event-workspace" aria-busy={busy}>
       <div className="event-tabs" role="tablist" aria-label="Carpetas de eventos">
@@ -206,10 +216,11 @@ export function EventsPage() {
       </div>
 
       <section className="event-folder-toolbar" aria-labelledby="event-folder-title">
-        <div><p className="section-label">Carpeta actual</p><h2 id="event-folder-title">{tabCopy[activeTab].title}</h2><p>{tabCopy[activeTab].description}</p>{lastSyncedAt && <p className="event-sync-status"><span aria-hidden="true" /> Última consulta a Google: {formatDate(lastSyncedAt, { hour: 'numeric', minute: '2-digit', hour12: true })}</p>}</div>
+        <div><p className="section-label">{activeTab === 'schedule' && selectedPeriod ? 'Trimestre seleccionado' : 'Carpeta actual'}</p><h2 id="event-folder-title">{activeTab === 'schedule' && selectedPeriod ? selectedPeriod.title.replace('Trimestre ', '') : tabCopy[activeTab].title}</h2><p>{activeTab === 'schedule' && selectedPeriod ? `Clases sincronizadas entre ${formatDate(new Date(`${selectedPeriod.startsOn}T12:00:00`), { day: 'numeric', month: 'long', year: 'numeric' })} y ${formatDate(new Date(`${selectedPeriod.endsOn}T12:00:00`), { day: 'numeric', month: 'long', year: 'numeric' })}.` : tabCopy[activeTab].description}</p>{lastSyncedAt && <p className="event-sync-status"><span aria-hidden="true" /> Última consulta a Google: {formatDate(lastSyncedAt, { hour: 'numeric', minute: '2-digit', hour12: true })}</p>}</div>
         <div className="event-folder-actions">
           {activeTab === 'personal' && <><Button onClick={() => { if (editorOpen) { resetDraft(); setEditorOpen(false); } else setEditorOpen(true); }}><Icon name={editorOpen ? 'close' : 'spark'} /> {editorOpen ? 'Cerrar formulario' : 'Nueva actividad'}</Button><Button variant="secondary" disabled={busy} onClick={() => void refresh()} title="Vuelve a consultar Google y trae los cambios hechos fuera de AcademicPlanner"><Icon name="refresh" /> Traer cambios de Google</Button></>}
-          {activeTab === 'schedule' && <Button disabled={busy} onClick={() => void syncSchedule()}><Icon name="sync" /> Enviar clases a Google</Button>}
+          {activeTab === 'schedule' && !viewingScheduleHistory && <Button disabled={busy} onClick={() => void syncSchedule()}><Icon name="sync" /> Enviar clases a Google</Button>}
+          {activeTab === 'schedule' && viewingScheduleHistory && <span className="event-folder-note"><Icon name="lock" /> Consulta de un trimestre anterior</span>}
           {activeTab === 'institutional' && <span className="event-folder-note"><Icon name="check" /> {preferences.institutionalReminders ? 'Recordatorios automáticos activos' : 'Actívalos en Más para enviarlos a Google'}</span>}
         </div>
       </section>
@@ -230,8 +241,8 @@ export function EventsPage() {
       </form></section>}
 
       <section className="event-list-section" role="tabpanel" id={`events-panel-${activeTab}`} aria-labelledby={`events-tab-${activeTab}`}>
-        <div className="section-heading"><div><div className="event-list-title-row"><h2>Próximos</h2><span className="event-count" aria-label={`${tabEvents.length} eventos`}>{tabEvents.length}</span></div></div></div>
-        {tabEvents.length ? <><ol className="event-list">{visibleEvents.map((event) => <li key={event.id} className="event-card" data-source={event.sourceType}><time className="event-date" dateTime={event.startAt}><strong>{formatDate(new Date(event.startAt), { day: 'numeric' })}</strong><span>{formatDate(new Date(event.startAt), { month: 'short' })}</span></time><div className="event-card__content"><p className="event-source"><span aria-hidden="true" /> {event.sourceType === 'schedule' ? 'Clase sincronizada' : event.sourceType === 'institutional' ? 'Fecha INTEC' : event.sourceType === 'google' ? 'Creado en Google' : 'Evento personal'}</p><h3>{event.title}</h3><p><Icon name="clock" width="14" height="14" /> {formatDate(new Date(event.startAt), { weekday: 'long', hour: 'numeric', minute: '2-digit' })} – {formatDate(new Date(event.endAt), { hour: 'numeric', minute: '2-digit' })}</p>{event.location && <p><Icon name="pin" width="14" height="14" /> {event.location}</p>}</div>{activeTab === 'personal' && <div className="event-card-actions"><Button variant="secondary" className="event-action event-action--edit" onClick={() => beginEdit(event)}><Icon name="edit" /> Editar</Button><Button variant="plain" className="event-action event-action--delete" onClick={() => setDeleting(event)}><Icon name="trash" /> Eliminar</Button></div>}</li>)}</ol>{(hiddenEventCount > 0 || eventsExpanded) && <Button variant="plain" className="event-list-more" aria-expanded={eventsExpanded} onClick={() => setEventsExpanded((current) => !current)}>{eventsExpanded ? 'Mostrar menos eventos' : `Mostrar ${hiddenEventCount} eventos más`}<Icon name="chevron-right" /></Button>}</> : <EmptyState compact icon="calendar" title="Esta carpeta está al día" description={tabCopy[activeTab].empty} />}
+        <div className="section-heading"><div><div className="event-list-title-row"><h2>{activeTab === 'schedule' && selectedPeriod ? 'Clases de este trimestre' : 'Próximos'}</h2><span className="event-count" aria-label={`${tabEvents.length} eventos`}>{tabEvents.length}</span></div></div></div>
+        {tabEvents.length ? <><ol className="event-list">{visibleEvents.map((event) => <li key={event.id} className="event-card" data-source={event.sourceType}><time className="event-date" dateTime={event.startAt}><strong>{formatDate(new Date(event.startAt), { day: 'numeric' })}</strong><span>{formatDate(new Date(event.startAt), { month: 'short' })}</span></time><div className="event-card__content"><p className="event-source"><span aria-hidden="true" /> {event.sourceType === 'schedule' ? 'Clase sincronizada' : event.sourceType === 'institutional' ? 'Fecha INTEC' : event.sourceType === 'google' ? 'Creado en Google' : 'Evento personal'}</p><h3>{event.title}</h3><p><Icon name="clock" width="14" height="14" /> {formatDate(new Date(event.startAt), { weekday: 'long', hour: 'numeric', minute: '2-digit' })} – {formatDate(new Date(event.endAt), { hour: 'numeric', minute: '2-digit' })}</p>{event.location && <p><Icon name="pin" width="14" height="14" /> {event.location}</p>}</div>{activeTab === 'personal' && <div className="event-card-actions"><Button variant="secondary" className="event-action event-action--edit" onClick={() => beginEdit(event)}><Icon name="edit" /> Editar</Button><Button variant="plain" className="event-action event-action--delete" onClick={() => setDeleting(event)}><Icon name="trash" /> Eliminar</Button></div>}</li>)}</ol>{(hiddenEventCount > 0 || eventsExpanded) && <Button variant="plain" className="event-list-more" aria-expanded={eventsExpanded} onClick={() => setEventsExpanded((current) => !current)}>{eventsExpanded ? 'Mostrar menos eventos' : `Mostrar ${hiddenEventCount} eventos más`}<Icon name="chevron-right" /></Button>}</> : <EmptyState compact icon="calendar" title={activeTab === 'schedule' && selectedPeriod ? 'No encontramos clases sincronizadas para este trimestre' : 'Esta carpeta está al día'} description={activeTab === 'schedule' && selectedPeriod ? 'Conecta Google Calendar para recuperar las clases que AcademicPlanner hubiera sincronizado en este período. Las materias retiradas no se muestran.' : tabCopy[activeTab].empty} />}
       </section>
     </div>}
     {deleting && <Dialog title="Eliminar evento" onClose={() => setDeleting(null)}><p>Se eliminará “{deleting.title}” de tu calendario personal de Google.</p><div className="dialog-actions"><Button variant="secondary" onClick={() => setDeleting(null)}>Cancelar</Button><Button disabled={busy} onClick={() => void confirmDelete()}>Eliminar</Button></div></Dialog>}
