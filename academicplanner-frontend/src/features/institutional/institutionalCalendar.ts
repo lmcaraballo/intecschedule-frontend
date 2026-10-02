@@ -57,11 +57,16 @@ export function getNextInstitutionalDate(now: Date): InstitutionalDate | null {
   return sortedInstitutionalDates().find((entry) => entry.date >= key) ?? null;
 }
 
-/** Upcoming milestones must read as future notices, never as if they were happening today. */
-export function getInstitutionalNotice(now: Date, maximumLeadDays = 14): InstitutionalNotice | null {
+function isDailyNoticeRelevant(entry: InstitutionalDate) {
+  return !/(solicitar grado|graduaci[oó]n|ceremonia de graduaci[oó]n)/i.test(`${entry.title} ${entry.detail}`);
+}
+
+/** The daily card prioritizes the next useful campus action, not long-range graduation milestones. */
+export function getInstitutionalNotice(now: Date, maximumLeadDays = 7): InstitutionalNotice | null {
   const today = getInstitutionalDate(now);
-  if (today) return { ...today, daysUntil: 0, isUpcoming: false };
-  const next = getNextInstitutionalDate(now);
+  if (today && isDailyNoticeRelevant(today)) return { ...today, daysUntil: 0, isUpcoming: false };
+  const key = dateKey(now);
+  const next = sortedInstitutionalDates().find((entry) => entry.date >= key && isDailyNoticeRelevant(entry));
   if (!next) return null;
   const todayAtNoon = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
   const target = new Date(`${next.date}T12:00:00`);

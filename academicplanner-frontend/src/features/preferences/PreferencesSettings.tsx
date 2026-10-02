@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { Button } from '../../components/Button';
 import { Icon, type IconName } from '../../components/Icon';
 import { scheduleStorage } from '../../storage/scheduleStorage';
-import { defaultPreferences, type Preferences } from './preferences';
+import { defaultPreferences, themeToneForVariant, themeVariantFor, type Preferences } from './preferences';
 import { useTheme } from '../../theme/ThemeProvider';
 
 export function PreferencesSettings() {
@@ -43,7 +43,7 @@ export function PreferencesSettings() {
 
       <PreferenceCard id="appearance" icon="spark" title="Apariencia y accesibilidad" detail="Tema, texto, contraste y movimiento" open={openSection === 'appearance'} onOpen={setOpenSection}>
         <div className="preference-options" aria-label="Tema visual">{(['auto', 'day', 'night'] as const).map((theme) => <Button type="button" key={theme} variant="plain" aria-pressed={preferences.theme === theme} onClick={() => update(themeChange(preferences, theme))}><Icon name={theme === 'auto' ? 'spark' : theme === 'day' ? 'sun' : 'moon'} />{theme === 'auto' ? 'Auto' : theme === 'day' ? 'Claro' : 'Oscuro'}</Button>)}</div>
-        {preferences.theme !== 'auto' && <label className="preference-select preference-palette-select"><span><strong>{preferences.theme === 'day' ? 'Matiz claro' : 'Matiz oscuro'}</strong><small>Elige una de las dos variantes sin cambiar el contraste ni la lectura.</small></span><select aria-label={preferences.theme === 'day' ? 'Matiz claro' : 'Matiz oscuro'} value={activeVariant(preferences)} onChange={(event) => update({ themeVariant: event.target.value as Preferences['themeVariant'] })}>{preferences.theme === 'day' ? <><option value="day-cream">Claro crema</option><option value="day-paper">Claro papel</option></> : <><option value="night-forest">Oscuro bosque</option><option value="night-midnight">Oscuro medianoche</option></>}</select></label>}
+        {preferences.theme !== 'auto' && <label className="preference-select preference-palette-select"><span><strong>{preferences.theme === 'day' ? 'Matiz claro' : 'Matiz oscuro'}</strong><small>Elige una de las dos variantes. Tu elección se conserva al alternar entre claro y oscuro.</small></span><select aria-label={preferences.theme === 'day' ? 'Matiz claro' : 'Matiz oscuro'} value={themeVariantFor(preferences.theme, preferences.themeTone)} onChange={(event) => { const variant = event.target.value as Preferences['themeVariant']; update({ themeVariant: variant, themeTone: themeToneForVariant(variant) }); }}>{preferences.theme === 'day' ? <><option value="day-cream">Claro crema</option><option value="day-paper">Claro papel</option></> : <><option value="night-forest">Oscuro bosque</option><option value="night-midnight">Oscuro medianoche</option></>}</select></label>}
         {preferences.theme === 'auto' && <section className="theme-day-cycle" aria-label="Ciclo diario del tema automático">
           <div><strong>Auto acompaña la hora</strong><p>La luz cambia suavemente durante el día. Ahora corresponde a <b>{phaseLabel(phase)}</b>.</p></div>
           <ol>
@@ -82,15 +82,9 @@ function phaseLabel(phase: 'morning' | 'day' | 'sunset' | 'night') {
   return { morning: 'la mañana', day: 'el día', sunset: 'el atardecer', night: 'la noche' }[phase];
 }
 
-function themeChange(preferences: Preferences, theme: Preferences['theme']): Pick<Preferences, 'theme' | 'themeVariant'> {
-  if (theme === 'auto') return { theme, themeVariant: preferences.themeVariant };
-  if (theme === 'day') return { theme, themeVariant: preferences.themeVariant.startsWith('day-') ? preferences.themeVariant : 'day-cream' };
-  return { theme, themeVariant: preferences.themeVariant.startsWith('night-') ? preferences.themeVariant : 'night-forest' };
-}
-
-function activeVariant(preferences: Preferences): Preferences['themeVariant'] {
-  if (preferences.theme === 'day') return preferences.themeVariant.startsWith('day-') ? preferences.themeVariant : 'day-cream';
-  return preferences.themeVariant.startsWith('night-') ? preferences.themeVariant : 'night-forest';
+function themeChange(preferences: Preferences, theme: Preferences['theme']): Pick<Preferences, 'theme' | 'themeVariant' | 'themeTone'> {
+  if (theme === 'auto') return { theme, themeVariant: preferences.themeVariant, themeTone: preferences.themeTone };
+  return { theme, themeVariant: themeVariantFor(theme, preferences.themeTone), themeTone: preferences.themeTone };
 }
 
 type PreferenceSectionId = 'start' | 'appearance' | 'information' | 'reminders';

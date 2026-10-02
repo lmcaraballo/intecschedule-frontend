@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const preferencesSchema = z.object({
   theme: z.enum(['auto', 'day', 'night']),
   themeVariant: z.enum(['day-cream', 'day-paper', 'night-forest', 'night-midnight']).default('day-cream'),
+  themeTone: z.enum(['first', 'second']).default('first'),
   reducedMotion: z.boolean().default(false),
   textSize: z.enum(['normal', 'large']).default('normal'),
   highContrast: z.boolean().default(false),
@@ -20,6 +21,7 @@ export type Preferences = z.infer<typeof preferencesSchema>;
 export const defaultPreferences: Preferences = {
   theme: 'auto',
   themeVariant: 'day-cream',
+  themeTone: 'first',
   reducedMotion: false,
   textSize: 'normal',
   highContrast: false,
@@ -37,4 +39,13 @@ export function getStartPath(preferences: Preferences): '/ahora' | '/horario' | 
   if (preferences.startPage === 'schedule') return '/horario';
   if (preferences.startPage === 'events') return '/eventos';
   return '/ahora';
+}
+
+export function themeVariantFor(theme: Exclude<Preferences['theme'], 'auto'>, tone: Preferences['themeTone']): Preferences['themeVariant'] {
+  if (theme === 'day') return tone === 'second' ? 'day-paper' : 'day-cream';
+  return tone === 'second' ? 'night-midnight' : 'night-forest';
+}
+
+export function themeToneForVariant(variant: Preferences['themeVariant']): Preferences['themeTone'] {
+  return variant === 'day-paper' || variant === 'night-midnight' ? 'second' : 'first';
 }

@@ -45,6 +45,8 @@
 .day-status p { color: var(--muted); font-size: .8125rem; margin-top: var(--space-1); }
 .now-columns { display: grid; gap: var(--space-8); }
 .now-focus { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
+.now-unscheduled { margin-top: var(--space-12); padding-top: var(--space-8); border-top: 1px solid color-mix(in srgb, var(--border) 72%, transparent); }
+.now-unscheduled .status-banner { border: 1px solid color-mix(in srgb, var(--border) 70%, var(--primary)); border-left: 4px solid color-mix(in srgb, var(--primary) 62%, var(--border)); box-shadow: 0 10px 22px rgb(31 79 58 / .06); }
 .section-label { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); font-size: .6875rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin: 0 0 var(--space-3); }
 .section-label > span { letter-spacing: 0; text-transform: none; text-align: right; font-weight: 400; }
 .class-card { border: 1px solid color-mix(in srgb, var(--border) 78%, var(--subject-accent)); border-left: 4px solid var(--subject-accent); border-radius: var(--radius-md); background: linear-gradient(145deg, color-mix(in srgb, var(--surface) 98%, white) 0%, color-mix(in srgb, var(--surface) 88%, var(--subject-tint)) 100%); box-shadow: 0 3px 0 color-mix(in srgb, var(--border) 78%, var(--subject-accent)), 0 14px 28px rgb(31 39 25 / .09), 0 4px 8px rgb(31 39 25 / .045), inset 0 1px 0 rgb(255 255 255 / .78); overflow-wrap: anywhere; min-width: 0; transform: translateY(-1px); transition: transform var(--duration-fast), box-shadow var(--duration-fast), border-color var(--duration-fast); }
@@ -208,8 +210,8 @@ html[data-reduce-motion='true'] .campus-3d-map .maplibregl-canvas { transition: 
 [data-theme='night'] .preference-options button:not([aria-pressed='true']) { background: var(--surface); color: var(--text); }
 [data-theme='night'] .preference-options button[aria-pressed='true'] { background: linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 74%, var(--success-bg)), var(--success-bg)); box-shadow: 0 3px 0 color-mix(in srgb, var(--primary) 32%, var(--border)), 0 7px 14px rgb(0 0 0 / .18), inset 0 1px 0 rgb(255 255 255 / .1); }
 @media (max-width: 390px) { .preference-options { gap: 4px; padding: 4px; } .preference-options button { gap: 4px; min-height: 44px; padding-inline: var(--space-2); font-size: .75rem; } .preference-options button svg { width: 14px; height: 14px; } }
-.preference-palette-select { min-height: 76px; border-color: color-mix(in srgb, var(--border) 82%, var(--primary)); background: linear-gradient(145deg, color-mix(in srgb, var(--success-bg) 50%, var(--surface)), var(--surface)); }
-.preference-palette-select select { min-width: 148px; }
+.preference-palette-select { min-height: 80px; border-color: color-mix(in srgb, var(--border) 66%, var(--primary)); background: linear-gradient(145deg, color-mix(in srgb, var(--success-bg) 62%, var(--surface)), var(--surface)); box-shadow: inset 3px 0 0 color-mix(in srgb, var(--primary) 58%, var(--border)); }
+.preference-palette-select select { min-width: 168px; border-color: color-mix(in srgb, var(--input-border) 58%, var(--primary)); color: var(--heading); font-weight: 700; }
 .theme-day-cycle { display: grid; gap: var(--space-3); padding: var(--space-3); border: 1px solid color-mix(in srgb, var(--border) 78%, var(--primary)); border-radius: var(--radius-md); background: linear-gradient(145deg, color-mix(in srgb, #f4e8ca 54%, var(--surface)), color-mix(in srgb, #dbe5d7 58%, var(--surface))); }
 [data-theme='night'] .theme-day-cycle { background: linear-gradient(145deg, color-mix(in srgb, var(--surface-soft) 82%, #594a2d), color-mix(in srgb, var(--surface) 88%, #42604a)); }
 .theme-day-cycle > div > strong { color: var(--heading); font-size: .78rem; }

@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { scheduleStorage } from '../storage/scheduleStorage';
-import { defaultPreferences, type Preferences } from '../features/preferences/preferences';
+import { defaultPreferences, themeVariantFor, type Preferences } from '../features/preferences/preferences';
 import { getContextualTheme, getVisualTheme, type ContextualTheme, type VisualTheme } from './contextualTheme';
 
 interface ThemeContextValue {
@@ -54,8 +54,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   function setPreference(value: Preferences['theme']) {
     const variantForMode = (current: Preferences) => {
       if (value === 'auto') return current.themeVariant;
-      if (value === 'day') return current.themeVariant.startsWith('day-') ? current.themeVariant : 'day-cream';
-      return current.themeVariant.startsWith('night-') ? current.themeVariant : 'night-forest';
+      return themeVariantFor(value, current.themeTone);
     };
     setPreferences((current) => ({ ...current, theme: value, themeVariant: variantForMode(current) }));
     try {

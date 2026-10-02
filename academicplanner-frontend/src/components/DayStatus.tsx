@@ -12,7 +12,7 @@ export function DayStatus({ status, hasUnscheduled = false }: { status: Academic
   };
   const message = hasUnscheduled && (status.kind === 'empty' || status.kind === 'finished')
     ? { title: status.kind === 'empty' ? 'Hoy no hay encuentros con hora en tu horario.' : 'Finalizaron los encuentros programados de hoy.',
-        detail: 'También tienes materias o componentes sin horario semanal. Revisa sus actividades y entregas.' }
+        detail: 'También tienes materias asíncronas o componentes sin horario semanal. Revisa sus actividades y entregas.' }
     : messages[status.kind];
   return <div className={`day-status day-status--${status.kind}`} role="status"><span className="day-status__icon"><Icon name={status.kind === 'finished' ? 'check' : status.kind === 'during' ? 'book' : 'leaf'} width="22" height="22" /></span><div><h2>{message.title}</h2><p>{message.detail}</p></div></div>;
 }

@@ -10,7 +10,7 @@ describe('courses without weekly times', () => {
       unscheduledSubjects: [{ id: 'pending', subjectCode: 'QA300', subjectName: 'Materia pendiente', section: '01' }],
     }, '1234567');
     render(<UnscheduledSubjects schedule={session.schedule} />);
-    expect(screen.getByText('Materias y componentes sin horario semanal')).toBeInTheDocument();
+    expect(screen.getByText('Materias asíncronas y componentes sin horario semanal')).toBeInTheDocument();
     expect(screen.getByText(/QA300 · Materia pendiente/)).toBeInTheDocument();
     expect(session.schedule.classes).toEqual([]);
   });

@@ -54,7 +54,7 @@ export function NowPage() {
         })}</ol> : <EmptyState compact title="Hoy no hay clases en tu horario" description="Puedes explorar los demás días de tu semana." action={<Link to="/horario" className="quick-link">Explorar la semana <Icon name="arrow" width="16" height="16" /></Link>} />}
       </section>
     </div>
-    {preferences.showUnscheduledSubjects && <UnscheduledSubjects schedule={session.schedule} />}
+    {preferences.showUnscheduledSubjects && <section className="now-unscheduled" aria-label="Materias asíncronas"><UnscheduledSubjects schedule={session.schedule} /></section>}
     <LastUpdated fetchedAt={session.schedule.fetchedAt} />
     {period && <p className="schedule-note"><Icon name="calendar" width="16" height="16" /><span>{period.title} · horario válido hasta el {period.endsOn.split('-').reverse().join('/')} · <a href={period.sourceUrl} target="_blank" rel="noopener noreferrer">fuente INTEC</a> (actualizada el {formatDate(new Date(institutionalCalendar.lastUpdatedAt), { day: 'numeric', month: 'long', year: 'numeric' })}).</span></p>}
   </main>;

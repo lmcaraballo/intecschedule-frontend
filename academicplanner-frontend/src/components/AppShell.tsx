@@ -68,8 +68,10 @@ export function AppShell() {
         {academic && <PrimaryNavigation />}
         <div className="theme-controls" role="group" aria-label="Apariencia" data-mode={preference} data-phase={phase}>
           <Button variant="plain" className="theme-auto" aria-pressed={preference === 'auto'} onClick={() => setPreference('auto')}>Auto</Button>
-          <span className="theme-rail" aria-hidden="true"><i /><i /><i /><i /></span>
-          <Button variant="plain" className="theme-toggle" aria-label={themeToggleLabel(preference, theme, phase)} onClick={() => setPreference(theme === 'day' ? 'night' : 'day')}><Icon name={phaseIcon(preference, theme, phase)} /></Button>
+          <span className="theme-scene">
+            <span className="theme-rail" aria-hidden="true"><i /><i /><i /><i /></span>
+            <Button variant="plain" className="theme-toggle" aria-label={themeToggleLabel(preference, theme, phase)} onClick={() => setPreference(theme === 'day' ? 'night' : 'day')}><Icon key={`${preference}-${theme}-${phase}`} name={phaseIcon(preference, theme, phase)} /></Button>
+          </span>
         </div>
       </header>
       {splashDestination && <BrandSplash message={splashDestination.message} />}

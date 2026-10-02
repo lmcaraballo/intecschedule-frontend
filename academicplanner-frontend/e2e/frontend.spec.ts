@@ -197,8 +197,9 @@ test('More keeps settings compact and provides clear control feedback', async ({
   await page.getByLabel('Tema visual').getByRole('button', { name: 'Oscuro', exact: true }).click();
   const darkPalette = page.getByLabel('Matiz oscuro');
   await expect(darkPalette).toBeVisible();
-  await darkPalette.selectOption('night-midnight');
   await expect(page.locator('html')).toHaveAttribute('data-theme-variant', 'night-midnight');
+  await page.getByLabel('Tema visual').getByRole('button', { name: 'Claro', exact: true }).click();
+  await expect(page.getByLabel('Matiz claro')).toHaveValue('day-paper');
   await page.getByText('Contraste reforzado', { exact: true }).click();
   await expect(page.getByRole('switch', { name: /Contraste reforzado/ })).toBeChecked();
   await expect(page.getByRole('status')).toContainText('Cambios guardados');

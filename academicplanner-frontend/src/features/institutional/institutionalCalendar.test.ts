@@ -28,9 +28,11 @@ describe('institutional calendar', () => {
 
   it('labels future milestones as upcoming instead of claiming they are happening now', () => {
     const notice = getInstitutionalNotice(new Date(2026, 8, 28, 8));
-    expect(notice).toMatchObject({ date: '2026-10-02', daysUntil: 4, isUpcoming: true, title: 'En 4 días: fecha límite para solicitar grado' });
-    expect(notice?.detail).toContain('viernes, 2 de octubre');
+    expect(notice).toMatchObject({ date: '2026-10-03', daysUntil: 5, isUpcoming: true, title: 'En 5 días: último día para retirar asignaturas' });
+    expect(notice?.detail).toContain('sábado, 3 de octubre');
     expect(notice?.title).not.toContain('última semana');
+    expect(getInstitutionalNotice(new Date(2026, 8, 28, 8), 4)).toBeNull();
+    expect(getInstitutionalNotice(new Date(2026, 9, 2, 8))).toMatchObject({ date: '2026-10-03', isUpcoming: true });
     expect(getInstitutionalNotice(new Date(2026, 9, 11, 8))?.title).toBe('Mañana: última semana de docencia');
     expect(getInstitutionalNotice(new Date(2026, 9, 12, 8))).toMatchObject({ isUpcoming: false, title: 'Última semana de docencia' });
   });
