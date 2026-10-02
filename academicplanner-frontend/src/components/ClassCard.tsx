@@ -9,7 +9,7 @@ import { Icon } from './Icon';
 
 interface ClassCardProps {
   academicClass: AcademicClass;
-  eyebrow?: string;
+  eyebrow?: string | undefined;
   children?: ReactNode;
   compact?: boolean;
 }

@@ -3,7 +3,7 @@ import { Button } from '../../components/Button';
 import { dateKey, formatDate, formatTime, weekdayNames } from '../../utils/dateFormat';
 import { getInstitutionalDate } from '../institutional/institutionalCalendar';
 import { getClassModality } from './classLocation';
-import { addDays, getTodayClasses, isSameDay, isoWeekday } from './scheduleDomain';
+import { addDays, getTodayClasses, isPastDay, isSameDay, isoWeekday } from './scheduleDomain';
 import { getSubjectColor } from './subjectColor';
 
 export function getMonthGridDays(selected: Date): Date[] {
@@ -34,14 +34,15 @@ export function MonthSchedule({ schedule, selected, now, showInstitutionalDates,
       const outside = date.getMonth() !== month;
       const selectedDay = isSameDay(date, selected);
       const today = isSameDay(date, now);
+      const past = isPastDay(date, now);
       const weekend = isoWeekday(date) >= 6;
       const classSummary = classes.map((item) => `${formatTime(item.startTime)} ${item.subjectCode}: ${item.subjectName}${item.location ? `, ${item.location}` : ''}`).join('. ');
-      const description = [formatDate(date), `${classes.length} ${classes.length === 1 ? 'clase' : 'clases'}`, classSummary, institutional?.title].filter(Boolean).join('. ');
+      const description = [formatDate(date), past ? 'Día anterior, disponible para consulta' : '', `${classes.length} ${classes.length === 1 ? 'clase' : 'clases'}`, classSummary, institutional?.title].filter(Boolean).join('. ');
       return <Button
         variant="plain"
         type="button"
         key={dateKey(date)}
-        className={`month-day${outside ? ' month-day--outside' : ''}${weekend ? ' month-day--weekend' : ''}${today ? ' month-day--today' : ''}${selectedDay ? ' month-day--selected' : ''}${institutional ? ' month-day--institutional' : ''}${institutional?.kind === 'no_class' ? ' month-day--no-class' : ''}`}
+        className={`month-day${outside ? ' month-day--outside' : ''}${weekend ? ' month-day--weekend' : ''}${today ? ' month-day--today' : ''}${past ? ' month-day--past' : ''}${selectedDay ? ' month-day--selected' : ''}${institutional ? ' month-day--institutional' : ''}${institutional?.kind === 'no_class' ? ' month-day--no-class' : ''}`}
         aria-label={description}
         aria-current={today ? 'date' : undefined}
         aria-pressed={selectedDay}

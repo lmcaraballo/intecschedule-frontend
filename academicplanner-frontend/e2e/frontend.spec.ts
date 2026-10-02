@@ -97,6 +97,14 @@ test('day schedule controls read as one compact tactile workspace', async ({ pag
   expect(await nowCard.locator('.class-card__top > svg').evaluate((element) => getComputedStyle(element).borderRadius)).toBe('50%');
 });
 
+test('past schedule dates stay available as clearly marked history', async ({ page }) => {
+  await seed(page);
+  await page.goto('/horario?date=2026-09-30&view=day');
+  await expect(page.getByText('Día anterior: puedes consultar sus clases y detalles.')).toBeVisible();
+  await expect(page.getByText(/Historial · \d+ clase/)).toBeVisible();
+  await expect(page.getByRole('button', { name: /Ver detalle:/ }).first()).toBeVisible();
+});
+
 test('campus model keeps controls out of the map caption and reports the active camera', async ({ page }) => {
   await page.setViewportSize({ width: 954, height: 911 });
   await seed(page);

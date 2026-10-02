@@ -2,7 +2,7 @@ import { UnscheduledSubjects } from '../../components/UnscheduledSubjects';
 import { Button } from '../../components/Button';
 import { useSearchParams } from 'react-router';
 import { useAcademicSession } from '../../app/AcademicLayout';
-import { addDays, getTodayClasses, isSameDay, isoWeekday } from './scheduleDomain';
+import { addDays, getTodayClasses, isPastDay, isSameDay, isoWeekday } from './scheduleDomain';
 import { availableScheduleViews, isScheduleView, type AvailableScheduleView } from './scheduleViews';
 import { dateKey, formatDate, parseDateKey, weekdayNames } from '../../utils/dateFormat';
 import { ClassCard } from '../../components/ClassCard';
@@ -24,6 +24,7 @@ export function SchedulePage() {
   const monday = addDays(selected, 1 - isoWeekday(selected));
   const days = Array.from({ length: hasSunday ? 7 : 6 }, (_, index) => addDays(monday, index));
   const classes = getTodayClasses(session.schedule, selected);
+  const selectedIsPast = isPastDay(selected, now);
   const institutionalDate = getInstitutionalDate(selected);
   const period = getInstitutionalPeriod(selected);
 
@@ -57,8 +58,8 @@ export function SchedulePage() {
     <p className="sr-only" role="status">{view === 'day' ? `Vista Día: ${formatDate(selected)}. ${classes.length} clases.` : view === 'week' ? `Vista Semana: desde el ${formatDate(monday)}.` : `Vista Mes: ${periodLabel}.`}</p>
     <div key={`${view}-${dateKey(selected)}`} className="view-content">
     {view === 'day' ? <>
-      <div className="day-picker" role="group" aria-label="Seleccionar día">{days.map((date) => <Button variant="plain" type="button" key={dateKey(date)} aria-pressed={isSameDay(date, selected)} aria-current={isSameDay(date, now) ? 'date' : undefined} aria-label={formatDate(date)} onClick={() => update(date)}><span>{weekdayNames[isoWeekday(date) - 1]?.slice(0, 3)}</span><strong>{date.getDate()}</strong><span className="day-picker__dot" aria-hidden="true" /></Button>)}</div>
-      <section className="day-schedule" aria-labelledby="selected-day-title"><div className="section-heading"><h2 id="selected-day-title">{formatDate(selected, { weekday: 'long', day: 'numeric', month: 'long' })}</h2><span>{classes.length} {classes.length === 1 ? 'clase' : 'clases'}</span></div>{classes.length ? <ol className="class-list">{classes.map((item) => <li key={item.id}><ClassCard academicClass={item} compact={preferences.scheduleDensity === 'compact'} /></li>)}</ol> : <EmptyState compact title={institutionalDate?.kind === 'no_class' ? institutionalDate.title : period ? 'No tienes clases este día' : 'Este día queda fuera del trimestre activo'} description={institutionalDate?.kind === 'no_class' ? institutionalDate.detail : period ? 'Puedes explorar otro día de la semana.' : 'El horario no se repite automáticamente fuera de las fechas académicas confirmadas.'} />}</section>
+      <div className="day-picker" role="group" aria-label="Seleccionar día">{days.map((date) => { const past = isPastDay(date, now); return <Button variant="plain" type="button" key={dateKey(date)} data-past={past || undefined} aria-pressed={isSameDay(date, selected)} aria-current={isSameDay(date, now) ? 'date' : undefined} aria-label={`${formatDate(date)}${past ? ', día anterior' : ''}`} onClick={() => update(date)}><span>{weekdayNames[isoWeekday(date) - 1]?.slice(0, 3)}</span><strong>{date.getDate()}</strong><span className="day-picker__dot" aria-hidden="true" /></Button>; })}</div>
+      <section className={`day-schedule${selectedIsPast ? ' day-schedule--past' : ''}`} aria-labelledby="selected-day-title"><div className="section-heading"><div><h2 id="selected-day-title">{formatDate(selected, { weekday: 'long', day: 'numeric', month: 'long' })}</h2>{selectedIsPast && <p className="history-note"><Icon name="calendar" width="14" height="14" /> Día anterior: puedes consultar sus clases y detalles.</p>}</div><span>{selectedIsPast ? 'Historial · ' : ''}{classes.length} {classes.length === 1 ? 'clase' : 'clases'}</span></div>{classes.length ? <ol className="class-list">{classes.map((item) => <li key={item.id}><ClassCard academicClass={item} eyebrow={selectedIsPast ? 'Historial' : undefined} compact={preferences.scheduleDensity === 'compact'} /></li>)}</ol> : <EmptyState compact title={institutionalDate?.kind === 'no_class' ? institutionalDate.title : period ? 'No tienes clases este día' : 'Este día queda fuera del trimestre activo'} description={institutionalDate?.kind === 'no_class' ? institutionalDate.detail : period ? 'Puedes explorar otro día de la semana.' : 'El horario no se repite automáticamente fuera de las fechas académicas confirmadas.'} />}</section>
     </> : view === 'week' ? <WeekSchedule schedule={session.schedule} days={days} now={now} onSelectDay={(date) => update(date, 'day')} /> : <MonthSchedule schedule={session.schedule} selected={selected} now={now} showInstitutionalDates={preferences.showInstitutionalDates} onSelectDay={(date) => update(date, 'day')} />}
     </div>
     <p className="schedule-note"><Icon name="calendar" width="16" height="16" /> El horario se muestra solo dentro del trimestre publicado e incorpora los feriados registrados. Las horas siguen la zona horaria de tu dispositivo.</p>

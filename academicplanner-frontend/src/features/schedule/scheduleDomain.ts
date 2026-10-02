@@ -37,6 +37,11 @@ export function isSameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
+/** Dates remain readable after they pass, but are presented as history rather than current work. */
+export function isPastDay(date: Date, now: Date = new Date()): boolean {
+  return dateKey(date) < dateKey(now);
+}
+
 /** Weekly recurring classes, ordered without mutating the stored schedule. */
 export function getTodayClasses(schedule: Schedule, now: Date = new Date()): AcademicClass[] {
   const schedulePeriod = getInstitutionalPeriod(new Date(schedule.fetchedAt));

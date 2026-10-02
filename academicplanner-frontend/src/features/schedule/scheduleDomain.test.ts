@@ -1,13 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import type { Schedule } from '../../types/academic';
 import { createMockSession } from '../../mocks/academicSession';
-import { getTodayClasses, getCurrentClass, getNextClass, getFreeTimeUntilNextClass, getDayStatus, getClassProgress } from './scheduleDomain';
+import { getTodayClasses, getCurrentClass, getNextClass, getFreeTimeUntilNextClass, getDayStatus, getClassProgress, isPastDay } from './scheduleDomain';
 
 const schedule = createMockSession('test-student').schedule;
 // Local constructor keeps expectations independent of the machine timezone.
 const monday = (hour: number, minute = 0, second = 0) => new Date(2026, 8, 14, hour, minute, second);
 
 describe('academic day domain', () => {
+  it('classifies whole dates as historical without hiding their schedule', () => {
+    const now = new Date(2026, 9, 2, 0, 5);
+    expect(isPastDay(new Date(2026, 8, 30, 23, 59), now)).toBe(true);
+    expect(isPastDay(new Date(2026, 9, 2, 0, 0), now)).toBe(false);
+    expect(getTodayClasses(schedule, new Date(2026, 8, 30, 9))).not.toHaveLength(0);
+  });
   const cases = [
     { label: 'before first class', now: monday(7, 35), kind: 'before', current: null, next: 'mat-01-mon', free: 25, count: 2 },
     { label: 'during class', now: monday(9, 22), kind: 'during', current: 'mat-01-mon', next: 'sis-02-mon', free: null, count: 2 },

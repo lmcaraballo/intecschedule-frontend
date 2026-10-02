@@ -421,12 +421,16 @@ html[data-reduce-motion='true'] *, html[data-reduce-motion='true'] *::before, ht
 .day-picker { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; margin-bottom: var(--space-5); padding: 5px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--surface-soft) 72%, var(--surface)); box-shadow: inset 0 2px 6px rgb(31 39 25 / .045); }
 .day-picker button { display: flex; flex-direction: column; align-items: center; padding: var(--space-2) 2px; gap: 3px; border: 1px solid transparent; border-radius: var(--radius-md); background: transparent; color: var(--muted); min-height: 68px; }
 .day-picker button:hover { background: var(--surface-soft); }
+.day-picker button[data-past='true'] { color: color-mix(in srgb, var(--muted) 72%, var(--surface)); }
+.day-picker button[data-past='true'] > strong { text-decoration: underline dotted color-mix(in srgb, currentColor 52%, transparent); text-underline-offset: 4px; }
 .day-picker button > span:first-child { font-size: .6875rem; }
 .day-picker button > strong { font-size: 1.125rem; font-weight: 500; }
 .day-picker button[aria-pressed='true'] { border-color: color-mix(in srgb, var(--primary) 78%, black); background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 92%, white), var(--primary)); box-shadow: 0 3px 0 color-mix(in srgb, var(--primary) 72%, black), 0 7px 13px rgb(31 79 58 / .16), inset 0 1px 0 rgb(255 255 255 / .24); color: var(--on-primary); font-weight: 700; transform: translateY(-1px); }
 .day-picker__dot { width: 4px; height: 4px; border-radius: 50%; background: transparent; }
 .day-picker button[aria-current='date'] .day-picker__dot { background: currentColor; }
 .day-schedule { margin-top: var(--space-5); }
+.history-note { display: flex; align-items: center; gap: 6px; margin-top: 3px; color: var(--muted); font-size: .6875rem; font-weight: 400; }
+.day-schedule--past .class-card { opacity: .9; }
 .day-schedule .class-card__button { padding-block: 13px; }
 .week-schedule { display: grid; gap: var(--space-6); }
 .week-time-label { display: none; }
@@ -435,6 +439,7 @@ html[data-reduce-motion='true'] *, html[data-reduce-motion='true'] *::before, ht
 .week-day__heading strong { font-size: 1.25rem; font-weight: 500; }
 .week-day__heading:hover { background: var(--surface-soft); }
 .week-day--today .week-day__heading { color: var(--heading); background: var(--success-bg); border-radius: var(--radius-sm); }
+.week-day--past .week-day__heading { color: color-mix(in srgb, var(--muted) 74%, var(--surface)); }
 .week-day__today { margin-left: auto; font-size: .625rem; }
 .week-day__empty { font-size: .75rem; color: var(--muted); padding: var(--space-3); }
 .schedule-note { display: flex; align-items: flex-start; gap: var(--space-2); font-size: .6875rem; color: var(--muted); margin-top: var(--space-6); }
@@ -452,6 +457,7 @@ button.month-day:hover { z-index: 1; border-color: var(--input-border); backgrou
 .month-day--outside { color: var(--muted); background: color-mix(in srgb, var(--surface-soft) 68%, var(--surface)); box-shadow: inset 0 3px 0 var(--border); }
 .month-day--selected { border-color: var(--heading) !important; box-shadow: inset 0 0 0 1px var(--heading); }
 .month-day--today { background: var(--success-bg); }
+.month-day--past:not(.month-day--selected) { color: color-mix(in srgb, var(--text) 68%, var(--surface)); background: color-mix(in srgb, var(--surface-soft) 40%, var(--surface)); }
 .month-day--institutional { background: color-mix(in srgb, var(--warning-bg) 45%, var(--surface)); }
 .month-day--no-class { background: color-mix(in srgb, var(--warning-bg) 72%, var(--surface)); }
 .month-day__top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-1); min-height: 28px; }
