@@ -248,7 +248,8 @@ test('campus model keeps controls out of the map caption and reports the active 
   expect(popupContentBox!.x + popupContentBox!.width).toBeLessThanOrEqual(mapShellBox!.x + mapShellBox!.width + 2);
   expect(popupContentBox!.y + popupContentBox!.height).toBeLessThanOrEqual(mapShellBox!.y + mapShellBox!.height + 2);
   const moreFacilities = popup.locator('.popup-more');
-  await expect(moreFacilities.locator('summary')).toHaveText(/Ver \d+ espacios más/);
+  // El edificio seleccionado puede tener uno o varios espacios adicionales.
+  await expect(moreFacilities.locator('summary')).toHaveText(/Ver \d+ espacios? más/);
   const closeButtonBox = await popup.getByRole('button', { name: /Close popup|Cerrar/ }).boundingBox();
   expect(closeButtonBox).not.toBeNull();
   expect(closeButtonBox!.width).toBeGreaterThanOrEqual(36);
@@ -284,6 +285,11 @@ test('campus model keeps controls out of the map caption and reports the active 
       * Math.max(0, Math.min(controlsRect.bottom, captionRect.bottom) - Math.max(controlsRect.top, captionRect.top));
   });
   expect(overlap).toBe(0);
+  // Bug 615: sin WebGL conservamos la ubicación escrita y una opción de reintento.
+  await page.addInitScript(() => Object.defineProperty(window, 'WebGLRenderingContext', { value: undefined, configurable: true }));
+  await page.reload();
+  await expect(page.getByRole('alert')).toContainText('La ubicación escrita sigue disponible');
+  await expect(page.getByRole('button', { name: 'Volver a intentar', exact: true })).toBeVisible();
 });
 
 test('More keeps settings compact and provides clear control feedback', async ({ page }) => {
@@ -456,6 +462,13 @@ for (const width of [320,375,390,430,768,1024,1280,1440]) {
     const dialog=page.getByRole('dialog');await expect(dialog).toBeVisible();
     expect(await dialog.evaluate(d => d.scrollWidth - d.clientWidth)).toBeLessThanOrEqual(1);
     await expect(dialog).toContainText('Sección no informada');
+    await page.keyboard.press('Escape');
+    // Bug 609: el código largo también debe caber al ampliar el texto.
+    await page.evaluate(() => document.documentElement.style.fontSize = '200%');
+    await page.getByRole('button', { name: /Ver detalle:/ }).first().click();
+    await expect(dialog).toBeVisible();
+    expect(await dialog.evaluate(d => d.scrollWidth - d.clientWidth)).toBeLessThanOrEqual(1);
+    await expect(page.getByRole('button', { name: 'Cerrar detalle de clase' })).toBeInViewport();
     await page.keyboard.press('Escape');
   });
 }
@@ -652,7 +665,8 @@ test('clearing local data also closes the in-memory Google Calendar connection',
 for (const width of [320,390,640,768,1440]) {
   test(`200% font reflow, touch targets and short viewport at ${width}px`,async({page})=>{
     await page.setViewportSize({width,height:450});await seed(page);
-    for (const route of ['/','/ahora','/horario?date=2026-09-14','/horario?date=2026-09-14&view=week','/horario?date=2026-09-14&view=month','/mas']) {
+    // Bug 610: incluir Eventos, donde se administra la conexión de Calendar.
+    for (const route of ['/','/ahora','/horario?date=2026-09-14','/horario?date=2026-09-14&view=week','/horario?date=2026-09-14&view=month','/mas','/eventos']) {
       await page.goto(route);await page.locator('main').waitFor();
       await page.evaluate(()=>document.documentElement.style.fontSize='200%');
       await noOverflow(page);

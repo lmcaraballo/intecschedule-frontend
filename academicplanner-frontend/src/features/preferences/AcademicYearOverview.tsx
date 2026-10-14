@@ -16,8 +16,8 @@ export function AcademicYearOverview({ now }: { now: Date }) {
   const selectedPeriod = periods.find((period) => period.id === selectedPeriodId) ?? currentPeriod;
   const dates = (selectedPeriod?.dates ?? [])
     .filter((entry, index, all) => all.findIndex((item) => item.date === entry.date && item.title === entry.title) === index)
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(0, 8);
+    // Bug 596: conservar todas las actividades publicadas del trimestre.
+    .sort((a, b) => a.date.localeCompare(b.date));
   const totalDates = periods.reduce((total, period) => total + period.dates.length, 0);
   const sourceUrl = periods[0]?.sourceUrl;
 

@@ -287,6 +287,9 @@ html[data-reduce-motion='true'] *, html[data-reduce-motion='true'] *::before, ht
 .events-page > .page-heading::after { content: ''; position: absolute; right: clamp(22px, 8vw, 100px); bottom: -54px; z-index: -1; width: 150px; height: 150px; border: 1px solid color-mix(in srgb, var(--primary) 16%, transparent); border-radius: 50%; box-shadow: 0 0 0 24px color-mix(in srgb, var(--success-bg) 34%, transparent), 0 0 0 52px color-mix(in srgb, var(--success-bg) 18%, transparent); }
 .calendar-onboarding { display: flex; align-items: flex-start; gap: var(--space-4); max-width: 680px; padding: var(--space-6); border: 1px solid color-mix(in srgb, var(--border) 76%, var(--primary)); border-radius: var(--radius-lg); background: linear-gradient(145deg, color-mix(in srgb, var(--surface) 98%, white), color-mix(in srgb, var(--surface-soft) 72%, var(--surface))); box-shadow: 0 4px 0 color-mix(in srgb, var(--primary) 14%, var(--border)), 0 18px 36px rgb(31 39 25 / .09), inset 0 1px 0 rgb(255 255 255 / .8); animation: event-panel-enter 360ms 60ms cubic-bezier(.2,.75,.25,1) both; }
 .calendar-onboarding > svg { flex: 0 0 auto; color: var(--heading); }
+/* Bug 610: el contenido flexible no debe imponer su ancho mínimo al ampliar el texto. */
+.calendar-onboarding > div { min-width: 0; overflow-wrap: anywhere; }
+.calendar-onboarding .button { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
 .calendar-onboarding h2, .event-editor h2 { color: var(--heading); font-size: 1.25rem; font-weight: 600; }
 .calendar-onboarding p:not(.section-label) { max-width: 56ch; margin: var(--space-2) 0 var(--space-4); color: var(--muted); font-size: .8125rem; line-height: 1.6; }
 .calendar-onboarding .connection-help { margin-bottom: 0; }
@@ -590,7 +593,8 @@ button.month-day:focus-visible .month-day__preview { display: block; }
   .app-dialog.confirmation-dialog { inset: 0; width: min(560px, calc(100% - 48px)); height: fit-content; max-height: 90svh; margin: auto; border-radius: var(--radius-lg); }
 }
 @media (min-width: 1100px) {
-  .app-shell.app-shell--academic { display: grid; grid-template-columns: 240px minmax(0, 1fr); grid-template-rows: auto 1fr auto; padding-bottom: 0; max-width: 1680px; }
+  /* Bug 598: no centrar toda la app al alejar el zoom; la barra queda en el borde. */
+  .app-shell.app-shell--academic { display: grid; grid-template-columns: 240px minmax(0, 1fr); grid-template-rows: auto 1fr auto; padding-bottom: 0; max-width: none; width: 100%; margin-inline: 0; }
   .app-shell--academic .site-header { position: sticky; top: 0; grid-column: 1; grid-row: 1 / 4; height: 100svh; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: var(--space-8) var(--space-5); background: linear-gradient(160deg, color-mix(in srgb, var(--surface-soft) 92%, white), color-mix(in srgb, var(--success-bg) 34%, var(--surface-soft))); border-bottom: 0; border-right: 1px solid color-mix(in srgb, var(--border) 76%, var(--heading)); box-shadow: 12px 0 30px rgb(31 39 25 / .08), inset -1px 0 0 rgb(255 255 255 / .6); }
   .app-shell--academic .brand { font-size: 1rem; gap: var(--space-2); }
   .app-shell--academic .brand-link { padding: 7px 10px; border: 1px solid color-mix(in srgb, var(--border) 68%, transparent); border-radius: var(--radius-md); background: color-mix(in srgb, var(--surface) 62%, transparent); box-shadow: 0 7px 16px rgb(31 39 25 / .065), inset 0 1px 0 rgb(255 255 255 / .72); }
@@ -646,6 +650,7 @@ button.month-day:focus-visible .month-day__preview { display: block; }
 }
 
 @media (max-width: 639px) {
+  .calendar-onboarding { flex-direction: column; padding: var(--space-4); }
   .campus-preview--expanded .campus-preview__heading { align-items: flex-start; padding: var(--space-3); }
   .campus-preview--expanded .campus-preview__heading h2 { font-size: .875rem; }
   .campus-preview--expanded .campus-preview__actions { flex-wrap: nowrap; }

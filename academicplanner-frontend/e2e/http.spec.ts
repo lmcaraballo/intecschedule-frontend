@@ -114,7 +114,10 @@ test('twelve-class portal response renders days, week, blank professor and virtu
   await expect(page.getByRole('dialog')).toContainText('ProfesorNo informado');
   await expect(page.getByRole('dialog')).toContainText('ModalidadVirtual');
   await expect(page.getByRole('dialog')).toContainText('VIRTUAL');
-  await expect(page.getByRole('dialog')).toContainText('No necesitas dirigirte a un edificio del campus');
+  // La ayuda virtual cambió de redacción; verificar también que no aparece un mapa presencial.
+  await expect(page.getByRole('dialog')).toContainText('Este encuentro es virtual');
+  await expect(page.getByRole('dialog').getByRole('link', { name: 'Campus Virtual', exact: true })).toBeVisible();
+  await expect(page.getByRole('dialog').locator('.maplibregl-canvas')).toHaveCount(0);
   await page.keyboard.press('Escape');
   await page.goto('/horario?date=2026-09-14&view=week');
   await expect(page.getByRole('button',{name:/Ver detalle:/})).toHaveCount(12);
@@ -167,7 +170,10 @@ test('virtual meetings, Sunday and asynchronous components survive login and rel
   await page.route('**/api/schedule',route=>route.fulfill({json:response}));
   await page.goto('/');await login(page);await expect(page).toHaveURL(/\/ahora$/);
   await expect(page.getByText(/Asíncrona: el portal lo indica expresamente/)).toBeVisible();
-  await expect(page.getByText(/puede ser asíncrona o tener un horario pendiente/)).toBeVisible();
+  // Un dato no informado no confirma que la materia sea asíncrona.
+  const unknownSubject = page.getByRole('listitem').filter({ hasText: 'Modalidad sin confirmar QA' });
+  await expect(unknownSubject).toContainText('Sin horario semanal informado:');
+  await expect(unknownSubject).toContainText('Confirma la modalidad con tu docente o en BeeCampus.');
   await expect(page.getByText(/Horario por anunciar:/)).toBeVisible();
   await page.goto('/horario?date=2026-09-20&view=week');
   await expect(page.getByLabel('Horario semanal de lunes a domingo')).toBeVisible();

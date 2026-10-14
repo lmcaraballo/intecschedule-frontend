@@ -125,7 +125,8 @@ export function Campus3DPreview({ academicClass, timing }: { academicClass: Acad
       window.cancelAnimationFrame(refocusFrame);
       mapElement.current?.querySelector<HTMLElement>('.maplibregl-canvas')?.focus();
     };
-  }, [building?.code, isExpanded, mapSelection?.code]);
+    // Bug 600: los clics del mapa ya mueven la cámara; no repetir ese vuelo.
+  }, [building?.code, isExpanded]);
 
   if (isVirtualLocation(academicClass.location)) {
     const virtualTitle = timing === 'current' ? 'Tu clase en curso es virtual' : timing === 'next' ? 'Tu próxima clase es virtual' : 'Este encuentro es virtual';

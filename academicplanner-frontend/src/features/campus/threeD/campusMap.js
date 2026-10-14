@@ -4,6 +4,7 @@ import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&ur
 import { buildingsData } from './campusData.js';
 import { campusFeatures } from './campusFeatures.js';
 import { cameraPresets } from './campusCameras.js';
+import { centerCameraOnBuilding, createSelectionScheduler } from './campusInteraction';
 import { campusContextBuildings, campusContextRoads } from './campusContext.js';
 import {
     campusGates,
@@ -466,8 +467,10 @@ function getOverviewCamera(containerWidth = window.innerWidth) {
 }
 
 function getFocusedCamera(presetId, containerWidth, compact) {
-    const preset = cameraPresets[presetId];
-    if (!preset) return null;
+    const configuredPreset = cameraPresets[presetId];
+    if (!configuredPreset) return null;
+    const building = CAMPUS_BUILDINGS.find(feature => feature.properties.code === presetId);
+    const preset = centerCameraOnBuilding(configuredPreset, building?.properties);
 
     // En una tarjeta angosta, el acercamiento original de 18.8 recortaba
     // demasiado el edificio. Conservamos el volumen 3D y el contexto cercano.
@@ -2114,9 +2117,17 @@ export function initCampusMap(containerId, options = {}) {
     const handleVisibilityChange = () => syncSelectionAnimation();
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
+    const scheduleSelection = createSelectionScheduler(map);
     const controller = {
         highlightBuilding: (code) => {
             const doHighlight = () => {
+                // Al restablecer el edificio de la clase, no conservar una ficha
+                // del edificio anterior encima de la nueva selección.
+                if (code !== currentActiveCode) {
+                    if (popupOpenTimer) window.clearTimeout(popupOpenTimer);
+                    popup?.remove();
+                    popup = null;
+                }
                 if (currentActiveCode) {
                     CAMPUS_BUILDINGS
                         .filter(f => f.properties.code === currentActiveCode)
@@ -2165,7 +2176,7 @@ export function initCampusMap(containerId, options = {}) {
                 currentActiveCode = code || null;
                 syncSelectionAnimation();
             };
-            map.isStyleLoaded() ? doHighlight() : map.once('load', doHighlight);
+            scheduleSelection(doHighlight);
         },
 
         setLighting: (phase, theme) => {
